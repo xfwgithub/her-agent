@@ -276,7 +276,6 @@ const sidebars: SidebarsConfig = {
                     'user-guide/skills/bundled/productivity/productivity-notion',
                     'user-guide/skills/bundled/productivity/productivity-ocr-and-documents',
                     'user-guide/skills/bundled/productivity/productivity-powerpoint',
-                    'user-guide/skills/bundled/productivity/productivity-teams-meeting-pipeline',
                   ],
                 },
                 {
@@ -333,15 +332,6 @@ const sidebars: SidebarsConfig = {
                     'user-guide/skills/bundled/software-development/software-development-spike',
                     'user-guide/skills/bundled/software-development/software-development-systematic-debugging',
                     'user-guide/skills/bundled/software-development/software-development-test-driven-development',
-                  ],
-                },
-                {
-                  type: 'category',
-                  label: 'yuanbao',
-                  key: 'skills-bundled-yuanbao',
-                  collapsed: true,
-                  items: [
-                    'user-guide/skills/bundled/yuanbao/yuanbao-yuanbao',
                   ],
                 },
               ],
@@ -619,8 +609,6 @@ const sidebars: SidebarsConfig = {
           type: 'category',
           label: 'Microsoft 365',
           items: [
-            'user-guide/messaging/teams',
-            'user-guide/messaging/teams-meetings',
             'user-guide/messaging/msgraph-webhook',
           ],
         },
@@ -634,7 +622,6 @@ const sidebars: SidebarsConfig = {
             'user-guide/messaging/wecom-callback',
             'user-guide/messaging/weixin',
             'user-guide/messaging/qqbot',
-            'user-guide/messaging/yuanbao',
           ],
         },
         {
@@ -698,7 +685,6 @@ const sidebars: SidebarsConfig = {
         'guides/xai-grok-oauth',
         'guides/oauth-over-ssh',
         'guides/microsoft-graph-app-registration',
-        'guides/operate-teams-meeting-pipeline',
       ],
     },
     {
