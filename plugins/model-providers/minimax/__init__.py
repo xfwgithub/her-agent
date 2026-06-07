@@ -27,19 +27,5 @@ minimax_cn = ProviderProfile(
     default_aux_model="MiniMax-M3",
 )
 
-minimax_oauth = ProviderProfile(
-    name="minimax-oauth",
-    aliases=("minimax_oauth", "minimax-oauth-io"),
-    api_mode="anthropic_messages",
-    display_name="MiniMax (OAuth)",
-    description="MiniMax via OAuth browser flow — no API key required",
-    signup_url="https://api.minimax.io/",
-    env_vars=(),  # OAuth — tokens in auth.json, not env
-    base_url="https://api.minimax.io/anthropic",
-    auth_type="oauth_external",
-    default_aux_model="MiniMax-M2.7",
-)
-
 register_provider(minimax)
 register_provider(minimax_cn)
-register_provider(minimax_oauth)
