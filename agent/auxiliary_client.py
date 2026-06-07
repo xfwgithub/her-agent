@@ -1284,7 +1284,6 @@ def _resolve_nous_runtime_api(*, force_refresh: bool = False) -> Optional[tuple[
     return api_key, base_url
 
 
-def _resolve_xai_oauth_for_aux() -> Optional[Tuple[str, str]]:
     """Resolve a fresh xAI OAuth (api_key, base_url) for auxiliary clients.
 
     Prefer the credential pool, matching the main runtime/provider status
@@ -1886,30 +1885,6 @@ def _try_custom_endpoint() -> Tuple[Optional[Any], Optional[str]]:
     return _fallback_client, model
 
 
-def _build_xai_oauth_aux_client(model: str) -> Tuple[Optional[Any], Optional[str]]:
-    """Build a CodexAuxiliaryClient for an xAI Grok OAuth-authenticated session.
-
-    xAI's ``/v1/responses`` endpoint speaks the OpenAI Responses API, so we
-    wrap a plain ``OpenAI`` client in ``CodexAuxiliaryClient`` to translate
-    ``chat.completions.create()`` calls into ``responses.stream()`` requests.
-
-    The caller must pass an explicit model — pinning a default for Grok
-    would silently rot when xAI's allowlist drifts.  Returns ``(None, None)``
-    when the user has not authenticated with xAI Grok OAuth.
-    """
-    if not model:
-        logger.warning(
-            "Auxiliary client: xai-oauth requested without a model; "
-            "pass model explicitly (auxiliary.<task>.model in config.yaml)."
-        )
-        return None, None
-    resolved = _resolve_xai_oauth_for_aux()
-    if resolved is None:
-        return None, None
-    api_key, base_url = resolved
-    logger.debug("Auxiliary client: xAI OAuth (%s via Responses API)", model)
-    real_client = OpenAI(api_key=api_key, base_url=base_url)
-    return CodexAuxiliaryClient(real_client, model), model
 
 
 def _build_codex_client(model: str) -> Tuple[Optional[Any], Optional[str]]:
@@ -3454,7 +3429,6 @@ def resolve_provider_client(
     # OpenRouter / Nous bills for side tasks they thought were running on
     # their xAI subscription.
     if provider == "xai-oauth":
-        client, default = _build_xai_oauth_aux_client(model)
         if client is None:
             logger.warning(
                 "resolve_provider_client: xai-oauth requested but no xAI "

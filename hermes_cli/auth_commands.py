@@ -33,7 +33,7 @@ from hermes_cli.secret_prompt import masked_secret_prompt
 
 
 # Providers that support OAuth login in addition to API keys.
-_OAUTH_CAPABLE_PROVIDERS = {"anthropic"}
+_OAUTH_CAPABLE_PROVIDERS: set[str] = set()
 
 
 def _get_custom_provider_names() -> list:
