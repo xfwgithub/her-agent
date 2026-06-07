@@ -57,6 +57,7 @@ def _make_discord_adapter():
     return adapter
 
 
+@pytest.mark.skipif(True, reason="Discord removed in the 2026-06-07 platform slim")
 class TestDiscordTextBatching:
     @pytest.mark.asyncio
     async def test_single_message_dispatched_after_delay(self):
@@ -235,6 +236,7 @@ def _make_matrix_adapter():
     return adapter
 
 
+@pytest.mark.skipif(True, reason="Matrix removed in the 2026-06-07 platform slim")
 class TestMatrixTextBatching:
     @pytest.mark.asyncio
     async def test_single_message_dispatched_after_delay(self):
@@ -320,6 +322,7 @@ def _make_wecom_adapter():
     return adapter
 
 
+@pytest.mark.skipif(True, reason="WeCom removed in the 2026-06-07 platform slim")
 class TestWeComTextBatching:
     @pytest.mark.asyncio
     async def test_single_message_dispatched_after_delay(self):
@@ -473,6 +476,7 @@ def _make_feishu_adapter():
     return adapter
 
 
+@pytest.mark.skipif(True, reason="Feishu removed in the 2026-06-07 platform slim")
 class TestFeishuAdaptiveDelay:
     @pytest.mark.asyncio
     async def test_short_chunk_uses_normal_delay(self):

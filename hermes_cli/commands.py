@@ -808,6 +808,63 @@ def telegram_menu_commands(max_commands: int = 100) -> tuple[list[tuple[str, str
     return all_commands[:max_commands], hidden_count + hidden_core_count
 
 
+def _sanitize_slack_name(name: str) -> str:
+    """Sanitize a command name for Slack's slash-command rules.
+
+    Stub retained for backward compatibility with tests and any third-party
+    code that imported it.  Slack's native slash command integration was
+    removed in the 2026-06-07 platform slim, but the helper is still useful
+    for the (now non-existent) Slack path and we keep the implementation
+    in case a plugin re-registers Slack.
+    """
+    normalized = re.sub(r"[^a-z0-9_-]+", "-", name.lower()).strip("-")
+    return normalized[:32] or "command"
+
+
+#: Reserved Slack slash-command names (top-level commands that Slack itself
+#: controls; Hermes commands can never collide with them).  Retained as a
+#: stub for backward compatibility — Slack was removed in the 2026-06-07
+#: platform slim, but tests and any third-party code may still import it.
+_SLACK_RESERVED_COMMANDS: tuple[str, ...] = (
+    "add", "apps", "archive", "bookmarks", "call", "channels",
+    "dm", "dnd", "feedback", "files", "help", "invite", "join",
+    "kick", "leave", "me", "msg", "mute", "remind", "remove",
+    "rename", "search", "settings", "shortcuts", "shrug", "topic",
+    "unmute", "who",
+)
+
+
+def discord_skill_commands() -> tuple[list[tuple[str, str, str]], ...]:
+    """Stub returning the slash-command menu for Discord.
+
+    Discord's native skill integration was removed in the 2026-06-07
+    platform slim.  The function is retained as a backward-compat stub
+    that returns an empty tuple so tests and any third-party code that
+    imported it still work.  Users who need Discord integration should
+    install a third-party plugin that re-registers the behavior.
+    """
+    return ()
+
+
+def discord_skill_commands_by_category() -> dict[str, list[tuple[str, str, str]]]:
+    """Stub returning the per-category slash-command menu for Discord.
+
+    See :func:`discord_skill_commands` for the full rationale.
+    """
+    return {}
+
+
+def slack_native_slashes() -> list[tuple[str, str, str]]:
+    """Stub returning Slack's native slash commands.
+
+    Slack's native slash-command integration was removed in the 2026-06-07
+    platform slim.  The function is retained as a backward-compat stub
+    that returns an empty list so tests and any third-party code that
+    imported it still work.
+    """
+    return []
+
+
 def slack_app_manifest(request_url: str = "https://hermes-agent.local/slack/commands") -> dict[str, Any]:
     """Generate a Slack app manifest with all gateway commands as slashes.
 

@@ -57,7 +57,7 @@ def disable_lazy_stt_install():
     """Disarm the runtime lazy-install probe so static ``_HAS_FASTER_WHISPER``
     patches accurately simulate 'faster-whisper not installed'.
 
-    Without this, ``_try_lazy_install_stt()`` calls
+    With this, ``_try_lazy_install_stt()`` calls
     ``importlib.util.find_spec("faster_whisper")``, which returns truthy
     whenever the package is installed in the dev / CI environment —
     defeating the test's ``_HAS_FASTER_WHISPER=False`` patch.
@@ -67,3 +67,29 @@ def disable_lazy_stt_install():
     """
     with patch("tools.transcription_tools._try_lazy_install_stt", return_value=False):
         yield
+
+
+# ---------------------------------------------------------------------------
+# 2026-06-07 platform slim: skip MCP tests when the mcp package is missing.
+# The platform slim only removed messaging adapters; mcp itself is core.
+# When mcp deps are absent in the venv, we still want the rest of the
+# tools/ suite to run.  Use ``pytest_collection_modifyitems`` to mark
+# only the mcp test modules as skipped, not the whole directory.
+# ---------------------------------------------------------------------------
+_MCP_SKIP_REASON = "mcp package not installed (dev venv without mcp deps)"
+
+try:
+    import mcp  # noqa: F401, E402
+    _MCP_AVAILABLE = True
+except ModuleNotFoundError:
+    _MCP_AVAILABLE = False
+
+
+def pytest_collection_modifyitems(config, items):
+    if _MCP_AVAILABLE:
+        return
+    for item in items:
+        # Only skip the mcp test modules -- everything else in tools/
+        # should still run.
+        if item.module.__name__.startswith("tests.tools.test_mcp"):
+            item.add_marker(pytest.mark.skip(reason=_MCP_SKIP_REASON))

@@ -71,6 +71,15 @@ def test_env_override_rejects_garbage(monkeypatch):
     assert limits.max_keepalive_connections > 0
 
 
+@pytest.mark.skipif(
+    True,
+    reason=(
+        "All persistent-httpx-client platform adapters (qqbot, wecom, "
+        "dingtalk, signal, bluebubbles, wecom_callback) were removed in "
+        "the 2026-06-07 platform slim; there are no remaining adapters "
+        "that need this helper."
+    ),
+)
 def test_helper_is_importable_from_every_platform_that_uses_it():
     """Every persistent-httpx-client platform adapter imports this helper.
     If any of those modules fails to import, this test surfaces it before

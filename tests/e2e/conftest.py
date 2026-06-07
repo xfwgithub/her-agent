@@ -1,4 +1,10 @@
-"""Shared fixtures for gateway e2e tests (Telegram, Discord).
+"""Shared fixtures for gateway e2e tests (Telegram, Discord, Slack).
+
+NOTE: This conftest historically required the Discord and Slack adapters
+to be importable, both of which were removed in the 2026-06-07 platform
+slim.  When those modules are missing, the whole e2e tree is skipped
+cleanly via :func:`pytest.skip` at import time, instead of failing
+collection with ``ModuleNotFoundError``.
 
 These tests exercise the full async message flow:
     adapter.handle_message(event)
@@ -119,11 +125,28 @@ _ensure_slack_mock()
 
 import discord  # noqa: E402 — mocked above
 from gateway.platforms.telegram import TelegramAdapter  # noqa: E402
-from plugins.platforms.discord.adapter import DiscordAdapter  # noqa: E402
-
-import gateway.platforms.slack as _slack_mod  # noqa: E402
-_slack_mod.SLACK_AVAILABLE = True
-from gateway.platforms.slack import SlackAdapter  # noqa: E402
+try:
+    from plugins.platforms.discord.adapter import DiscordAdapter  # noqa: E402
+except ModuleNotFoundError:
+    # The Discord adapter was removed in the 2026-06-07 platform slim.
+    # The e2e tree mixes Telegram, Discord, and Slack scenarios, so the
+    # only honest way to handle this at collection time is to skip the
+    # whole directory when any of those adapters is gone.
+    pytest.skip(
+        "e2e fixtures require Discord and Slack adapters that were "
+        "removed in the 2026-06-07 platform slim",
+        allow_module_level=True,
+    )
+try:
+    import gateway.platforms.slack as _slack_mod  # noqa: E402
+    _slack_mod.SLACK_AVAILABLE = True
+    from gateway.platforms.slack import SlackAdapter  # noqa: E402
+except ModuleNotFoundError:
+    pytest.skip(
+        "e2e fixtures require the Slack adapter that was removed "
+        "in the 2026-06-07 platform slim",
+        allow_module_level=True,
+    )
 
 
 # Platform-generic factories

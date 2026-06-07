@@ -1,5 +1,6 @@
 """Tests for the central command registry and autocomplete."""
 
+import pytest
 from prompt_toolkit.completion import CompleteEvent
 from prompt_toolkit.document import Document
 
@@ -281,6 +282,13 @@ class TestSlackSubcommandMap:
                 assert cmd.name not in mapping
 
 
+@pytest.mark.skipif(
+    True,
+    reason=(
+        "Slack platform removed in the 2026-06-07 platform slim; "
+        "slack_native_slashes() now returns an empty list."
+    ),
+)
 class TestSlackNativeSlashes:
     """Slack native slash command generation — used to register every
     COMMAND_REGISTRY entry as a first-class Slack slash, matching Discord
@@ -378,6 +386,13 @@ class TestSlackNativeSlashes:
         )
 
 
+@pytest.mark.skipif(
+    True,
+    reason=(
+        "Slack platform removed in the 2026-06-07 platform slim; "
+        "slack_app_manifest() is no longer generated."
+    ),
+)
 class TestSlackAppManifest:
     """Generated Slack app manifest (used by `hermes slack manifest`)."""
 
@@ -903,6 +918,15 @@ class TestClampCommandNamesTriples:
         assert result == entries
 
 
+@pytest.mark.skipif(
+    True,
+    reason=(
+        "Discord platform removed in the 2026-06-07 platform slim; the "
+        "discord_skill_commands / discord_skill_commands_by_category stubs "
+        "in hermes_cli/commands.py now return empty containers, so these "
+        "tests can no longer exercise their behavior."
+    ),
+)
 class TestDiscordSkillCmdKeyDispatch:
     """Integration: discord_skill_commands preserves cmd_key for long names.
 
@@ -1202,6 +1226,13 @@ class TestBackwardCompatAliases:
 # Discord skill command registration
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skipif(
+    True,
+    reason=(
+        "Discord platform removed in the 2026-06-07 platform slim; "
+        "discord_skill_commands() now returns an empty tuple."
+    ),
+)
 class TestDiscordSkillCommands:
     """Tests for discord_skill_commands() — centralized skill registration."""
 
@@ -1426,6 +1457,13 @@ class TestDiscordSkillCommands:
 from hermes_cli.commands import discord_skill_commands_by_category  # noqa: E402
 
 
+@pytest.mark.skipif(
+    True,
+    reason=(
+        "Discord platform removed in the 2026-06-07 platform slim; "
+        "discord_skill_commands_by_category() now returns an empty dict."
+    ),
+)
 class TestDiscordSkillCommandsByCategory:
     """Tests for discord_skill_commands_by_category() — /skill group registration."""
 

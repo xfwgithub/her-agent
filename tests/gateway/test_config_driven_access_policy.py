@@ -30,13 +30,14 @@ from gateway.session import SessionSource
 
 
 # Platforms whose adapters own their access policy at intake.
-_OWN_POLICY_PLATFORMS = [
-    Platform.WECOM,
-    Platform.WEIXIN,
-    Platform.YUANBAO,
-    Platform.QQBOT,
-    Platform.WHATSAPP,
-]
+# All five own-policy adapters in this test module were removed in the
+# 2026-06-07 platform slim.  The config-driven-access-policy contract is
+# still valid for plugin-supplied adapters and is exercised by the slim
+# set (telegram) via the gateway integration tests, so we keep the
+# tests' structure but with an empty list.  Re-introduce a platform here
+# only if it is re-introduced as a built-in or has a stable plugin that
+# overrides ``enforces_own_access_policy`` to True.
+_OWN_POLICY_PLATFORMS: list[Platform] = []
 
 
 def _clear_auth_env(monkeypatch) -> None:
@@ -100,27 +101,14 @@ def test_base_adapter_defaults_to_not_owning_access_policy():
     assert BasePlatformAdapter.enforces_own_access_policy.fget(object()) is False
 
 
-@pytest.mark.parametrize(
-    "module_path, class_name",
-    [
-        ("gateway.platforms.wecom", "WeComAdapter"),
-        ("gateway.platforms.weixin", "WeixinAdapter"),
-        ("gateway.platforms.yuanbao", "YuanbaoAdapter"),
-        ("gateway.platforms.qqbot.adapter", "QQAdapter"),
-        ("gateway.platforms.whatsapp", "WhatsAppAdapter"),
-    ],
-)
-def test_own_policy_adapters_declare_the_flag(module_path, class_name):
-    """The config-policy adapters override the flag to True."""
-    import importlib
-
-    module = importlib.import_module(module_path)
-    adapter_cls = getattr(module, class_name)
-    # Property is overridden on the subclass and returns True regardless of
-    # instance state (it reflects a static capability, not runtime config).
-    value = adapter_cls.enforces_own_access_policy.fget(object.__new__(adapter_cls))
-    assert value is True
-
+# NOTE: the adapter-specific parametrize table that used to follow this
+# comment listed WeCom, Weixin, Yuanbao, QQBot, and WhatsApp -- all of which
+# were removed in the 2026-06-07 platform slim.  The table is gone; if a
+# future platform ships an adapter that overrides
+# ``enforces_own_access_policy`` to True, re-introduce the parametrize
+# block with that single entry.  Until then the contract is covered by
+# the base class default-returns-False assertion in
+# ``test_base_adapter_default_is_false`` above.
 
 # ---------------------------------------------------------------------------
 # Layer 2: gateway trusts the adapter-enforced flag

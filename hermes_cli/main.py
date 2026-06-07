@@ -11637,7 +11637,6 @@ def _coalesce_session_name_args(argv: list) -> list:
         "model",
         "gateway",
         "setup",
-        "whatsapp",
         "login",
         "logout",
         "auth",
@@ -12533,8 +12532,8 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "model", "pairing", "plugins", "portal", "postinstall", "profile", "proxy",
         "prompt-size",
         "send", "sessions", "setup",
-        "skills", "slack", "status", "tools", "uninstall", "update",
-        "version", "webhook", "whatsapp", "chat", "secrets", "security",
+        "skills", "status", "tools", "uninstall", "update",
+        "version", "webhook", "chat", "secrets", "security",
         # Help-ish invocations — plugin commands not being listed in
         # top-level --help is an acceptable trade-off for skipping an
         # expensive eager import of every bundled plugin module.
@@ -13355,64 +13354,6 @@ def main():
         "dependencies that pip cannot provide, then runs setup if needed.",
     )
     postinstall_parser.set_defaults(func=cmd_postinstall)
-
-    # =========================================================================
-    # whatsapp command
-    # =========================================================================
-    whatsapp_parser = subparsers.add_parser(
-        "whatsapp",
-        help="Set up WhatsApp integration",
-        description="Configure WhatsApp and pair via QR code",
-    )
-    whatsapp_parser.set_defaults(func=cmd_whatsapp)
-
-    # =========================================================================
-    # slack command
-    # =========================================================================
-    slack_parser = subparsers.add_parser(
-        "slack",
-        help="Slack integration helpers (manifest generation, etc.)",
-        description="Slack integration helpers for Hermes.",
-    )
-    slack_sub = slack_parser.add_subparsers(dest="slack_command")
-    slack_manifest = slack_sub.add_parser(
-        "manifest",
-        help="Print or write a Slack app manifest with every gateway command "
-        "registered as a native slash (/btw, /stop, /model, ...)",
-        description=(
-            "Generate a Slack app manifest that registers every gateway "
-            "command in COMMAND_REGISTRY as a first-class Slack slash "
-            "command (matching Discord and Telegram parity). Paste the "
-            "output into Slack app config → Features → App Manifest → "
-            "Edit, then Save. Reinstall the app if Slack prompts for it."
-        ),
-    )
-    slack_manifest.add_argument(
-        "--write",
-        nargs="?",
-        const=True,
-        default=None,
-        metavar="PATH",
-        help="Write manifest to a file instead of stdout. With no PATH "
-        "writes to $HERMES_HOME/slack-manifest.json.",
-    )
-    slack_manifest.add_argument(
-        "--name",
-        default=None,
-        help='Bot display name (default: "Hermes")',
-    )
-    slack_manifest.add_argument(
-        "--description",
-        default=None,
-        help="Bot description shown in Slack's app directory.",
-    )
-    slack_manifest.add_argument(
-        "--slashes-only",
-        action="store_true",
-        help="Emit only the features.slash_commands array (for merging "
-        "into an existing manifest manually).",
-    )
-    slack_parser.set_defaults(func=cmd_slack)
 
     # =========================================================================
     # send command — pipe shell-script output to any configured platform
@@ -15264,7 +15205,7 @@ Examples:
             msgs = db.message_count()
             print(f"Total sessions: {total}")
             print(f"Total messages: {msgs}")
-            for src in ["cli", "telegram", "discord", "whatsapp", "slack"]:
+            for src in ["cli", "telegram"]:
                 c = db.session_count(source=src)
                 if c > 0:
                     print(f"  {src}: {c} sessions")

@@ -3,6 +3,8 @@
 import os
 from unittest.mock import patch
 
+import pytest
+
 from gateway.config import (
     GatewayConfig,
     HomeChannel,
@@ -803,6 +805,16 @@ class TestLoadGatewayConfig:
         assert os.environ.get("TELEGRAM_PROXY") == "socks5://from-env:1080"
 
 
+@pytest.mark.skipif(
+    True,
+    reason=(
+        "All platforms in this test (slack, whatsapp, signal, dingtalk, "
+        "matrix, wecom, weixin, feishu, qqbot) were removed in the "
+        "2026-06-07 platform slim; home-channel env-override behavior "
+        "is now exercised only for telegram via the slim-set gateway "
+        "tests."
+    ),
+)
 class TestHomeChannelEnvOverrides:
     """Home channel env vars should apply even when the platform was already
     configured via config.yaml (not just when credential env vars create it)."""

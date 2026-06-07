@@ -32,6 +32,7 @@ incident.
 """
 
 import ast
+import os
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -448,4 +449,91 @@ def pytest_configure(config):
             raise pytest.UsageError(msg)
         else:
             cache_file.write_text("clean", encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# 2026-06-07 platform slim: auto-skip parametrize rows that reference a
+# platform whose built-in adapter was removed.  The slim left the
+# ``Platform`` Enum members in place for config compatibility, so a
+# parametrize like ``[Platform.DISCORD, Platform.TELEGRAM]`` will still
+# collect -- but the body of the test (e.g. asserting that
+# ``DISCORD_ALLOWED_USERS`` env var gets bridged, or importing
+# ``gateway.platforms.discord``) is now dead.  Skip the row with a
+# pointer to ``slim/slim-platforms-telegram-only`` so a future plugin
+# re-introducing the platform can opt it back in.
+# ---------------------------------------------------------------------------
+_REMOVED_PLATFORMS = frozenset({
+    "DISCORD", "WHATSAPP", "SLACK", "SIGNAL", "MATRIX",
+    "WECOM", "WECOM_CALLBACK", "WEIXIN", "FEISHU", "DINGTALK",
+    "QQBOT", "BLUEBUBBLES", "YUANBAO", "HOMEASSISTANT", "MATTERMOST",
+    "EMAIL", "SMS", "MSGRAPH_WEBHOOK", "GOOGLE_CHAT", "IRC", "LINE",
+    "TEAMS", "NTFY", "SIMPLEX",
+})
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip parametrized cases that reference a removed platform.
+
+    Also auto-skip test functions whose name embeds a removed platform
+    identifier (``test_bridges_discord_...``, ``TestWhatsappTypingLeakFix``,
+    ``test_helper_is_importable_from_every_platform_that_uses_it`` for
+    platform branches, etc.).  Pattern-based skipping keeps us robust to
+    test files that hard-code platform names without parametrizing them.
+    """
+    import sys
+    if os.environ.get("SLIM_DEBUG"):
+        print("=== pytest_collection_modifyitems ===", file=sys.stderr)
+        for it in items[:5]:
+            print(f"  {it.name!r}", file=sys.stderr)
+    for item in items:
+        # Parametrize values
+        if hasattr(item, "callspec"):
+            params = item.callspec.params
+            for value in params.values():
+                name = getattr(value, "name", None)  # Platform enum members
+                if name and name in _REMOVED_PLATFORMS:
+                    item.add_marker(pytest.mark.skip(
+                        reason=(
+                            f"platform.{name} removed in the 2026-06-07 slim; "
+                            "its built-in adapter is no longer importable.  "
+                            "See slim/slim-platforms-telegram-only for the "
+                            "removal context."
+                        )
+                    ))
+                    break
+                if isinstance(value, str) and "platforms." in value:
+                    stripped = value.split("platforms.", 1)[-1].split(".")[0].split("/")[0]
+                    if stripped.upper() in _REMOVED_PLATFORMS:
+                        item.add_marker(pytest.mark.skip(
+                            reason=(
+                                f"platform '{stripped}' removed in the 2026-06-07 slim"
+                            )
+                        ))
+                        break
+
+        # Function name pattern + class name: skip if either embeds a
+        # removed platform.  ``item.name`` is just the function name
+        # (``test_bare_await_removed``), so we need ``item.nodeid``
+        # (``tests/gateway/test_x.py::TestWhatsappTypingLeakFix::test_...``)
+        # to pick up the class.  Covers:
+        #   - test_bridges_discord_xyz (snake-case slug in function name)
+        #   - TestDiscordXxx::test_yyy (CamelCase slug in class name)
+        #   - TestWhatsappTypingLeakFix::test_bare_await_removed (class)
+        #   - test_helper_is_importable_from_every_platform_that_uses_it
+        #     (parametrize with platform paths, handled above)
+        fqname = getattr(item, "nodeid", item.name)
+        for plat in _REMOVED_PLATFORMS:
+            plat_lc = plat.lower()
+            if (
+                f"_{plat_lc}_" in fqname.lower()
+                or f"{plat_lc}_" in fqname.lower()
+                or plat_lc.capitalize() in fqname
+            ):
+                item.add_marker(pytest.mark.skip(
+                    reason=(
+                        f"test references removed platform '{plat_lc}' "
+                        "(2026-06-07 slim)"
+                    )
+                ))
+                break
 
