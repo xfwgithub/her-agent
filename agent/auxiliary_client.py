@@ -1154,12 +1154,6 @@ def _maybe_wrap_anthropic(
             return client_obj
     except ImportError:
         pass
-    try:
-        from agent.copilot_acp_client import CopilotACPClient
-        if _safe_isinstance(client_obj, CopilotACPClient):
-            return client_obj
-    except ImportError:
-        pass
 
     # Explicit non-anthropic api_mode wins over URL heuristics.
     if api_mode and api_mode != "anthropic_messages":
@@ -1535,22 +1529,6 @@ def _describe_openrouter_unavailable() -> str:
 
 
 def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
-    # Check cross-session rate limit guard before attempting Nous —
-    # if another session already recorded a 429, skip Nous entirely
-    # to avoid piling more requests onto the tapped RPH bucket.
-    try:
-        from agent.nous_rate_guard import nous_rate_limit_remaining
-        _remaining = nous_rate_limit_remaining()
-        if _remaining is not None and _remaining > 0:
-            logger.debug(
-                "Auxiliary: skipping Nous Portal (rate-limited, resets in %.0fs)",
-                _remaining,
-            )
-            _mark_provider_unhealthy("nous", ttl=_remaining)
-            return None, None
-    except Exception:
-        pass
-
     nous = _read_nous_auth()
     runtime = _resolve_nous_runtime_api(force_refresh=False)
     if runtime is None and not nous:
@@ -3210,12 +3188,6 @@ def _to_async_client(sync_client, model: str, is_vision: bool = False):
             return AsyncGeminiNativeClient(sync_client), model
     except ImportError:
         pass
-    try:
-        from agent.copilot_acp_client import CopilotACPClient
-        if isinstance(sync_client, CopilotACPClient):
-            return sync_client, model
-    except ImportError:
-        pass
 
     async_kwargs = {
         "api_key": sync_client.api_key,
@@ -3820,34 +3792,6 @@ def resolve_provider_client(
             or _read_main_model(),
             provider,
         )
-        if provider == "copilot-acp":
-            api_key = str(creds.get("api_key", "")).strip()
-            base_url = str(creds.get("base_url", "")).strip()
-            command = str(creds.get("command", "")).strip() or None
-            args = list(creds.get("args") or [])
-            if not final_model:
-                logger.warning(
-                    "resolve_provider_client: copilot-acp requested but no model "
-                    "was provided or configured"
-                )
-                return None, None
-            if not api_key or not base_url:
-                logger.warning(
-                    "resolve_provider_client: copilot-acp requested but external "
-                    "process credentials are incomplete"
-                )
-                return None, None
-            from agent.copilot_acp_client import CopilotACPClient
-
-            client = CopilotACPClient(
-                api_key=api_key,
-                base_url=base_url,
-                command=command,
-                args=args,
-            )
-            logger.debug("resolve_provider_client: %s (%s)", provider, final_model)
-            return (_to_async_client(client, final_model, is_vision=is_vision) if async_mode
-                    else (client, final_model))
         logger.warning("resolve_provider_client: external-process provider %s not "
                        "directly supported", provider)
         return None, None

@@ -1176,54 +1176,6 @@ def run_conversation(
         agent._current_api_request_id = api_request_id
 
         while retry_count < max_retries:
-            # ── Nous Portal rate limit guard ──────────────────────
-            # If another session already recorded that Nous is rate-
-            # limited, skip the API call entirely.  Each attempt
-            # (including SDK-level retries) counts against RPH and
-            # deepens the rate limit hole.
-            if agent.provider == "nous":
-                try:
-                    from agent.nous_rate_guard import (
-                        nous_rate_limit_remaining,
-                        format_remaining as _fmt_nous_remaining,
-                    )
-                    _nous_remaining = nous_rate_limit_remaining()
-                    if _nous_remaining is not None and _nous_remaining > 0:
-                        _nous_msg = (
-                            f"Nous Portal rate limit active — "
-                            f"resets in {_fmt_nous_remaining(_nous_remaining)}."
-                        )
-                        agent._buffer_vprint(
-                            f"⏳ {_nous_msg} Trying fallback..."
-                        )
-                        agent._buffer_status(f"⏳ {_nous_msg}")
-                        if agent._try_activate_fallback():
-                            retry_count = 0
-                            compression_attempts = 0
-                            primary_recovery_attempted = False
-                            continue
-                        # No fallback available — surface buffered context
-                        # so user sees the rate-limit message that led here.
-                        agent._flush_status_buffer()
-                        agent._persist_session(messages, conversation_history)
-                        return {
-                            "final_response": (
-                                f"⏳ {_nous_msg}\n\n"
-                                "No fallback provider available. "
-                                "Try again after the reset, or add a "
-                                "fallback provider in config.yaml."
-                            ),
-                            "messages": messages,
-                            "api_calls": api_call_count,
-                            "completed": False,
-                            "failed": True,
-                            "error": _nous_msg,
-                        }
-                except ImportError:
-                    pass
-                except Exception:
-                    pass  # Never let rate guard break the agent loop
-
             try:
                 agent._reset_stream_delivery_tracking()
                 # api_messages is built once, before this retry loop, while the
@@ -2075,15 +2027,6 @@ def run_conversation(
                 # usable content. Empty responses still loop through the
                 # empty-retry path below; the buffer is cleared when
                 # genuinely successful content is detected later (~L4127).
-                # Clear Nous rate limit state on successful request —
-                # proves the limit has reset and other sessions can
-                # resume hitting Nous.
-                if agent.provider == "nous":
-                    try:
-                        from agent.nous_rate_guard import clear_nous_rate_limit
-                        clear_nous_rate_limit()
-                    except Exception:
-                        pass
                 agent._touch_activity(f"API call #{api_call_count} completed")
                 break  # Success, exit retry loop
 
@@ -2944,35 +2887,6 @@ def run_conversation(
                     and classified.reason == FailoverReason.rate_limit
                     and not recovered_with_pool
                 ):
-                    _genuine_nous_rate_limit = False
-                    try:
-                        from agent.nous_rate_guard import (
-                            is_genuine_nous_rate_limit,
-                            record_nous_rate_limit,
-                        )
-                        _err_resp = getattr(api_error, "response", None)
-                        _err_hdrs = (
-                            getattr(_err_resp, "headers", None)
-                            if _err_resp else None
-                        )
-                        _genuine_nous_rate_limit = is_genuine_nous_rate_limit(
-                            headers=_err_hdrs,
-                            last_known_state=agent._rate_limit_state,
-                        )
-                        if _genuine_nous_rate_limit:
-                            record_nous_rate_limit(
-                                headers=_err_hdrs,
-                                error_context=error_context,
-                            )
-                        else:
-                            logger.info(
-                                "Nous 429 looks like upstream capacity "
-                                "(no exhausted bucket in headers or "
-                                "last-known state) -- not tripping "
-                                "cross-session breaker."
-                            )
-                    except Exception:
-                        pass
                     if _genuine_nous_rate_limit:
                         # Skip straight to max_retries -- the
                         # top-of-loop guard will handle fallback or

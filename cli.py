@@ -8346,18 +8346,6 @@ class HermesCLI:
             return "\n".join(p for p in parts if p)
         return str(value)
 
-    def _handle_gquota_command(self, cmd_original: str) -> None:
-        """Show Google Gemini Code Assist quota usage for the current OAuth account.
-
-        The Gemini OAuth provider has been removed; this command is a no-op
-        that informs the user.
-        """
-        self._console_print(
-            "  [yellow]The google-gemini-cli OAuth provider has been removed.[/]\n"
-            "  Use [cyan]/auth gemini[/] to configure the API-key Gemini provider instead."
-        )
-        return
-
     def _handle_personality_command(self, cmd: str):
         """Handle the /personality command to set predefined personalities."""
         parts = cmd.split(maxsplit=1)
@@ -8960,8 +8948,6 @@ class HermesCLI:
             self._handle_model_switch(cmd_original)
         elif canonical == "codex-runtime":
             self._handle_codex_runtime(cmd_original)
-        elif canonical == "gquota":
-            self._handle_gquota_command(cmd_original)
 
         elif canonical == "personality":
             # Use original case (handler lowercases the personality name itself)
