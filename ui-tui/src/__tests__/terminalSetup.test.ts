@@ -27,11 +27,11 @@ describe('terminalSetup helpers', () => {
     expect(
       getVSCodeStyleConfigDir(
         'Code',
-        'win32',
-        { APPDATA: 'C:/Users/me/AppData/Roaming' } as NodeJS.ProcessEnv,
+        'linux',
+        {} as NodeJS.ProcessEnv,
         '/home/me'
       )
-    ).toBe('C:/Users/me/AppData/Roaming/Code/User')
+    ).toBe('/home/me/.config/Code/User')
   })
 
   it('strips line comments from keybindings JSON', () => {

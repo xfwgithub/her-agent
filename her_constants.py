@@ -42,11 +42,7 @@ def get_her_home_override() -> str | None:
 
 
 def _get_platform_default_her_home() -> Path:
-    """Return the platform-native default her home path."""
-    if sys.platform == "win32":
-        local_appdata = os.environ.get("LOCALAPPDATA", "").strip()
-        base = Path(local_appdata) if local_appdata else Path.home() / "AppData" / "Local"
-        return base / "her"
+    """Return the default her home path."""
     return Path.home() / ".her"
 
 
@@ -111,8 +107,7 @@ def get_her_home() -> Path:
 def get_default_her_root() -> Path:
     """Return the root her directory for profile-level operations.
 
-    In standard deployments this is the platform-native her home
-    (``~/.her`` on POSIX, ``%LOCALAPPDATA%\\her`` on native Windows).
+    In standard deployments this is the her home (``~/.her``).
 
     In Docker or custom deployments where ``HER_HOME`` points outside
     ``~/.her`` (e.g. ``/opt/data``), returns ``HER_HOME`` directly

@@ -1942,22 +1942,6 @@ class TestNewEndpoints:
         assert calls[0][0] == "osascript"
         assert "coder setup" in " ".join(calls[0])
 
-    def test_profile_open_terminal_uses_windows_cmd(self, monkeypatch):
-        from her_constants import get_her_home
-        import her_cli.web_server as web_server
-
-        (get_her_home() / "profiles" / "coder").mkdir(parents=True)
-        calls = []
-        monkeypatch.setattr(web_server.sys, "platform", "win32")
-        monkeypatch.setattr(web_server.subprocess, "Popen", lambda args, **kwargs: calls.append(args))
-
-        resp = self.client.post("/api/profiles/coder/open-terminal")
-
-        assert resp.status_code == 200
-        assert calls
-        assert calls[0][:4] == ["cmd.exe", "/c", "start", ""]
-        assert calls[0][-1] == "coder setup"
-
     def test_profiles_create_rejects_invalid_name(self):
         resp = self.client.post("/api/profiles", json={"name": "Has Spaces"})
         assert resp.status_code == 400
@@ -3775,12 +3759,6 @@ class TestDashboardPluginManifestExtensions:
 import sys
 
 
-skip_on_windows = pytest.mark.skipif(
-    sys.platform.startswith("win"), reason="PTY bridge is POSIX-only"
-)
-
-
-@skip_on_windows
 class TestPtyWebSocket:
     @pytest.fixture(autouse=True)
     def _setup(self, monkeypatch, _isolate_her_home):

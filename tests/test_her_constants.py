@@ -69,42 +69,6 @@ class TestGetDefaultherRoot:
         monkeypatch.setenv("HER_HOME", str(profile))
         assert get_default_her_root() == docker_root
 
-    def test_no_her_home_returns_localappdata_root_on_windows(self, tmp_path, monkeypatch):
-        """Native Windows falls back to %LOCALAPPDATA%\\her, not ~/.her."""
-        local_appdata = tmp_path / "LocalAppData"
-        monkeypatch.delenv("HER_HOME", raising=False)
-        monkeypatch.setenv("LOCALAPPDATA", str(local_appdata))
-        monkeypatch.setattr(Path, "home", lambda: tmp_path / "Home")
-        monkeypatch.setattr(her_constants.sys, "platform", "win32")
-
-        assert get_default_her_root() == local_appdata / "her"
-
-    def test_no_her_home_uses_windows_path_when_localappdata_missing(self, tmp_path, monkeypatch):
-        """Windows fallback still uses AppData/Local/her without LOCALAPPDATA."""
-        home = tmp_path / "Home"
-        monkeypatch.delenv("HER_HOME", raising=False)
-        monkeypatch.delenv("LOCALAPPDATA", raising=False)
-        monkeypatch.setattr(Path, "home", lambda: home)
-        monkeypatch.setattr(her_constants.sys, "platform", "win32")
-
-        assert get_default_her_root() == home / "AppData" / "Local" / "her"
-
-
-class TestGetherHome:
-    """Tests for get_her_home() platform-aware fallback."""
-
-    def test_windows_fallback_uses_localappdata(self, tmp_path, monkeypatch):
-        """When HER_HOME is unset on Windows, use %LOCALAPPDATA%\\her."""
-        local_appdata = tmp_path / "LocalAppData"
-        monkeypatch.delenv("HER_HOME", raising=False)
-        monkeypatch.setenv("LOCALAPPDATA", str(local_appdata))
-        monkeypatch.setattr(Path, "home", lambda: tmp_path / "Home")
-        monkeypatch.setattr(her_constants.sys, "platform", "win32")
-        monkeypatch.setattr(her_constants, "_profile_fallback_warned", False)
-
-        assert get_her_home() == local_appdata / "her"
-
-
 class TestIsContainer:
     """Tests for is_container() — Docker/Podman detection."""
 

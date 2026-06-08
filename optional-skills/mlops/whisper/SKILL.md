@@ -48,7 +48,6 @@ pip install -U openai-whisper
 # Requires ffmpeg
 # macOS: brew install ffmpeg
 # Ubuntu: sudo apt install ffmpeg
-# Windows: choco install ffmpeg
 ```
 
 ### Basic transcription

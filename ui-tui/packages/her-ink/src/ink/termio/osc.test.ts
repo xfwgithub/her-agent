@@ -58,7 +58,7 @@ describe('supportsOsc52Clipboard', () => {
   // the terminal's own clipboard write. Values must match what
   // detectTerminal() in utils/env.ts returns — TERM=xterm-ghostty normalises
   // to 'ghostty', TERM_PROGRAM=WezTerm stays 'WezTerm', etc.
-  it.each(['ghostty', 'kitty', 'WezTerm', 'windows-terminal', 'vscode'])(
+  it.each(['ghostty', 'kitty', 'WezTerm', 'vscode'])(
     'returns true for allowlisted terminal %s',
     terminal => {
       expect(supportsOsc52Clipboard(terminal)).toBe(true)
@@ -116,13 +116,12 @@ describe('shouldUseNativeClipboard', () => {
   })
 
   it('returns false on allowlisted local terminals (the race-fix case)', () => {
-    // Ghostty / kitty / WezTerm / Windows Terminal / VS Code — OSC 52
-    // alone is reliable, native fallback racing it can corrupt the
-    // clipboard (the wl-copy on Wayland symptom this PR fixes).
+    // Ghostty / kitty / WezTerm / VS Code — OSC 52 alone is reliable,
+    // native fallback racing it can corrupt the clipboard (the wl-copy on
+    // Wayland symptom this PR fixes).
     expect(shouldUseNativeClipboard({} as NodeJS.ProcessEnv, 'ghostty')).toBe(false)
     expect(shouldUseNativeClipboard({} as NodeJS.ProcessEnv, 'kitty')).toBe(false)
     expect(shouldUseNativeClipboard({} as NodeJS.ProcessEnv, 'WezTerm')).toBe(false)
-    expect(shouldUseNativeClipboard({} as NodeJS.ProcessEnv, 'windows-terminal')).toBe(false)
     expect(shouldUseNativeClipboard({} as NodeJS.ProcessEnv, 'vscode')).toBe(false)
   })
 

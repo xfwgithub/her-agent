@@ -4,7 +4,7 @@ description: Web scraping with Scrapling - HTTP fetching, stealth browser automa
 version: 1.0.0
 author: FEUAZUR
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Web Scraping, Browser, Cloudflare, Stealth, Crawling, Spider]

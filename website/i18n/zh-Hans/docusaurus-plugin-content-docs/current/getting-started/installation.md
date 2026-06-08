@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: "安装"
-description: "在 Linux、macOS、WSL2、原生 Windows 或通过 Termux 在 Android 上安装 her Agent"
+description: "在 Linux、macOS 或通过 Termux 在 Android 上安装 her Agent"
 ---
 
 # 安装
@@ -10,36 +10,13 @@ description: "在 Linux、macOS、WSL2、原生 Windows 或通过 Termux 在 And
 
 ## 快速安装
 
-### 一行安装命令（Linux / macOS / WSL2）
+### 一行安装命令（Linux / macOS）
 
 基于 git 的安装方式，跟踪 `main` 分支，可立即获取最新变更：
 
 ```bash
 curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
 ```
-
-### Windows（原生，PowerShell）
-
-原生 Windows 无需 WSL 即可运行 her——CLI、gateway、TUI 和工具均可原生运行。（原生安装与 WSL2 安装可干净共存；唯一仅限 WSL2 的功能见下方功能说明。）遇到 bug 请[提交 issue](https://github.com/NousResearch/her-agent/issues)。
-
-打开 PowerShell 并运行：
-
-```powershell
-iex (irm https://her-agent.nousresearch.com/install.ps1)
-```
-
-安装程序处理**一切**：`uv`、Python 3.11、Node.js 22、`ripgrep`、`ffmpeg`，**以及一个便携式 Git Bash**（PortableGit——一个自包含的 Git-for-Windows 发行版，附带 `bash.exe` 和 her 用于 shell 命令的完整 POSIX 工具链；在 32 位 Windows 上安装程序会回退到 MinGit，后者缺少 bash，终端工具和 agent 浏览器功能将被禁用）。它将仓库克隆到 `%LOCALAPPDATA%\her\her-agent`，创建虚拟环境，并将 `her` 添加到**用户 PATH**。安装完成后请重启终端（或打开新的 PowerShell 窗口）以使 PATH 生效。
-
-**Git 的处理方式：**
-
-1. 如果 `git` 已在你的 PATH 中，安装程序将使用现有安装。
-2. 否则，它会下载便携式 **PortableGit**（约 50MB，来自官方 `git-for-windows` GitHub 发布页）并解压到 `%LOCALAPPDATA%\her\git`。无需管理员权限，完全隔离——不会干扰任何系统 Git 安装，无论其状态如何。（在 32 位 Windows 上会回退到 MinGit，因为 PortableGit 仅提供 64 位和 ARM64 资产；依赖 bash 的 her 功能在 32 位主机上无法使用。）
-
-**为什么不使用 winget？** 早期设计通过 `winget install Git.Git` 自动安装 Git，但当系统 Git 安装处于部分损坏状态时，winget 会严重失败（而这恰恰是用户最需要安装程序正常工作的时候）。便携式 Git 方案绕过了 winget、Windows 安装程序注册表以及任何现有系统 Git。如果 her 的 Git 安装本身出现问题，执行 `Remove-Item %LOCALAPPDATA%\her\git` 并重新运行安装程序即可——对系统无影响，无需卸载操作。
-
-安装程序还会将 `HER_GIT_BASH_PATH` 设置为找到的 `bash.exe` 路径，以便 her 在新 shell 中确定性地解析它。
-
-如果你偏好 WSL2，上方的 Linux 安装程序可在其中运行；原生安装和 WSL 安装可以共存而不冲突（原生数据位于 `%LOCALAPPDATA%\her`，WSL 数据位于 `~/.her`）。
 
 ### Android / Termux
 
@@ -58,20 +35,6 @@ curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
 - 默认跳过未经测试的浏览器 / WhatsApp 引导
 
 如需完整的显式步骤，请参阅专门的 [Termux 指南](./termux.md)。
-
-:::note Windows 功能对等性
-
-除基于浏览器的 dashboard 聊天终端外，其余功能均可在 Windows 上原生运行：
-
-- **CLI（`her chat`、`her setup`、`her gateway` 等）** — 原生，使用默认终端
-- **Gateway（Telegram、Discord、Slack 等）** — 原生，作为后台 PowerShell 进程运行
-- **Cron 调度器** — 原生
-- **浏览器工具** — 原生（通过 Node.js 使用 Chromium）
-- **MCP 服务器** — 原生（stdio 和 HTTP 传输均支持）
-- **Dashboard `/chat` 终端面板** — **仅限 WSL2**（使用 POSIX PTY（伪终端），原生 Windows 无等效实现）。Dashboard 的其余部分（会话、任务、指标）可原生运行——仅嵌入式 PTY 终端标签页受限。
-
-如果遇到编码相关的 bug 并希望回退到旧版 cp1252 stdio 路径（用于问题定位），请在环境中设置 `HER_DISABLE_WINDOWS_UTF8=1`。
-:::
 
 ### 安装程序做了什么
 

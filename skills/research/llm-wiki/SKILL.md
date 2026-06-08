@@ -4,7 +4,7 @@ description: "Karpathy's LLM Wiki: build/query interlinked markdown KB."
 version: 2.1.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [wiki, knowledge-base, research, notes, markdown, rag-alternative]

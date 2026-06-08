@@ -5,7 +5,7 @@ version: 1.0.0
 author: her Agent
 license: MIT
 dependencies: []
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Excalidraw, Diagrams, Flowcharts, Architecture, Visualization, JSON]

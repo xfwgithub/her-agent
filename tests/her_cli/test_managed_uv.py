@@ -32,13 +32,6 @@ class TestManagedUvPath:
             from her_cli.managed_uv import managed_uv_path
             assert managed_uv_path() == tmp_path / "bin" / "uv"
 
-    def test_windows(self, tmp_path):
-        with patch("her_cli.managed_uv.get_her_home", return_value=tmp_path), \
-             patch("her_cli.managed_uv.platform.system", return_value="Windows"):
-            from her_cli.managed_uv import managed_uv_path
-            assert managed_uv_path() == tmp_path / "bin" / "uv.exe"
-
-
 # ---------------------------------------------------------------------------
 # resolve_uv
 # ---------------------------------------------------------------------------
@@ -117,8 +110,7 @@ class TestEnsureUvUpdateBoundary:
     result must therefore be usable as a bare path *and* unpackable as a
     2-tuple, in both the success and failure cases.
 
-    The dual contract is intentionally **not** offered on Windows — see
-    ``TestEnsureUvWindowsSafe`` for why — so these tests pin ``platform.system``
+    These tests pin ``platform.system``
     to a POSIX value.
     """
 
@@ -148,52 +140,6 @@ class TestEnsureUvUpdateBoundary:
             uv_bin, fresh = ensure_uv()
             assert uv_bin is None
             assert fresh is False
-
-
-class TestEnsureUvWindowsSafe:
-    """On Windows ``ensure_uv()`` must return a plain ``str``/``None``.
-
-    ``subprocess`` on Windows serializes argv through
-    ``subprocess.list2cmdline``, which iterates every entry *as a string*
-    (``for c in arg``). The dependency installer feeds uv straight into the
-    command list (``[uv_bin, "pip", "install", ...]``). A ``str`` subclass
-    whose ``__iter__`` yields ``(path, fresh_bootstrap)`` instead of characters
-    therefore injects the bool into the command line and crashes the install
-    with ``TypeError: sequence item 1: expected str instance, bool found``
-    (a real field report on a 10-commits-behind Windows install). A single
-    return value cannot serve both the legacy 2-tuple unpack and Windows
-    char-iteration — both use the iterator protocol — so Windows opts out of
-    the wrapper entirely.
-    """
-
-    def test_uvresult_would_break_windows_list2cmdline(self):
-        # Canary: this is *why* the wrapper is gated off Windows. If a future
-        # change makes _UvResult char-iterable (and thus list2cmdline-safe),
-        # the gate may be revisited.
-        import subprocess
-        from her_cli.managed_uv import _UvResult
-        with pytest.raises(TypeError):
-            subprocess.list2cmdline([_UvResult("C:\\her\\uv.exe"), "pip"])
-
-    def test_windows_returns_plain_str_safe_for_subprocess(self, tmp_path):
-        import subprocess
-        # On (mocked) Windows the managed binary is uv.exe.
-        _make_executable(tmp_path / "bin" / "uv.exe")
-        with patch("her_cli.managed_uv.get_her_home", return_value=tmp_path), \
-             patch("her_cli.managed_uv.platform.system", return_value="Windows"):
-            from her_cli.managed_uv import _UvResult, ensure_uv
-            uv_bin = ensure_uv()
-            assert type(uv_bin) is str and not isinstance(uv_bin, _UvResult)
-            # The exact operation that crashed in the field must now succeed.
-            cmdline = subprocess.list2cmdline([uv_bin, "pip", "install", "-e", "."])
-            assert "pip" in cmdline and "install" in cmdline
-
-    def test_windows_failure_returns_none(self, tmp_path):
-        with patch("her_cli.managed_uv.get_her_home", return_value=tmp_path), \
-             patch("her_cli.managed_uv.platform.system", return_value="Windows"), \
-             patch("her_cli.managed_uv._install_uv", side_effect=RuntimeError("network down")):
-            from her_cli.managed_uv import ensure_uv
-            assert ensure_uv() is None
 
 
 # ---------------------------------------------------------------------------
@@ -244,12 +190,4 @@ class TestInstallUvInternals:
             call_env = mock_posix.call_args[0][0]
             assert call_env["UV_UNMANAGED_INSTALL"] == str(tmp_path / "bin")
 
-    def test_windows_sets_uv_install_dir(self, tmp_path):
-        target = tmp_path / "bin" / "uv.exe"
-        with patch("her_cli.managed_uv.platform.system", return_value="Windows"), \
-             patch("her_cli.managed_uv._install_uv_windows") as mock_windows:
-            from her_cli.managed_uv import _install_uv
-            _install_uv(target)
-            mock_windows.assert_called_once()
-            call_env = mock_windows.call_args[0][0]
-            assert call_env["UV_INSTALL_DIR"] == str(tmp_path / "bin")
+

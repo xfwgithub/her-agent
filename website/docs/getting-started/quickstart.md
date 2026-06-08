@@ -47,16 +47,9 @@ Pick the row that matches your goal:
 ---
 
 ## 1. Install her Agent
-### Linux / macOS / WSL2 / Android (Termux)
+### Linux / macOS / Android (Termux)
 ```bash
 curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
-```
-
-### Windows (native)
-
-Run in powershell:
-```powershell
-iex (irm https://her-agent.nousresearch.com/install.ps1) 
 ```
 
 :::tip Android / Termux
@@ -262,7 +255,7 @@ her config set terminal.backend ssh       # Remote server
 
 ```bash
 # From the her install directory (the curl installer placed it at
-# ~/.her/her-agent on Linux/macOS or %LOCALAPPDATA%\her\her-agent on Windows):
+# ~/.her/her-agent on Linux/macOS):
 cd ~/.her/her-agent
 uv pip install -e ".[voice]"
 # Includes faster-whisper for free local speech-to-text

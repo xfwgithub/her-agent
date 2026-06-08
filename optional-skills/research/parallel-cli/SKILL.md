@@ -4,7 +4,7 @@ description: Optional vendor skill for Parallel CLI — agent-native web search,
 version: 1.1.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Research, Web, Search, Deep-Research, Enrichment, CLI]

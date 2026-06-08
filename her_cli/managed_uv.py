@@ -1,11 +1,11 @@
 """Managed uv — one path, no guessing.
 
-her owns its own uv binary at ``$HER_HOME/bin/uv`` (or ``uv.exe`` on
-Windows).  Every code path that needs uv resolves it from that single location.
-If the binary is missing, ``ensure_uv()`` bootstraps it via the official
-standalone installer with ``UV_UNMANAGED_INSTALL`` / ``UV_INSTALL_DIR`` pointed
-at ``$HER_HOME/bin`` so the installer writes directly there — no PATH
-probing, no conda guards, no multi-location resolution chains.
+her owns its own uv binary at ``$HER_HOME/bin/uv``.  Every code path
+that needs uv resolves it from that single location.  If the binary is
+missing, ``ensure_uv()`` bootstraps it via the official standalone
+installer with ``UV_UNMANAGED_INSTALL`` pointed at ``$HER_HOME/bin``
+so the installer writes directly there — no PATH probing, no conda
+guards, no multi-location resolution chains.
 """
 
 from __future__ import annotations
@@ -29,15 +29,10 @@ logger = logging.getLogger(__name__)
 
 def managed_uv_path() -> Path:
     """Return the path where her keeps *its* uv binary.
-
-    ``$HER_HOME/bin/uv`` on POSIX, ``$HER_HOME\\bin\\uv.exe`` on
-    Windows.  The directory may not exist yet — callers should use
-    ``ensure_uv()`` to bootstrap it.
+    ``$HER_HOME/bin/uv``. The directory may not exist yet — callers
+    should use ``ensure_uv()`` to bootstrap it.
     """
-    home = get_her_home()
-    if platform.system() == "Windows":
-        return home / "bin" / "uv.exe"
-    return home / "bin" / "uv"
+    return get_her_home() / "bin" / "uv"
 
 
 def resolve_uv() -> Optional[str]:
@@ -72,9 +67,6 @@ class _UvResult(str):
     Missing uv is the empty string (falsy) instead of ``None`` so legacy
     2-target call sites can still unpack a failure without raising, while
     ``if not uv_bin`` keeps working for single-value callers.
-
-    POSIX only. This wrapper is **never** returned on Windows — see
-    ``ensure_uv()`` for why the ``__iter__`` override is unsafe there.
     """
 
     fresh_bootstrap: bool
@@ -127,31 +119,15 @@ def _ensure_uv_path() -> Optional[str]:
 def ensure_uv():
     """Return the managed uv path, installing it first if necessary.
 
-    On **POSIX** the result is a :class:`_UvResult` (a ``str`` subclass) that is
+    The result is a :class:`_UvResult` (a ``str`` subclass) that is
     both usable directly as the path *and* unpackable as
     ``(path, fresh_bootstrap)`` for older call sites parked on a 2-tuple
     release — see :class:`_UvResult` for the update-boundary rationale.
-
-    On **Windows** we deliberately return a plain ``str``/``None`` instead.
-    ``subprocess`` there serializes the argv via ``subprocess.list2cmdline``,
-    which iterates every entry *as a string* (``for c in arg``). The dependency
-    installer passes uv straight into the command list (``[uv_bin, "pip", ...]``),
-    so a ``_UvResult`` — whose ``__iter__`` yields ``(path, fresh_bootstrap)``
-    rather than characters — would inject the bool into the command line and
-    crash the install with ``TypeError: sequence item 1: expected str instance,
-    bool found``. A plain ``str`` matches the historical Windows contract and is
-    subprocess-safe. (A single value cannot satisfy both 2-target unpacking and
-    Windows char-iteration: both use the iterator protocol, with contradictory
-    results.)
 
     On failure the result is falsy — never raises — so callers can fall back to
     pip gracefully.
     """
     result = _ensure_uv_path()
-    if platform.system() == "Windows":
-        # See docstring: a str subclass with an overridden __iter__ is unsafe as
-        # a Windows subprocess argument. Hand back the plain path (or None).
-        return result
     return _UvResult(result)
 
 
@@ -192,26 +168,13 @@ def update_managed_uv() -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 def _install_uv(target: Path) -> None:
-    """Bootstrap uv into *target* using the official standalone installer.
-
-    Uses ``UV_UNMANAGED_INSTALL`` (POSIX) or ``UV_INSTALL_DIR`` (Windows)
-    so the astral installer writes the binary directly into
-    ``$HER_HOME/bin/`` instead of ``~/.local/bin/``.
-    """
-    system = platform.system()
+    """Bootstrap uv into *target* using the official standalone installer."""
     env = {
         **os.environ,
-        # Tell the astral installer to drop the binary in our dir, not
-        # ~/.local/bin.  UV_UNMANAGED_INSTALL is the POSIX env var; Windows
-        # uses UV_INSTALL_DIR.
         "UV_UNMANAGED_INSTALL": str(target.parent),
         "UV_INSTALL_DIR": str(target.parent),
     }
-
-    if system == "Windows":
-        _install_uv_windows(env)
-    else:
-        _install_uv_posix(env)
+    _install_uv_posix(env)
 
 
 def _install_uv_posix(env: dict[str, str]) -> None:
@@ -237,18 +200,6 @@ def _install_uv_posix(env: dict[str, str]) -> None:
         except OSError:
             pass
 
-
-def _install_uv_windows(env: dict[str, str]) -> None:
-    """Invoke the PowerShell installer."""
-    cmd = (
-        'irm https://astral.sh/uv/install.ps1 | iex'
-    )
-    subprocess.run(
-        ["powershell", "-ExecutionPolicy", "Bypass", "-c", cmd],
-        env=env,
-        check=True,
-        capture_output=True,
-    )
 
 def rebuild_venv(uv_bin: str, venv_dir: Path, python_version: str = "3.11") -> bool:
     True # dont remove me. ask ethernet

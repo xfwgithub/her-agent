@@ -18,11 +18,6 @@ pytest.importorskip("ptyprocess", reason="ptyprocess not installed")
 from her_cli.pty_bridge import PtyBridge, PtyUnavailableError
 
 
-skip_on_windows = pytest.mark.skipif(
-    sys.platform.startswith("win"), reason="PTY bridge is POSIX-only"
-)
-
-
 def _read_until(bridge: PtyBridge, needle: bytes, timeout: float = 5.0) -> bytes:
     """Accumulate PTY output until we see `needle` or time out."""
     deadline = time.monotonic() + timeout
@@ -37,7 +32,6 @@ def _read_until(bridge: PtyBridge, needle: bytes, timeout: float = 5.0) -> bytes
     return bytes(buf)
 
 
-@skip_on_windows
 class TestPtyBridgeSpawn:
     def test_is_available_on_posix(self):
         assert PtyBridge.is_available() is True
@@ -54,7 +48,6 @@ class TestPtyBridgeSpawn:
             PtyBridge.spawn([str(tmp_path / "definitely-not-a-real-binary")])
 
 
-@skip_on_windows
 class TestPtyBridgeIO:
     def test_reads_child_stdout(self):
         bridge = PtyBridge.spawn(["/bin/sh", "-c", "printf her-ok"])
@@ -94,7 +87,6 @@ class TestPtyBridgeIO:
             bridge.close()
 
 
-@skip_on_windows
 class TestPtyBridgeResize:
     def test_resize_updates_child_winsize(self):
         # Query the TTY ioctl directly instead of using tput, which requires
@@ -148,7 +140,6 @@ class TestPtyBridgeResize:
             bridge.close()
 
 
-@skip_on_windows
 class TestClampDimension:
     def test_clamps_above_max(self):
         from her_cli.pty_bridge import _MAX_COLS, _MAX_ROWS, _clamp_dimension
@@ -187,7 +178,6 @@ class TestClampDimension:
         _struct.pack("HHHH", rows, cols, 0, 0)
 
 
-@skip_on_windows
 class TestPtyBridgeClose:
     def test_close_is_idempotent(self):
         bridge = PtyBridge.spawn(["/bin/sh", "-c", "sleep 30"])
@@ -212,7 +202,6 @@ class TestPtyBridgeClose:
         assert reaped, f"pid {pid} still running after close()"
 
 
-@skip_on_windows
 class TestPtyBridgeEnv:
     def test_cwd_is_respected(self, tmp_path):
         bridge = PtyBridge.spawn(

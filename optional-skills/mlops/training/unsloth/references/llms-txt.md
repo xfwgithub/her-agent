@@ -728,25 +728,12 @@ Base models are usually used for fine-tuning purposes:
 
 ---
 
-## Windows Installation
-
-**URL:** llms-txt#windows-installation
-
 **Contents:**
 - Method #1 - Docker:
-- Method #2 - Windows directly:
   - **Notes**
   - **Advanced/Troubleshooting**
-- Method #3 - Windows using PowerShell:
-- Method #4 - Windows via WSL:
-
-See how to install Unsloth on Windows with or without WSL.
-
-For Windows, `pip install unsloth` now works, however you must have Pytorch previously installed.
 
 ## Method #1 - Docker:
-
-Docker might be the easiest way for Windows users to get started with Unsloth as there is no setup needed or dependency issues. [**`unsloth/unsloth`**](https://hub.docker.com/r/unsloth/unsloth) is Unsloth's only Docker image. For [Blackwell](https://docs.unsloth.ai/basics/fine-tuning-llms-with-blackwell-rtx-50-series-and-unsloth) and 50-series GPUs, use this same image - no separate image needed.
 
 For installation instructions, please follow our [Docker guide](https://docs.unsloth.ai/new/how-to-fine-tune-llms-with-unsloth-and-docker), otherwise here is a quickstart guide:
 
@@ -780,8 +767,6 @@ If you're new, follow our step-by-step [Fine-tuning Guide](https://docs.unsloth.
 {% endstep %}
 {% endstepper %}
 
-## Method #2 - Windows directly:
-
 {% hint style="info" %}
 Python 3.13 now works with Unsloth!
 {% endhint %}
@@ -796,8 +781,6 @@ You should install the latest version of your GPUs driver. Download drivers here
 {% step %}
 **Install Visual Studio C++**
 
-You will need Visual Studio, with C++ installed. By default, C++ is not installed with Visual Studio, so make sure you select all of the C++ options. Also select options for Windows 10/11 SDK.
-
 * Launch the Installer here:  [Visual Studio Community Edition](https://visualstudio.microsoft.com/vs/community/)
 * In the installer, navigate to individual components and select all the options listed here:
   * **.NET Framework 4.8 SDK**
@@ -806,17 +789,10 @@ You will need Visual Studio, with C++ installed. By default, C++ is not installe
   * **MSBuild**
   * **MSVC v143 - VS 2022 C++ x64/x86 build tools**
   * **C++ 2022 Redistributable Update**
-  * **C++ CMake tools for Windows**
   * **C++/CLI support for v143 build tools (Latest)**
   * **MSBuild support for LLVM (clang-cl) toolset**
-  * **C++ Clang Compiler for Windows (19.1.1)**
-  * **Windows 11 SDK (10.0.22621.0)**
-  * **Windows Universal CRT SDK**
   * **C++ 2022 Redistributable MSMs**
 
-**Easier method:** Or you can open an elevated Command Prompt or PowerShell:
-
-* Search for "cmd" or "PowerShell", right-click it, and choose "Run as administrator."
 * Paste and run this command (update the Visual Studio path if necessary):
 
 {% step %}
@@ -842,12 +818,8 @@ Open Conda command prompt or your terminal with Python and run the command:
 {% endstepper %}
 
 {% hint style="warning" %}
-If you're using GRPO or plan to use vLLM, currently vLLM does not support Windows directly but only via WSL or Linux.
 {% endhint %}
 
-To run Unsloth directly on Windows:
-
-* Install Triton from this Windows fork and follow the instructions [here](https://github.com/woct0rdho/triton-windows) (be aware that the Windows fork requires PyTorch >= 2.4 and CUDA 12)
 * In the SFTTrainer, set `dataset_num_proc=1` to avoid a crashing issue:
 
 ### **Advanced/Troubleshooting**
@@ -859,8 +831,6 @@ For **advanced installation instructions** or if you see weird errors during ins
 3. Install `xformers` manually. You can try installing `vllm` and seeing if `vllm` succeeds. Check if `xformers` succeeded with `python -m xformers.info` Go to <https://github.com/facebookresearch/xformers>. Another option is to install `flash-attn` for Ampere GPUs.
 4. Double check that your versions of Python, CUDA, CUDNN, `torch`, `triton`, and `xformers` are compatible with one another. The [PyTorch Compatibility Matrix](https://github.com/pytorch/pytorch/blob/main/RELEASE.md#release-compatibility-matrix) may be useful.
 5. Finally, install `bitsandbytes` and check it with `python -m bitsandbytes`
-
-## Method #3 - Windows using PowerShell:
 
 #### **Step 1: Install Prerequisites**
 
@@ -887,13 +857,9 @@ For **advanced installation instructions** or if you see weird errors during ins
 4. **Install Conda**
    1. Download and install **Miniconda** from the [official website](https://docs.anaconda.com/miniconda/install/#quick-command-line-install)
    2. Follow installation instruction from the website
-   3. To check whether `conda` is already installed, you can test it with `conda` in your PowerShell
 
 #### **Step 2: Run the Unsloth Installation Script**
 
-1. **Download the** [**unsloth\_windows.ps1**](https://github.com/unslothai/notebooks/blob/main/unsloth_windows.ps1) **PowerShell script by going through this link**.
-2. **Open PowerShell as Administrator**:
-   * Right-click Start and select **"Windows PowerShell (Admin)"**.
 3. **Navigate to the script’s location** using `cd`:
 
 4. **Run the script**:
@@ -904,14 +870,9 @@ Activate the environment after the installation completes:
 
 **Unsloth and its dependencies are now ready!**
 
-## Method #4 - Windows via WSL:
-
 WSL is Window's subsystem for Linux.
 
 1. Install python though [Python's official site](https://www.python.org/downloads/windows/).
-2. Start WSL (Should already be preinstalled). Open command prompt as admin then run:
-
-Optional: If WSL is not preinstalled, go to the Microsoft store and search "Ubuntu" and the app that says Ubuntu will be WSL. Install it and run it and continue from there.
 
 6. Optional: Install Jupyter Notebook to run in a Colab like environment:
 
@@ -955,7 +916,7 @@ Example 2 (unknown):
 
 Example 3 (unknown):
 ```unknown
-pip install "unsloth[windows] @ git+https://github.com/unslothai/unsloth.git"
+
 ```
 
 Example 4 (python):
@@ -1950,7 +1911,6 @@ Standy mode enabled:
 |---------------------------------------------------------------------------|
 | Oversize GPU segments |       0    |       0    |       0    |       0    |
 |===========================================================================|
-
 
 Without Standby:
 
@@ -3590,8 +3550,6 @@ bash
    bash
    uv pip install -U transformers
    bash
-   # Create or edit .wslconfig in your Windows user directory
-   # (typically C:\Users\YourUsername\.wslconfig)
 
 # Add these lines to the file
    [wsl2]
@@ -3599,8 +3557,6 @@ bash
    processors=4  # Adjust based on your CPU cores
    swap=2GB
    localhostForwarding=true
-   powershell
-   wsl --shutdown
    bash
    # Set CUDA architecture for Blackwell GPUs
    export TORCH_CUDA_ARCH_LIST="12.0"
@@ -5079,7 +5035,7 @@ Here are Unsloth's requirements including system and GPU VRAM requirements.
 
 ## System Requirements
 
-* **Operating System**: Works on Linux and Windows.
+* **Operating System**: Works on Linux.
 * Supports NVIDIA GPUs since 2018+ including [Blackwell RTX 50](https://docs.unsloth.ai/basics/fine-tuning-llms-with-blackwell-rtx-50-series-and-unsloth) and [**DGX Spark**](https://docs.unsloth.ai/basics/fine-tuning-llms-with-nvidia-dgx-spark-and-unsloth).\
   Minimum CUDA Capability 7.0 (V100, T4, Titan V, RTX 20 & 50, A100, H100, L40 etc) [Check your GPU!](https://developer.nvidia.com/cuda-gpus) GTX 1070, 1080 works, but is slow.
 * The official [Unsloth Docker image](https://hub.docker.com/r/unsloth/unsloth) `unsloth/unsloth` is available on Docker Hub.
@@ -9140,8 +9096,6 @@ We would recommend beginners to utilise our pre-made [notebooks](https://docs.un
 [unsloth-requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements)
 {% endcontent-ref %}
 
-Next, you'll need to install Unsloth. Unsloth currently only supports Windows and Linux devices. Once you install Unsloth, you can copy and paste our notebooks and use them in your own local environment. We have many installation methods:
-
 {% content-ref url="install-and-update" %}
 [install-and-update](https://docs.unsloth.ai/get-started/install-and-update)
 {% endcontent-ref %}
@@ -9995,8 +9949,6 @@ These instructions are for our pre-made Google Colab [notebooks](https://docs.un
 {% step %}
 
 If you're using our Colab notebook, click **Runtime > Run all**. We'd highly recommend you checking out our [Fine-tuning Guide](https://docs.unsloth.ai/get-started/fine-tuning-llms-guide) before getting started.
-
-If installing locally, ensure you have the correct [requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements) and use `pip install unsloth` on Linux or follow our [Windows install ](https://docs.unsloth.ai/get-started/install-and-update/windows-installation)instructions.
 
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FCovHTH7dI2GcwNZm5TxF%2Fimage.png?alt=media&#x26;token=a157e33b-ad01-4174-a01c-67f742e4e732" alt=""><figcaption></figcaption></figure>
 {% endstep %}
@@ -11551,7 +11503,6 @@ Our docs will guide you through running & training your own model locally.
 * Supports **all models**: [TTS,](https://docs.unsloth.ai/basics/text-to-speech-tts-fine-tuning) multimodal, [BERT](https://docs.unsloth.ai/get-started/unsloth-notebooks#other-important-notebooks) and more. Any model that works in transformers works in Unsloth.
 * **0% loss in accuracy** - no approximation methods - all exact.
 * [MultiGPU](https://docs.unsloth.ai/basics/multi-gpu-training-with-unsloth) works already but a much better version is coming!
-* Unsloth supports Linux, Windows, Colab, Kaggle, **NVIDIA** and [**AMD**](https://docs.unsloth.ai/new/fine-tuning-llms-on-amd-gpus-with-unsloth) & **Intel**. See:
 
 {% content-ref url="beginner-start-here/unsloth-requirements" %}
 [unsloth-requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements)
@@ -11560,8 +11511,6 @@ Our docs will guide you through running & training your own model locally.
 **Install locally with pip (recommended)** for Linux or WSL devices:
 
 Use our official **Docker image**: `unsloth/unsloth`. Read our [**Docker guide**](https://docs.unsloth.ai/get-started/install-and-update/docker)**.**
-
-For Windows install instructions, see [here](https://docs.unsloth.ai/get-started/install-and-update/windows-installation).
 
 {% content-ref url="install-and-update" %}
 [install-and-update](https://docs.unsloth.ai/get-started/install-and-update)
@@ -11708,8 +11657,6 @@ Local training can be complex due to dependency hell or breaking environments. U
 * **Unsloth official Docker image:** [**`unsloth/unsloth`**](https://hub.docker.com/r/unsloth/unsloth)
 
 **Why Use Unsloth & Docker?**
-
-Unsloth’s Docker image is stable, up-to-date and works in [supported setups](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements#system-requirements) like Windows.
 
 * Fully contained dependencies keep your system clean. Runs safely without root.
 * Use locally or on any platform with pre-installed notebooks.
@@ -11873,11 +11820,9 @@ RL learns to edit the timing function to make it output 0 time as passed. We can
 
 Learn to install Unsloth locally or online.
 
-Unsloth works on Linux, Windows, NVIDIA, AMD, Google Colab and more. See our [system requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements).
+Unsloth works on Linux, NVIDIA, AMD, Google Colab and more. See our [system requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements).
 
 **Recommended installation method:**
-
-<table data-view="cards"><thead><tr><th data-type="content-ref"></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="install-and-update/pip-install">pip-install</a></td><td><a href="install-and-update/pip-install">pip-install</a></td></tr><tr><td><a href="install-and-update/docker">docker</a></td><td></td></tr><tr><td><a href="install-and-update/windows-installation">windows-installation</a></td><td></td></tr><tr><td><a href="install-and-update/updating">updating</a></td><td><a href="install-and-update/updating">updating</a></td></tr><tr><td><a href="install-and-update/amd">amd</a></td><td></td></tr><tr><td><a href="install-and-update/conda-install">conda-install</a></td><td><a href="install-and-update/conda-install">conda-install</a></td></tr><tr><td><a href="install-and-update/google-colab">google-colab</a></td><td><a href="install-and-update/google-colab">google-colab</a></td></tr></tbody></table>
 
 **Examples:**
 

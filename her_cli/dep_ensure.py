@@ -16,13 +16,10 @@ browser tool needs agent-browser).
 from __future__ import annotations
 
 import os
-import platform
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-
-_IS_WINDOWS = platform.system() == "Windows"
 
 _DEP_CHECKS = {
     "node": lambda: shutil.which("node") is not None,
@@ -44,10 +41,7 @@ _DEP_DESCRIPTIONS = {
 
 
 def _has_system_browser() -> bool:
-    if _IS_WINDOWS:
-        names = ("chrome", "msedge", "chromium")
-    else:
-        names = ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome")
+    names = ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome")
     for name in names:
         if shutil.which(name):
             return True
@@ -57,11 +51,6 @@ def _has_system_browser() -> bool:
 def _has_her_agent_browser() -> bool:
     from her_constants import get_her_home
     home = get_her_home()
-    if _IS_WINDOWS:
-        # npm -g --prefix puts .cmd shims directly in the prefix dir on Windows
-        return (home / "node" / "agent-browser.cmd").is_file()
-    # install.sh installs globally into $HER_HOME/node/bin/ via npm -g --prefix
-    # Also check legacy node_modules/.bin/ path for git-clone installs.
     return (
         (home / "node" / "bin" / "agent-browser").is_file()
         or (home / "node_modules" / ".bin" / "agent-browser").is_file()
@@ -73,8 +62,6 @@ def _find_install_script(
     repo_root: Path | None = None,
 ) -> tuple[Path | None, str | None]:
     """Locate the install script — bundled in wheel or in git checkout.
-
-    On Windows, prefers install.ps1; on POSIX, prefers install.sh.
     Returns a (path, shell) tuple, or (None, None) if neither is found.
     """
     if package_dir is None:
@@ -82,14 +69,7 @@ def _find_install_script(
     if repo_root is None:
         repo_root = package_dir.parent
 
-    if _IS_WINDOWS:
-        preferred = ("install.ps1", "powershell")
-        fallback = ("install.sh", "bash")
-    else:
-        preferred = ("install.sh", "bash")
-        fallback = ("install.ps1", "powershell")
-
-    for script_name, shell in (preferred, fallback):
+    for script_name, shell in (("install.sh", "bash"), ("install.ps1", "powershell")):
         bundled = package_dir / "scripts" / script_name
         if bundled.is_file():
             return bundled, shell
@@ -129,20 +109,6 @@ def ensure_dependency(
         if reply not in ("", "y", "yes"):
             return False
 
-    if shell == "powershell":
-        from her_constants import get_her_home
-        ps_bin = shutil.which("powershell") or shutil.which("pwsh")
-        if not ps_bin:
-            if interactive:
-                print("  PowerShell not found. Install PowerShell or run install.ps1 manually.")
-            return False
-        cmd = [
-            ps_bin,
-            "-ExecutionPolicy", "Bypass",
-            "-File", str(script),
-            "-Ensure", dep,
-            "-HerHome", str(get_her_home()),
-        ]
     else:
         cmd = ["bash", str(script), "--ensure", dep]
 

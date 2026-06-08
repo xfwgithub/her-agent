@@ -4,7 +4,7 @@ description: Set up and use 1Password CLI (op). Use when installing the CLI, ena
 version: 1.0.0
 author: arceus77-7, enhanced by her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [security, secrets, 1password, op, cli]
@@ -73,7 +73,6 @@ brew install 1password-cli
 # Linux (official package/install docs)
 # See references/get-started.md for distro-specific links.
 
-# Windows (winget)
 winget install AgileBits.1Password.CLI
 ```
 

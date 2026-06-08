@@ -4,7 +4,7 @@ description: "Delegate coding to OpenCode CLI (features, PR review)."
 version: 1.2.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Coding-Agent, OpenCode, Autonomous, Refactoring, Code-Review]

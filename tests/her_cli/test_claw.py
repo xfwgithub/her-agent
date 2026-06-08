@@ -722,43 +722,6 @@ class TestDetectOpenclawProcesses:
                 assert len(result) == 1
                 assert "systemd" in result[0]
 
-    def test_returns_match_on_windows_when_openclaw_exe_running(self):
-        with patch.object(claw_mod, "sys") as mock_sys:
-            mock_sys.platform = "win32"
-            with patch.object(claw_mod, "subprocess") as mock_subprocess:
-                mock_subprocess.run.side_effect = [
-                    MagicMock(returncode=0, stdout="openclaw.exe                 1234 Console    1     45,056 K\n"),
-                ]
-                result = claw_mod._detect_openclaw_processes()
-                assert len(result) >= 1
-                assert any("openclaw.exe" in r for r in result)
-
-    def test_returns_match_on_windows_when_node_exe_has_openclaw_in_cmdline(self):
-        with patch.object(claw_mod, "sys") as mock_sys:
-            mock_sys.platform = "win32"
-            with patch.object(claw_mod, "subprocess") as mock_subprocess:
-                mock_subprocess.run.side_effect = [
-                    MagicMock(returncode=0, stdout=""),  # tasklist openclaw.exe
-                    MagicMock(returncode=0, stdout=""),  # tasklist clawd.exe
-                    MagicMock(returncode=0, stdout="1234\n"),  # PowerShell
-                ]
-                result = claw_mod._detect_openclaw_processes()
-                assert len(result) >= 1
-                assert any("node.exe" in r for r in result)
-
-    def test_returns_empty_on_windows_when_nothing_found(self):
-        with patch.object(claw_mod, "sys") as mock_sys:
-            mock_sys.platform = "win32"
-            with patch.object(claw_mod, "subprocess") as mock_subprocess:
-                mock_subprocess.run.side_effect = [
-                    MagicMock(returncode=0, stdout=""),
-                    MagicMock(returncode=0, stdout=""),
-                    MagicMock(returncode=0, stdout=""),
-                ]
-                result = claw_mod._detect_openclaw_processes()
-                assert result == []
-
-
 class TestWarnIfOpenclawRunning:
     def test_noop_when_not_running(self, capsys):
         with patch.object(claw_mod, "_detect_openclaw_processes", return_value=[]):

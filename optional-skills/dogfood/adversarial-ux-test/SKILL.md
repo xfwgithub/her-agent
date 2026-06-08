@@ -4,7 +4,7 @@ description: Roleplay the most difficult, tech-resistant user for your product. 
 version: 1.0.0
 author: Omni @ Comelse
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [qa, ux, testing, adversarial, dogfood, personas, user-testing]

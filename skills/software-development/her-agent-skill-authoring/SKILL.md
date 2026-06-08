@@ -4,7 +4,7 @@ description: "Author in-repo SKILL.md: frontmatter, validator, structure."
 version: 1.0.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [skills, authoring, her-agent, conventions, skill-md]

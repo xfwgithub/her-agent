@@ -4,7 +4,7 @@ description: "Geocode, POIs, routes, timezones via OpenStreetMap/OSRM."
 version: 1.2.0
 author: Mibayy
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [maps, geocoding, places, routing, distance, directions, nearby, location, openstreetmap, nominatim, overpass, osrm]

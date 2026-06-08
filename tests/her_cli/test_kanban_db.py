@@ -67,27 +67,6 @@ def test_connect_honors_kanban_busy_timeout_env(kanban_home, monkeypatch):
     assert row[0] == 123456
 
 
-def test_cross_process_init_lock_uses_windows_byte_range_lock(tmp_path, monkeypatch):
-    """Windows must use a real process lock, not a no-op sidecar open."""
-    calls: list[tuple[int, int, int]] = []
-    fake_msvcrt = types.SimpleNamespace(
-        LK_LOCK=1,
-        LK_UNLCK=2,
-        locking=lambda fd, mode, nbytes: calls.append((fd, mode, nbytes)),
-    )
-    monkeypatch.setattr(kb, "_IS_WINDOWS", True)
-    monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
-
-    db_path = tmp_path / "kanban.db"
-    with kb._cross_process_init_lock(db_path):
-        assert calls == [(calls[0][0], fake_msvcrt.LK_LOCK, 1)]
-
-    assert [call[1:] for call in calls] == [
-        (fake_msvcrt.LK_LOCK, 1),
-        (fake_msvcrt.LK_UNLCK, 1),
-    ]
-
-
 def test_connect_rejects_tls_record_in_sqlite_header(tmp_path, monkeypatch):
     """Kanban should classify TLS-looking page-0 clobbers before WAL setup."""
     home = tmp_path / ".her"
@@ -2782,31 +2761,7 @@ def test_resolve_her_argv_prefers_path_shim(monkeypatch):
     assert argv == ["/usr/local/bin/her"]
 
 
-def test_resolve_her_argv_absolutizes_relative_exe_shim(monkeypatch, tmp_path):
-    """A relative executable override must not remain workspace-cwd-dependent."""
-    import her_cli.kanban_db as kb
 
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("HER_BIN", ".\\her.exe")
-    monkeypatch.setattr(kb, "_IS_WINDOWS", True)
-
-    assert kb._resolve_her_argv() == [os.path.abspath(".\\her.exe")]
-
-
-def test_resolve_her_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_path):
-    """Implicit .cmd/.bat shims use the module fallback, not batch argv[0]."""
-    import sys
-    import her_cli.kanban_db as kb
-
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    (bin_dir / "her.CMD").write_text("@echo off\n", encoding="utf-8")
-    monkeypatch.delenv("HER_BIN", raising=False)
-    monkeypatch.setenv("PATH", str(bin_dir))
-    monkeypatch.setenv("PATHEXT", ".CMD")
-    monkeypatch.setattr(kb, "_IS_WINDOWS", True)
-
-    assert kb._resolve_her_argv() == [sys.executable, "-m", "her_cli.main"]
 
 
 def test_resolve_her_argv_honors_her_bin_path_override(monkeypatch, tmp_path):
@@ -2840,36 +2795,6 @@ def test_resolve_her_argv_her_bin_bare_name_uses_path(monkeypatch, tmp_path):
     monkeypatch.setenv("HER_BIN", "her")
 
     assert kb._resolve_her_argv() == [str(path_her)]
-
-
-def test_resolve_her_argv_her_bin_bare_name_ignores_cwd(monkeypatch, tmp_path):
-    """Bare HER_BIN does not accept current-directory shadow executables."""
-    import sys
-    import her_cli.kanban_db as kb
-
-    (tmp_path / "her.exe").write_text("wrong\n", encoding="utf-8")
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("PATH", "")
-    monkeypatch.setenv("HER_BIN", "her")
-    monkeypatch.setattr(kb, "_IS_WINDOWS", True)
-
-    assert kb._resolve_her_argv() == [sys.executable, "-m", "her_cli.main"]
-
-
-def test_resolve_her_argv_her_bin_bare_cmd_uses_module_fallback(monkeypatch, tmp_path):
-    """A PATH-resolved HER_BIN batch shim is not used as worker argv[0]."""
-    import sys
-    import her_cli.kanban_db as kb
-
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    (bin_dir / "her.CMD").write_text("@echo off\n", encoding="utf-8")
-    monkeypatch.setenv("PATH", str(bin_dir))
-    monkeypatch.setenv("PATHEXT", ".CMD")
-    monkeypatch.setenv("HER_BIN", "her")
-    monkeypatch.setattr(kb, "_IS_WINDOWS", True)
-
-    assert kb._resolve_her_argv() == [sys.executable, "-m", "her_cli.main"]
 
 
 def test_resolve_her_argv_her_bin_unresolved_bare_name_falls_back(monkeypatch):
@@ -4098,7 +4023,7 @@ def test_reap_worker_zombies_returns_count():
 
 
 def test_reap_worker_zombies_noop_on_windows(monkeypatch):
-    """reap_worker_zombies() returns 0 and never calls os.waitpid on Windows."""
+    """reap_worker_zombies() returns 0."""
     from unittest.mock import patch
 
     monkeypatch.setattr("her_cli.kanban_db.os.name", "nt")

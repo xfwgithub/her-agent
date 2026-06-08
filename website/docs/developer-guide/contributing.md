@@ -13,7 +13,7 @@ Thank you for contributing to her Agent! This guide covers setting up your dev e
 We value contributions in this order:
 
 1. **Bug fixes** — crashes, incorrect behavior, data loss
-2. **Cross-platform compatibility** — macOS, different Linux distros, WSL2
+2. **Cross-platform compatibility** — macOS, different Linux distros
 3. **Security hardening** — shell injection, prompt injection, path traversal
 4. **Performance and robustness** — retry logic, error handling, graceful degradation
 5. **New skills** — broadly useful ones (see [Creating Skills](creating-skills.md))
@@ -91,61 +91,6 @@ pytest tests/ -v
 - **Error handling**: Catch specific exceptions. Use `logger.warning()`/`logger.error()` with `exc_info=True` for unexpected errors
 - **Cross-platform**: Never assume Unix (see below)
 - **Profile-safe paths**: Never hardcode `~/.her` — use `get_her_home()` from `her_constants` for code paths and `display_her_home()` for user-facing messages. See [AGENTS.md](https://github.com/NousResearch/her-agent/blob/main/AGENTS.md#profiles-multi-instance-support) for full rules.
-
-## Cross-Platform Compatibility
-
-her officially supports **Linux, macOS, WSL2, and native Windows (via PowerShell install)**.  Native Windows uses Git Bash (from [Git for Windows](https://git-scm.com/download/win)) for shell commands.  A few features require POSIX kernel primitives and are gated: the dashboard's embedded PTY terminal pane (`/chat` tab) is WSL2-only. If you're doing Windows-heavy dev, run the Windows-footgun lint (`scripts/check-windows-footguns.py`) before pushing.
-
-When contributing code, keep these rules in mind:
-
-- **Don't add unguarded `signal.SIGKILL` references.** It's not defined on Windows.  Either route through `gateway.status.terminate_pid(pid, force=True)` (the centralized primitive that does `taskkill /T /F` on Windows and SIGKILL on POSIX), or fall back with `getattr(signal, "SIGKILL", signal.SIGTERM)`.
-- **Catch `OSError` alongside `ProcessLookupError` on `os.kill(pid, 0)` probes.** Windows raises `OSError` (WinError 87, "parameter is incorrect") for an already-gone PID instead of `ProcessLookupError`.
-- **Don't force the terminal to POSIX semantics.** `os.setsid`, `os.killpg`, `os.getpgid`, `os.fork` all raise on Windows — gate them with `if sys.platform != "win32":` or `if os.name != "nt":`.
-- **Open files with an explicit `encoding="utf-8"`.** The Python default on Windows is the system locale (often cp1252), which mojibakes or crashes on non-Latin text.
-- **Use `pathlib.Path` / `os.path.join` — never manually concat with `/`.** This matters less for strings the OS gives us back and more for strings we construct to hand to subprocesses.
-
-Key patterns:
-
-### 1. `termios` and `fcntl` are Unix-only
-
-Always catch both `ImportError` and `NotImplementedError`:
-
-```python
-try:
-    from simple_term_menu import TerminalMenu
-    menu = TerminalMenu(options)
-    idx = menu.show()
-except (ImportError, NotImplementedError):
-    # Fallback: numbered menu
-    for i, opt in enumerate(options):
-        print(f"  {i+1}. {opt}")
-    idx = int(input("Choice: ")) - 1
-```
-
-### 2. File encoding
-
-Some environments may save `.env` files in non-UTF-8 encodings:
-
-```python
-try:
-    load_dotenv(env_path)
-except UnicodeDecodeError:
-    load_dotenv(env_path, encoding="latin-1")
-```
-
-### 3. Process management
-
-`os.setsid()`, `os.killpg()`, and signal handling differ across platforms:
-
-```python
-import platform
-if platform.system() != "Windows":
-    kwargs["preexec_fn"] = os.setsid
-```
-
-### 4. Path separators
-
-Use `pathlib.Path` instead of string concatenation with `/`.
 
 ## Security Considerations
 

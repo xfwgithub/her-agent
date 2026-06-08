@@ -4,7 +4,7 @@ description: Stock quotes, history, search, compare, crypto via Yahoo.
 version: 0.1.0
 author: Mibay (Mibayy), her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Stocks, Finance, Market, Crypto, Investing]

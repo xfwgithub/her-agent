@@ -209,16 +209,7 @@
     "size": "sm"
   },
   {
-    "id": "gh-edward-win",
-    "source": "github",
-    "author": "@EdwardWason",
-    "url": "https://github.com/NousResearch/her-agent/issues/11876",
-    "date": "2026",
-    "category": "meta",
-    "headline": "her-for-win: one-click Windows installer",
-    "quote": "As a Windows user I found getting her running on Windows quite challenging. I created her-for-win, a one-click installation and deployment tool for Windows with auto-start via Task Scheduler.",
-    "size": "sm"
-  },
+
   {
     "id": "gh-kovern-bedtime",
     "source": "github",
@@ -1812,17 +1803,6 @@
     "category": "creative",
     "headline": "I wanted to talk to my agent for hours, so I fixed the timeout",
     "quote": "So, I had an issue. One of the things I like to do with Claude Voice or GPT is to be able to talk to it over long sessions.",
-    "size": "sm"
-  },
-  {
-    "id": "reddit-windows-wrapper",
-    "source": "reddit",
-    "author": "r/SideProject",
-    "url": "https://www.reddit.com/r/SideProject/comments/1sdaojm/i_took_the_nousresearch_her_agent_and_built_a/",
-    "date": "2026",
-    "category": "meta",
-    "headline": "Native Windows app wrapper for her",
-    "quote": "The NousResearch team built her Agent — an open-source agentic AI system with tools, skills, memory, and multi-platform messaging. It's good. So I built a native Windows app around it.",
     "size": "sm"
   },
   {

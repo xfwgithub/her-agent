@@ -449,7 +449,7 @@ def test_get_config_schema_minimal():
     assert schema[0]["secret"] is True
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits not enforced on Windows")
+
 def test_save_config_sets_owner_only_permissions(tmp_path):
     """supermemory.json must be written with 0o600 so API key is not world-readable."""
     _save_supermemory_config({"api_key": "sm-test-key"}, str(tmp_path))

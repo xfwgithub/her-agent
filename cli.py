@@ -12,15 +12,12 @@ Usage:
     python cli.py --list-tools             # List available tools and exit
 """
 
-# IMPORTANT: her_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See her_bootstrap.py for full rationale.
 try:
     import her_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     # Graceful fallback when her_bootstrap isn't registered in the venv
     # yet — happens during partial ``her update`` where git-reset landed
-    # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
-    # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
+    # new code but ``uv pip install -e .`` didn't finish.
     pass
 
 import logging
@@ -1101,43 +1098,8 @@ def _reset_terminal_input_modes_on_exit() -> None:
 _active_worktree: Optional[Dict[str, str]] = None
 
 
-def _normalize_git_bash_path(p: Optional[str]) -> Optional[str]:
-    """Translate a Git Bash-style path (``/c/Users/...``) to the native
-    Windows form (``C:\\Users\\...``) that Python's ``subprocess.Popen``
-    and ``pathlib.Path`` accept.
-
-    No-op on non-Windows and for paths that already look native.  Git on
-    native Windows normally emits forward-slash Windows paths
-    (``C:/Users/...``) which both bash and Python handle, but certain
-    configurations (Git Bash shells, MSYS2, WSL-mounted repos) surface
-    ``/c/...`` or ``/cygdrive/c/...`` variants.
-    """
-    if not p:
-        return p
-    if sys.platform != "win32":
-        return p
-    import re as _re
-    # /c/Users/... or /C/Users/...
-    m = _re.match(r"^/([a-zA-Z])/(.*)$", p)
-    if m:
-        drive, rest = m.group(1), m.group(2)
-        return f"{drive.upper()}:\\{rest.replace('/', chr(92))}"
-    # /cygdrive/c/... or /mnt/c/...
-    m = _re.match(r"^/(?:cygdrive|mnt)/([a-zA-Z])/(.*)$", p)
-    if m:
-        drive, rest = m.group(1), m.group(2)
-        return f"{drive.upper()}:\\{rest.replace('/', chr(92))}"
-    return p
-
-
 def _git_repo_root() -> Optional[str]:
-    """Return the git repo root for CWD, or None if not in a repo.
-
-    Runs through :func:`_normalize_git_bash_path` so callers can pass
-    the result directly to ``Path``/``subprocess.Popen(cwd=...)`` on
-    Windows without hitting ``C:\\c\\Users\\...`` style resolution
-    mistakes.
-    """
+    """Return the git repo root for CWD, or None if not in a repo."""
     import subprocess
     try:
         result = subprocess.run(
@@ -1145,7 +1107,7 @@ def _git_repo_root() -> Optional[str]:
             capture_output=True, text=True, timeout=5,
         )
         if result.returncode == 0:
-            return _normalize_git_bash_path(result.stdout.strip())
+            return result.stdout.strip()
     except Exception:
         pass
     return None
@@ -1240,39 +1202,12 @@ def _setup_worktree(repo_root: str = None) -> Optional[Dict[str, str]]:
                     dst.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(str(src), str(dst))
                 elif src.is_dir():
-                    # Symlink directories (faster, saves disk).  On Windows,
-                    # symlink creation requires Developer Mode or elevation,
-                    # and fails with OSError otherwise — fall back to a
-                    # recursive copy so the worktree is still usable.  The
-                    # copy is slower and uses disk, but it doesn't require
-                    # admin and matches the Linux/macOS symlink outcome
-                    # functionally.
                     if not dst.exists():
                         dst.parent.mkdir(parents=True, exist_ok=True)
                         try:
                             os.symlink(str(src_resolved), str(dst))
-                        except (OSError, NotImplementedError) as _sym_err:
-                            if sys.platform == "win32":
-                                logger.info(
-                                    ".worktreeinclude: symlink failed (%s) — "
-                                    "falling back to copytree on Windows.",
-                                    _sym_err,
-                                )
-                                try:
-                                    shutil.copytree(
-                                        str(src_resolved),
-                                        str(dst),
-                                        symlinks=True,
-                                        dirs_exist_ok=False,
-                                    )
-                                except Exception as _copy_err:
-                                    logger.warning(
-                                        ".worktreeinclude: copy fallback "
-                                        "also failed for %s -> %s: %s",
-                                        src, dst, _copy_err,
-                                    )
-                            else:
-                                raise
+                        except (OSError, NotImplementedError):
+                            raise
         except Exception as e:
             logger.debug("Error copying .worktreeinclude entries: %s", e)
 
@@ -1968,27 +1903,6 @@ def _strip_markdown_syntax(text: str) -> str:
     return plain.strip("\n")
 
 
-_WINDOWS_PATH_WITH_DOT_SEGMENT_RE = re.compile(
-    r"(?i)(?:\b[a-z]:\\|\\\\)[^\s`]*\\\.[^\s`]*"
-)
-
-
-def _preserve_windows_dot_segments_for_markdown(text: str) -> str:
-    r"""Keep Windows path separators before hidden directories in Markdown.
-
-    CommonMark treats ``\.`` as an escaped literal dot, so Rich Markdown would
-    render ``D:\repo\.ai`` as ``D:\repo.ai``.  Doubling only that separator
-    inside Windows path-looking tokens preserves the path without changing
-    ordinary markdown escapes like ``1\. not a list``.
-    """
-    if "\\." not in text:
-        return text
-
-    def _protect(match: re.Match[str]) -> str:
-        return re.sub(r"(?<!\\)\\(?=\.)", r"\\\\", match.group(0))
-
-    return _WINDOWS_PATH_WITH_DOT_SEGMENT_RE.sub(_protect, text)
-
 
 def _terminal_width_for_streaming() -> int:
     """Display cells available inside the streamed response box.
@@ -2041,7 +1955,6 @@ def _render_final_assistant_content(text: str, mode: str = "render"):
     # normalise model-emitted under-padded tables so that mid-render fallbacks
     # (narrow panels, etc.) at least see consistent input.
     plain = _rich_text_from_ansi(text or "").plain
-    plain = _preserve_windows_dot_segments_for_markdown(plain)
     plain = realign_markdown_tables(plain, panel_width)
     return Markdown(plain)
 
@@ -2365,15 +2278,9 @@ def _resolve_attachment_path(raw_path: str) -> Path | None:
             parsed = urlparse(token)
             if parsed.scheme == "file":
                 expanded = unquote(parsed.path or "")
-                if parsed.netloc and os.name == "nt":
-                    expanded = f"//{parsed.netloc}{expanded}"
         except Exception:
             expanded = token
     expanded = os.path.expandvars(os.path.expanduser(expanded))
-    if os.name != "nt":
-        normalized = expanded.replace("\\", "/")
-        if len(normalized) >= 3 and normalized[1] == ":" and normalized[2] == "/" and normalized[0].isalpha():
-            expanded = f"/mnt/{normalized[0].lower()}/{normalized[3:]}"
     path = Path(expanded)
     if not path.is_absolute():
         base_dir = Path(os.getenv("TERMINAL_CWD", os.getcwd()))
@@ -2668,8 +2575,6 @@ def _preserve_ctrl_enter_newline() -> bool:
 
     See issue #22379.
     """
-    if sys.platform == "win32":
-        return True
     if any(os.environ.get(v) for v in ("SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY")):
         return True
     if os.environ.get("WT_SESSION"):
@@ -2708,7 +2613,7 @@ def _bind_prompt_submit_keys(kb, handler) -> None:
     See _preserve_ctrl_enter_newline() and issue #22379.
     """
     kb.add("enter")(handler)
-    if sys.platform != "win32" and not _preserve_ctrl_enter_newline():
+    if not _preserve_ctrl_enter_newline():
         kb.add("c-j")(handler)
 
 
@@ -7645,13 +7550,11 @@ class HerCLI:
         To avoid this, we fall back to ``_prompt_text_input`` (a simple
         ``input()``-based prompt) when any of these conditions hold:
 
-        * ``sys.platform == "win32"`` — native Windows console (ConPTY /
-          win32_input) does not support the modal reliably.
         * ``self._app`` is not set — unit tests / non-interactive contexts.
 
-        On non-Windows platforms the modal itself is still safe from the
-        ``process_loop`` daemon thread as long as the main-thread event loop
-        owns the prompt_toolkit buffer mutations.  When we are off the main
+        The modal itself is still safe from the ``process_loop`` daemon
+        thread as long as the main-thread event loop owns the
+        prompt_toolkit buffer mutations.  When we are off the main
         thread, schedule the modal snapshot / restore work on ``self._app.loop``
         via ``call_soon_threadsafe`` and keep the queue-based response path.
         """
@@ -7664,14 +7567,6 @@ class HerCLI:
         # If prompt_toolkit is not running (unit tests / non-interactive calls),
         # keep the simple stdin fallback.
         if not getattr(self, "_app", None):
-            return self._prompt_text_input("Choice [1/2/3]: ")
-
-        # On Windows the prompt_toolkit input channel can deadlock when the
-        # modal is entered from the process_loop daemon thread — keystrokes
-        # never reach the key bindings, so response_queue.get() blocks for
-        # the full timeout (issue #30768).  Fall back to the simpler
-        # stdin-based prompt which works reliably on Windows.
-        if sys.platform == "win32":
             return self._prompt_text_input("Choice [1/2/3]: ")
 
         try:
@@ -12829,7 +12724,7 @@ class HerCLI:
         # Fallback: shell clear command (rarely needed — escapes work on every
         # VT-capable terminal, but this covers exotic stdout wrappers).
         try:
-            os.system("cls" if os.name == "nt" else "clear")
+            os.system("clear")
         except Exception:
             pass
 
@@ -13988,10 +13883,6 @@ class HerCLI:
         @kb.add('c-z')
         def handle_ctrl_z(event):
             """Handle Ctrl+Z - suspend process to background (Unix only)."""
-            if sys.platform == 'win32':
-                _cprint(f"\n{_DIM}Suspend (Ctrl+Z) is not supported on Windows.{_RST}")
-                event.app.invalidate()
-                return
             import signal as _sig
             from prompt_toolkit.application import run_in_terminal
             from her_cli.skin_engine import get_active_skin
@@ -15357,25 +15248,8 @@ class HerCLI:
             # _run_cleanup mid-turn, and close browser sessions mid-open
             # — causing "Daemon process exited during startup" errors.
             #
-            # The handler is a silent no-op. Real user Ctrl+C still works
-            # because prompt_toolkit binds c-c at the TUI layer and never
-            # reaches this OS-signal path. This matches how Claude Code
-            # handles the same Windows quirk (cancellation is driven by
-            # the TUI key handler, not by OS signals).
-            #
             # POSIX: leave the default SIGINT handler alone. prompt_toolkit
             # installs its own handler there and it works as expected.
-            if sys.platform == "win32":
-                def _sigint_absorb(signum, frame):
-                    # Absorb silently. Do NOT call agent.interrupt() here:
-                    # Windows fires spurious CTRL_C_EVENT whenever a
-                    # background thread spawns a .cmd subprocess, and
-                    # interrupt() would inject a fake user message each
-                    # time. Real user Ctrl+C routes through prompt_toolkit's
-                    # own c-c key binding at the TUI layer (same pattern as
-                    # Claude Code's Windows handling).
-                    return
-                _signal.signal(_signal.SIGINT, _sigint_absorb)
         except Exception:
             pass  # Signal handlers may fail in restricted environments
         

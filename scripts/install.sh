@@ -414,10 +414,10 @@ detect_os() {
             DISTRO="macos"
             ;;
         CYGWIN*|MINGW*|MSYS*)
-            OS="windows"
-            DISTRO="windows"
-            log_error "Windows detected. Please use the PowerShell installer:"
-            log_info "  iex (irm https://her-agent.nousresearch.com/install.ps1)"
+            OS="unknown"
+            DISTRO="unknown"
+            log_error "Windows is no longer supported by her Agent."
+            log_error "Please use WSL2 or a macOS/Linux system to run her."
             exit 1
             ;;
         *)
@@ -540,8 +540,7 @@ check_python() {
     fi
 }
 
-# Best-effort automatic git provisioning, mirroring install.ps1's Install-Git
-# (which downloads PortableGit on Windows). git is required to clone the repo,
+# Best-effort automatic git provisioning. git is required to clone the repo,
 # and a fresh "normie" machine with no developer tools won't have it. Returns 0
 # if git is available afterwards, non-zero otherwise (caller prints manual
 # instructions and aborts).
@@ -629,7 +628,7 @@ check_git() {
         fi
     fi
 
-    # Try to install it automatically before giving up (parity with install.ps1).
+    # Try to install it automatically before giving up.
     log_info "Attempting to install Git automatically..."
     if attempt_install_git; then
         GIT_VERSION=$(git --version | awk '{print $3}')
@@ -1318,9 +1317,8 @@ install_deps() {
         # Critical flag choice: `--extra all`, NOT `--all-extras`.
         #   --all-extras = every [project.optional-dependencies] key.
         #                  This bypasses the curated `[all]` extra
-        #                  entirely and pulls e.g. [matrix] (which
-        #                  needs python-olm + make on Windows) and
-        #                  [rl] (git+https deps that fail offline).
+        #                  entirely and pulls e.g. [rl] (git+https
+        #                  deps that fail offline).
         #   --extra all  = install just the `[all]` extra's contents.
         #                  This respects the curation in pyproject.toml.
         # uv's own progress UI handles TTY detection and downgrades

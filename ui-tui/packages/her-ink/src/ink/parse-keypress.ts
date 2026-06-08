@@ -336,7 +336,7 @@ const keyName: Record<string, string> = {
   '[12~': 'f2',
   '[13~': 'f3',
   '[14~': 'f4',
-  /* from Cygwin and used in libuv */
+  /* used in libuv */
   '[[A': 'f1',
   '[[B': 'f2',
   '[[C': 'f3',
@@ -438,7 +438,7 @@ const isCtrlKey = (code: string): boolean => {
  * Modifier encoding: 1 + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0) + (super ? 8 : 0)
  *
  * Note: `meta` here means Alt/Option (bit 2). `super` is a distinct
- * modifier (bit 8, i.e. Cmd on macOS / Win key). Most legacy terminal
+ * modifier (bit 8, i.e. Cmd on macOS / Super key). Most legacy terminal
  * sequences can't express super — it only arrives via kitty keyboard
  * protocol (CSI u) or xterm modifyOtherKeys.
  */

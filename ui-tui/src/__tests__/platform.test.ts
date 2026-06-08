@@ -231,13 +231,12 @@ describe('parseVoiceRecordKey (#18994)', () => {
     expect(parseVoiceRecordKey('super+o').mod).toBe('super')
   })
 
-  it('allows super+{c,d,l,v} on Linux/Windows — those globals key off Ctrl, not Super', async () => {
+  it('allows super+{c,d,l,v} on Linux — those globals key off Ctrl, not Super', async () => {
     const { parseVoiceRecordKey } = await importPlatform('linux')
 
-    // Kitty/CSI-u users on non-mac report Cmd/Super as ``key.super``,
+    // Kitty/CSI-u users on Linux report Cmd/Super as ``key.super``,
     // but the TUI's global shortcuts (copy/exit/clear/paste) key off
-    // Ctrl there, so ``super+<letter>`` doesn't collide. Reject would
-    // silently coerce valid configs to Ctrl+B (Copilot round-8 review).
+    // Ctrl there, so ``super+<letter>`` doesn't collide.
     expect(parseVoiceRecordKey('super+c').mod).toBe('super')
     expect(parseVoiceRecordKey('super+d').mod).toBe('super')
     expect(parseVoiceRecordKey('super+l').mod).toBe('super')
@@ -260,10 +259,10 @@ describe('parseVoiceRecordKey (#18994)', () => {
     expect(parseVoiceRecordKey('alt+space').mod).toBe('alt')
   })
 
-  it('allows alt+{c,d,l} on Linux/Windows — non-mac isAction keys off Ctrl', async () => {
+  it('allows alt+{c,d,l} on Linux — non-mac isAction keys off Ctrl', async () => {
     const { parseVoiceRecordKey } = await importPlatform('linux')
 
-    // On Linux/Windows ``isActionMod`` ignores key.meta, so alt+<letter>
+    // On Linux ``isActionMod`` ignores key.meta, so alt+<letter>
     // doesn't collide with copy/exit/clear. Those configs stay usable.
     expect(parseVoiceRecordKey('alt+c').mod).toBe('alt')
     expect(parseVoiceRecordKey('alt+d').mod).toBe('alt')
@@ -365,7 +364,7 @@ describe('formatVoiceRecordKey (#18994)', () => {
     expect(formatVoiceRecordKey(parseVoiceRecordKey('ctrl+o'))).toBe('Ctrl+O')
     expect(formatVoiceRecordKey(parseVoiceRecordKey('alt+r'))).toBe('Alt+R')
     // ``super``/``win`` render as ``Super`` on non-mac so the hint
-    // doesn't tell Linux/Windows users to press a Cmd key they don't
+    // doesn't tell Linux users to press a Cmd key they don't
     // have.
     expect(formatVoiceRecordKey(parseVoiceRecordKey('super+b'))).toBe('Super+B')
   })

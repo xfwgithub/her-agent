@@ -21,19 +21,6 @@ _DARWIN_APPS = (
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
 )
 
-_WINDOWS_BROWSER_GROUPS = (
-    (("chrome.exe", "chrome"), (("Google", "Chrome", "Application", "chrome.exe"),)),
-    (
-        ("chromium.exe", "chromium"),
-        (("Chromium", "Application", "chrome.exe"), ("Chromium", "Application", "chromium.exe")),
-    ),
-    (("brave.exe", "brave"), (("BraveSoftware", "Brave-Browser", "Application", "brave.exe"),)),
-    (("msedge.exe", "msedge"), (("Microsoft", "Edge", "Application", "msedge.exe"),)),
-)
-
-_WINDOWS_BIN_NAMES = tuple(name for names, _ in _WINDOWS_BROWSER_GROUPS for name in names)
-_WINDOWS_INSTALL_PARTS = tuple(parts for _, group in _WINDOWS_BROWSER_GROUPS for parts in group)
-
 _LINUX_BROWSER_GROUPS = (
     (
         ("google-chrome", "google-chrome-stable"),
@@ -66,8 +53,8 @@ _LINUX_BROWSER_GROUPS = (
     ),
 )
 
-_LINUX_BIN_NAMES = tuple(name for names, _ in _LINUX_BROWSER_GROUPS for name in names)
-_LINUX_INSTALL_PATHS = tuple(path for _, paths in _LINUX_BROWSER_GROUPS for path in paths)
+_LINUX_BIN_NAMES: tuple[str, ...] = tuple(name for names, _ in _LINUX_BROWSER_GROUPS for name in names)
+_LINUX_INSTALL_PATHS: tuple[str, ...] = tuple(path for _, paths in _LINUX_BROWSER_GROUPS for path in paths)
 
 
 def get_chrome_debug_candidates(system: str) -> list[str]:
@@ -83,32 +70,9 @@ def get_chrome_debug_candidates(system: str) -> list[str]:
         candidates.append(path)
         seen.add(normalized)
 
-    def add_windows_install_paths(
-        bases: tuple[str | None, ...],
-        install_groups: tuple[tuple[tuple[str, ...], tuple[tuple[str, ...], ...]], ...],
-    ) -> None:
-        for _, group in install_groups:
-            for base in filter(None, bases):
-                for parts in group:
-                    add(os.path.join(base, *parts))
-
     if system == "Darwin":
         for app in _DARWIN_APPS:
             add(app)
-        return candidates
-
-    if system == "Windows":
-        install_bases = (
-            os.environ.get("ProgramFiles"),
-            os.environ.get("ProgramFiles(x86)"),
-            os.environ.get("LOCALAPPDATA"),
-        )
-        for names, install_parts in _WINDOWS_BROWSER_GROUPS:
-            for name in names:
-                add(shutil.which(name))
-            for base in filter(None, install_bases):
-                for parts in install_parts:
-                    add(os.path.join(base, *parts))
         return candidates
 
     for names, paths in _LINUX_BROWSER_GROUPS:
@@ -116,7 +80,6 @@ def get_chrome_debug_candidates(system: str) -> list[str]:
             add(shutil.which(name))
         for path in paths:
             add(path)
-    add_windows_install_paths(("/mnt/c/Program Files", "/mnt/c/Program Files (x86)"), _WINDOWS_BROWSER_GROUPS)
     return candidates
 
 
@@ -175,7 +138,7 @@ def manual_chrome_debug_command(port: int = DEFAULT_BROWSER_CDP_PORT, system: st
 
     if candidates:
         argv = [candidates[0], *_chrome_debug_args(port)]
-        return subprocess.list2cmdline(argv) if system == "Windows" else shlex.join(argv)
+        return shlex.join(argv)
 
     if system == "Darwin":
         data_dir = chrome_debug_data_dir()
@@ -188,12 +151,7 @@ def manual_chrome_debug_command(port: int = DEFAULT_BROWSER_CDP_PORT, system: st
 
 
 def _detach_kwargs(system: str) -> dict:
-    if system != "Windows":
-        return {"start_new_session": True}
-    flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(
-        subprocess, "CREATE_NEW_PROCESS_GROUP", 0
-    )
-    return {"creationflags": flags} if flags else {}
+    return {"start_new_session": True}
 
 
 def try_launch_chrome_debug(port: int = DEFAULT_BROWSER_CDP_PORT, system: str | None = None) -> bool:

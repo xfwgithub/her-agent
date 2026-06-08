@@ -101,18 +101,8 @@ def get_sandbox_dir() -> Path:
 def _pipe_stdin(proc: subprocess.Popen, data: str) -> None:
     """Write *data* to proc.stdin on a daemon thread to avoid pipe-buffer deadlocks.
 
-    On Windows, text-mode stdin (``text=True`` / ``encoding="utf-8"``)
-    translates ``\\n`` → ``\\r\\n`` as the data flows through the pipe —
-    which corrupts every write_file / patch call because the bytes that
-    land on disk include injected carriage returns.  The file IS created,
-    but every subsequent byte-count / content compare against the
-    caller's ``\\n``-only string fails.
-
-    Workaround: write through ``proc.stdin.buffer`` (the underlying byte
-    buffer), encoding to UTF-8 ourselves.  That bypasses Python's
-    newline translation entirely on every platform.  No behaviour change
-    on POSIX — the byte sequence is identical to what text-mode would
-    produce there.
+    Writes through ``proc.stdin.buffer`` (the underlying byte buffer) to bypass
+    any newline translation that text-mode Popen might apply.
     """
 
     def _write():
@@ -360,13 +350,6 @@ class BaseEnvironment(ABC):
         # change the working directory (e.g. bashrc `cd ~`).  Without this,
         # pwd -P captures the profile's directory, not terminal.cwd.
         _quoted_cwd = shlex.quote(self.cwd)
-        # Quote the snapshot / cwd-file paths so Git Bash on Windows handles
-        # ``C:/Users/...``-shaped paths without glob-splitting the colon or
-        # tripping on drive letters.  On POSIX this is a no-op (no colons /
-        # special chars in a /tmp path).  Previously unquoted interpolation
-        # caused ``C:/Users/.../her-snap-*.sh: No such file or directory``
-        # errors on Windows, leaking via stderr (merged into stdout on Linux
-        # backends) into every terminal-tool response.
         _quoted_snap = shlex.quote(self._snapshot_path)
         _quoted_cwd_file = shlex.quote(self._cwd_file)
         bootstrap = (
@@ -419,10 +402,6 @@ class BaseEnvironment(ABC):
         re-dumps env vars, and emits CWD markers."""
         escaped = command.replace("'", "'\\''")
 
-        # Quote the snapshot / cwd-file paths so Git Bash on Windows handles
-        # ``C:/Users/...``-shaped paths without glob-splitting the colon or
-        # tripping on drive letters.  POSIX paths are unaffected.  See
-        # :meth:`init_session` for the same fix on the bootstrap block.
         _quoted_snap = shlex.quote(self._snapshot_path)
         _quoted_cwd_file = shlex.quote(self._cwd_file)
 
@@ -568,26 +547,7 @@ class BaseEnvironment(ABC):
             if not isinstance(fd, int) or fd < 0:
                 _drain_iterable(stream)
                 return
-            # select.select does NOT work on pipe fds on Windows (only sockets).
-            # Use blocking os.read in a daemon thread instead — safe because
-            # EOF arrives promptly when bash exits.
-            if os.name == "nt":
-                try:
-                    while True:
-                        chunk = os.read(fd, 4096)
-                        if not chunk:
-                            break
-                        output_chunks.append(decoder.decode(chunk))
-                except (ValueError, OSError):
-                    pass
-                finally:
-                    try:
-                        tail = decoder.decode(b"", final=True)
-                        if tail:
-                            output_chunks.append(tail)
-                    except Exception:
-                        pass
-                return
+
             idle_after_exit = 0
             try:
                 while True:

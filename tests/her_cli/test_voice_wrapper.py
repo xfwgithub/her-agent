@@ -82,8 +82,6 @@ class TestNormalizeVoiceRecordKeyForPromptToolkit:
         from her_cli.voice import normalize_voice_record_key_for_prompt_toolkit
 
         assert normalize_voice_record_key_for_prompt_toolkit("super+b") == "c-b"
-        assert normalize_voice_record_key_for_prompt_toolkit("win+o") == "c-b"
-        assert normalize_voice_record_key_for_prompt_toolkit("windows+o") == "c-b"
 
     # Round-10 Copilot review regressions on #19835.
     def test_strips_whitespace_within_and_around(self):

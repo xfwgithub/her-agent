@@ -5,7 +5,7 @@ version: 1.0.0
 author: Cocoon AI (hello@cocoon-ai.com), ported by her Agent
 license: MIT
 dependencies: []
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [architecture, diagrams, SVG, HTML, visualization, infrastructure, cloud]

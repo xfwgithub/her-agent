@@ -1475,7 +1475,6 @@ def inspect_run_endpoint(
             "cpu_percent", "memory_info", "num_threads",
             "status", "create_time", "cmdline",
         ])
-        # num_fds is POSIX-only; skip gracefully on Windows.
         try:
             num_fds = proc.num_fds()
         except AttributeError:

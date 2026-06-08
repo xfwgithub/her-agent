@@ -30,9 +30,6 @@ sudo apt-get install ffmpeg
 # macOS
 brew install ffmpeg
 
-# Windows (using conda)
-conda install -c conda-forge ffmpeg
-
 # Verify
 ffmpeg -version
 ```

@@ -12,7 +12,6 @@ This directory contains official LaTeX templates for major machine learning and 
 1. Install [TeX Live](https://www.tug.org/texlive/) (full distribution recommended)
    - macOS: `brew install --cask mactex`
    - Ubuntu: `sudo apt install texlive-full`
-   - Windows: Download from [tug.org/texlive](https://www.tug.org/texlive/)
 
 2. Install VS Code extension: **LaTeX Workshop** by James Yu
    - Open VS Code → Extensions (Cmd/Ctrl+Shift+X) → Search "LaTeX Workshop" → Install

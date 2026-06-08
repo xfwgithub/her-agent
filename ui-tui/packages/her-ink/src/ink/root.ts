@@ -48,16 +48,11 @@ export type RenderOptions = {
   /**
    * Called when a click lands on a cell with an OSC 8 hyperlink (or a
    * plain-text URL the renderer detects on the same row). The host owns
-   * the actual open — `child_process.spawn` with an argv array (NOT
-   * shell-mode) to the platform's native opener: `open` on macOS,
-   * `xdg-open` on Linux/BSD, `explorer.exe` on Windows. Avoid
-   * `cmd.exe /c start` — `start` is a cmd builtin that reparses the URL
-   * through cmd's tokenizer (`&` / `|` / `^` / `<` / `>` get split or
-   * reinterpreted as command syntax), which both breaks plain URLs with
-   * `&` in query strings and undermines any protocol allowlist on the
-   * caller side. her wires this in `entry.tsx`; library users who
-   * don't pass it will see clickable underline styling but no action on
-   * click in any terminal where mouse tracking is on.
+ *  the actual open — `child_process.spawn` with an argv array (NOT
+ *  shell-mode) to the platform's native opener: `open` on macOS,
+ *  `xdg-open` on Linux/BSD. her wires this in `entry.tsx`; library
+ *  users who don't pass it will see clickable underline styling but no
+ *  action on click in any terminal where mouse tracking is on.
    */
   onHyperlinkClick?: (url: string) => void
 }

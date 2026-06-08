@@ -129,7 +129,6 @@ class TestResponseStore:
         # resp_2 mapping should still be intact
         assert store.get_conversation("chat-b") == "resp_2"
 
-    @pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits are platform-specific")
     def test_file_store_created_owner_only_under_permissive_umask(self, tmp_path):
         """response_store.db must be 0o600 on creation even under umask 022."""
         db_path = tmp_path / "response_store.db"

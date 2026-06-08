@@ -1,13 +1,13 @@
 ---
 name: domain-intel
 description: Passive domain reconnaissance using Python stdlib. Subdomain discovery, SSL certificate inspection, WHOIS lookups, DNS records, domain availability checks, and bulk multi-domain analysis. No API keys required.
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 ---
 
 # Domain Intelligence — Passive OSINT
 
 Passive domain reconnaissance using only Python stdlib.
-**Zero dependencies. Zero API keys. Works on Linux, macOS, and Windows.**
+**Zero dependencies. Zero API keys. Works on Linux and macOS.**
 
 ## Helper script
 
@@ -68,7 +68,7 @@ python3 SKILL_DIR/scripts/domain_intel.py bulk example.com github.com --checks s
 ## Platform compatibility
 
 Pure Python stdlib (`socket`, `ssl`, `urllib`, `json`, `concurrent.futures`).
-Works identically on Linux, macOS, and Windows with no dependencies.
+Works identically on Linux and macOS with no dependencies.
 
 - **crt.sh queries** use HTTPS (port 443) — works behind most firewalls
 - **WHOIS queries** use TCP port 43 — may be blocked on restrictive networks

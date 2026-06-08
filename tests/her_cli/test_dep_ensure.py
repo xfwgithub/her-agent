@@ -26,8 +26,7 @@ def test_find_install_script_from_checkout(tmp_path):
     scripts_dir = tmp_path / "scripts"
     scripts_dir.mkdir()
     (scripts_dir / "install.sh").write_text("#!/bin/bash", encoding="utf-8")
-    with patch("her_cli.dep_ensure._IS_WINDOWS", False):
-        path, shell = _find_install_script(package_dir=tmp_path / "her_cli", repo_root=tmp_path)
+    path, shell = _find_install_script(package_dir=tmp_path / "her_cli", repo_root=tmp_path)
     assert path is not None
     assert path.name == "install.sh"
     assert shell == "bash"
@@ -39,24 +38,10 @@ def test_find_install_script_from_wheel(tmp_path):
     bundled = tmp_path / "her_cli" / "scripts"
     bundled.mkdir(parents=True)
     (bundled / "install.sh").write_text("#!/bin/bash", encoding="utf-8")
-    with patch("her_cli.dep_ensure._IS_WINDOWS", False):
-        path, shell = _find_install_script(package_dir=tmp_path / "her_cli", repo_root=tmp_path)
+    path, shell = _find_install_script(package_dir=tmp_path / "her_cli", repo_root=tmp_path)
     assert path is not None
     assert path.name == "install.sh"
     assert shell == "bash"
-
-
-def test_find_install_script_prefers_ps1_on_windows(tmp_path):
-    """On Windows, _find_install_script should find install.ps1."""
-    scripts_dir = tmp_path / "her_cli" / "scripts"
-    scripts_dir.mkdir(parents=True)
-    (scripts_dir / "install.ps1").write_text("# fake")
-    (scripts_dir / "install.sh").write_text("# fake")
-    from her_cli.dep_ensure import _find_install_script
-    with patch("her_cli.dep_ensure._IS_WINDOWS", True):
-        path, shell = _find_install_script(package_dir=tmp_path / "her_cli")
-        assert path == scripts_dir / "install.ps1"
-        assert shell == "powershell"
 
 
 def test_find_install_script_returns_sh_on_posix(tmp_path):
@@ -66,10 +51,9 @@ def test_find_install_script_returns_sh_on_posix(tmp_path):
     (scripts_dir / "install.ps1").write_text("# fake")
     (scripts_dir / "install.sh").write_text("# fake")
     from her_cli.dep_ensure import _find_install_script
-    with patch("her_cli.dep_ensure._IS_WINDOWS", False):
-        path, shell = _find_install_script(package_dir=tmp_path / "her_cli")
-        assert path == scripts_dir / "install.sh"
-        assert shell == "bash"
+    path, shell = _find_install_script(package_dir=tmp_path / "her_cli")
+    assert path == scripts_dir / "install.sh"
+    assert shell == "bash"
 
 
 def test_find_install_script_falls_back_to_repo_root(tmp_path):
@@ -78,43 +62,22 @@ def test_find_install_script_falls_back_to_repo_root(tmp_path):
     (repo_root / "scripts").mkdir(parents=True)
     (repo_root / "scripts" / "install.sh").write_text("# fake")
     from her_cli.dep_ensure import _find_install_script
-    with patch("her_cli.dep_ensure._IS_WINDOWS", False):
-        path, shell = _find_install_script(package_dir=tmp_path / "her_cli", repo_root=repo_root)
-        assert path == repo_root / "scripts" / "install.sh"
-        assert shell == "bash"
+    path, shell = _find_install_script(package_dir=tmp_path / "her_cli", repo_root=repo_root)
+    assert path == repo_root / "scripts" / "install.sh"
+    assert shell == "bash"
 
 
 def test_find_install_script_returns_none_when_missing(tmp_path):
     from her_cli.dep_ensure import _find_install_script
-    with patch("her_cli.dep_ensure._IS_WINDOWS", False):
-        result = _find_install_script(package_dir=tmp_path / "x", repo_root=tmp_path / "y")
-        assert result == (None, None)
-
-
-def test_has_system_browser_checks_windows_names():
-    from her_cli.dep_ensure import _has_system_browser
-    with patch("her_cli.dep_ensure._IS_WINDOWS", True), \
-         patch("her_cli.dep_ensure.shutil") as mock_shutil:
-        mock_shutil.which.side_effect = lambda name: "/fake/msedge.exe" if name == "msedge" else None
-        assert _has_system_browser() is True
+    result = _find_install_script(package_dir=tmp_path / "x", repo_root=tmp_path / "y")
+    assert result == (None, None)
 
 
 def test_has_system_browser_checks_posix_names():
     from her_cli.dep_ensure import _has_system_browser
-    with patch("her_cli.dep_ensure._IS_WINDOWS", False), \
-         patch("her_cli.dep_ensure.shutil") as mock_shutil:
+    with patch("her_cli.dep_ensure.shutil") as mock_shutil:
         mock_shutil.which.return_value = None
         assert _has_system_browser() is False
-
-
-def test_has_her_agent_browser_windows_path(tmp_path):
-    node_dir = tmp_path / "node"
-    node_dir.mkdir(parents=True)
-    (node_dir / "agent-browser.cmd").write_text("@echo off")
-    from her_cli.dep_ensure import _has_her_agent_browser
-    with patch("her_cli.dep_ensure._IS_WINDOWS", True), \
-         patch("her_constants.get_her_home", return_value=tmp_path):
-        assert _has_her_agent_browser() is True
 
 
 def test_has_her_agent_browser_posix_path(tmp_path):
@@ -122,8 +85,7 @@ def test_has_her_agent_browser_posix_path(tmp_path):
     bin_dir.mkdir(parents=True)
     (bin_dir / "agent-browser").write_text("#!/bin/sh")
     from her_cli.dep_ensure import _has_her_agent_browser
-    with patch("her_cli.dep_ensure._IS_WINDOWS", False), \
-         patch("her_constants.get_her_home", return_value=tmp_path):
+    with patch("her_constants.get_her_home", return_value=tmp_path):
         assert _has_her_agent_browser() is True
 
 
@@ -133,30 +95,5 @@ def test_has_her_agent_browser_legacy_node_modules_path(tmp_path):
     bin_dir.mkdir(parents=True)
     (bin_dir / "agent-browser").write_text("#!/bin/sh")
     from her_cli.dep_ensure import _has_her_agent_browser
-    with patch("her_cli.dep_ensure._IS_WINDOWS", False), \
-         patch("her_constants.get_her_home", return_value=tmp_path):
+    with patch("her_constants.get_her_home", return_value=tmp_path):
         assert _has_her_agent_browser() is True
-
-
-def test_ensure_dependency_uses_powershell_on_windows(tmp_path):
-    from her_cli.dep_ensure import ensure_dependency
-    scripts_dir = tmp_path / "scripts"
-    scripts_dir.mkdir(parents=True)
-    (scripts_dir / "install.ps1").write_text("# fake")
-    with patch("her_cli.dep_ensure._IS_WINDOWS", True), \
-         patch("her_cli.dep_ensure._DEP_CHECKS", {"node": lambda: False}), \
-         patch("her_cli.dep_ensure._find_install_script", return_value=(scripts_dir / "install.ps1", "powershell")), \
-         patch("her_cli.dep_ensure.shutil") as mock_shutil, \
-         patch("her_constants.get_her_home", return_value=tmp_path / "fakehome"), \
-         patch("subprocess.run") as mock_run, \
-         patch("sys.stdin") as mock_stdin:
-        mock_shutil.which.side_effect = lambda name: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" if name == "powershell" else None
-        mock_stdin.isatty.return_value = False
-        mock_run.return_value = type("R", (), {"returncode": 0})()
-        ensure_dependency("node", interactive=False)
-        cmd = mock_run.call_args[0][0]
-        assert "powershell" in cmd[0].lower()
-        assert "-Ensure" in cmd
-        assert cmd[cmd.index("-Ensure") + 1] == "node"
-        assert "-HerHome" in cmd
-        assert str(tmp_path / "fakehome") in cmd

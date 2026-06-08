@@ -105,7 +105,7 @@ export const DEFAULT_VOICE_RECORD_KEY: ParsedVoiceRecordKey = {
  * (``her_cli/voice.py::normalize_voice_record_key_for_prompt_toolkit``)
  * so one ``voice.record_key`` value binds the same shortcut in both
  * runtimes (Copilot round-9 review on #19835). The ``super`` /
- * ``win`` / ``windows`` spellings are TUI-only — prompt_toolkit has no
+ * ``win`` spellings are TUI-only — prompt_toolkit has no
  * super modifier, so the CLI falls back to the documented default and
  * logs a warning at startup (Copilot round-11 review on #19835). */
 const _MOD_ALIASES: Record<string, VoiceRecordKeyMod> = {
@@ -115,8 +115,7 @@ const _MOD_ALIASES: Record<string, VoiceRecordKeyMod> = {
   option: 'alt',
   opt: 'alt',
   super: 'super',
-  win: 'super',
-  windows: 'super'
+  win: 'super'
 }
 
 /** Map config-string named tokens to the canonical name used at match time.
@@ -158,10 +157,10 @@ const _RESERVED_CTRL_CHARS = new Set(['c', 'd', 'l'])
  *  - super+d → exit
  *  - super+l → clear screen
  *  - super+v → paste (also claimed at the TextInput layer)
- * On Linux/Windows those globals key off Ctrl instead of Super, so
+ * On Linux those globals key off Ctrl instead of Super, so
  * super+<letter> bindings don't collide. Gate the rejection to darwin
  * at parse time so kitty/CSI-u ``super+<key>`` configs still work for
- * non-mac users (Copilot round-8 review on #19835). */
+ * non-mac users. */
 const _RESERVED_SUPER_CHARS = new Set(['c', 'd', 'l', 'v'])
 
 /** On macOS ``isActionMod`` accepts ``key.meta`` as the action
@@ -285,9 +284,9 @@ export const parseVoiceRecordKey = (raw: unknown): ParsedVoiceRecordKey => {
   // Same for ``super+c`` / ``super+d`` / ``super+l`` / ``super+v`` on
   // macOS only — those are copy / exit / clear / paste and get claimed
   // by ``isCopyShortcut`` / ``isAction`` / the TextInput paste layer
-  // before voice has a chance to toggle. On Linux/Windows the TUI
-  // globals key off Ctrl (not Super), so kitty/CSI-u ``super+<letter>``
-  // bindings stay usable for non-mac users.
+  // before voice has a chance to toggle. On Linux the TUI globals key
+  // off Ctrl (not Super), so kitty/CSI-u ``super+<letter>`` bindings
+  // stay usable for non-mac users.
   if (isMac && mod === 'super' && last.length === 1 && _RESERVED_SUPER_CHARS.has(last)) {
     return DEFAULT_VOICE_RECORD_KEY
   }
@@ -296,7 +295,7 @@ export const parseVoiceRecordKey = (raw: unknown): ParsedVoiceRecordKey => {
   // accepts as the mac action modifier. So ``alt+c`` / ``alt+d`` / ``alt+l``
   // collide with copy / exit / clear in ``useInputHandlers()`` before the
   // voice check. Reject at parse time on darwin only — non-mac ``alt+<letter>``
-  // bindings are still usable (Copilot round-12 review on #19835).
+  // bindings are still usable.
   if (isMac && mod === 'alt' && last.length === 1 && _RESERVED_ALT_CHARS_MAC.has(last)) {
     return DEFAULT_VOICE_RECORD_KEY
   }
@@ -320,8 +319,7 @@ export const parseVoiceRecordKey = (raw: unknown): ParsedVoiceRecordKey => {
  *
  * Platform-aware for the ``super`` modifier: renders ``Cmd`` on macOS and
  * ``Super`` elsewhere. Previously rendered ``Cmd`` universally, which told
- * Linux/Windows users the wrong modifier to press (Copilot review, round
- * 2 on #19835). */
+ * Linux users the wrong modifier to press. */
 export const formatVoiceRecordKey = (parsed: ParsedVoiceRecordKey): string => {
   const modLabel =
     parsed.mod === 'super' ? (isMac ? 'Cmd' : 'Super') : parsed.mod[0].toUpperCase() + parsed.mod.slice(1)
@@ -374,7 +372,7 @@ export const isVoiceToggleKey = (
       // Most terminals surface Alt as either ``alt`` or ``meta``; accept
       // both so the binding works across xterm-style and kitty-style
       // protocols. Guard against ctrl/super bits so a chord like
-      // Ctrl+Alt+<key> or Cmd+Alt+<key> doesn't spuriously fire the
+      // Ctrl+Alt+<key> or Super+Alt+<key> doesn't spuriously fire the
       // alt binding.
       //
       // Bare Escape on her-ink can arrive as ``key.meta=true`` on some

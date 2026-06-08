@@ -79,18 +79,8 @@ RETRY_BASE_DELAY = 0.5  # 0.5, 1.0, 2.0 — exponential
 
 
 def file_uri(path: str) -> str:
-    """Return ``file://`` URI for an absolute filesystem path.
-
-    Mirrors Node's ``pathToFileURL`` — handles spaces, unicode, and
-    Windows drive letters (``C:\\foo`` → ``file:///C:/foo``).
-    """
+    """Return ``file://`` URI for an absolute filesystem path."""
     abs_path = os.path.abspath(path)
-    if os.name == "nt":
-        # Windows: backslash → forward slash, prepend extra slash so
-        # the drive letter shows up as part of the path component.
-        abs_path = abs_path.replace("\\", "/")
-        if not abs_path.startswith("/"):
-            abs_path = "/" + abs_path
     return "file://" + quote(abs_path, safe="/:")
 
 
@@ -99,8 +89,6 @@ def uri_to_path(uri: str) -> str:
     if not uri.startswith("file://"):
         return uri
     raw = uri[len("file://"):]
-    if os.name == "nt" and raw.startswith("/") and len(raw) > 2 and raw[2] == ":":
-        raw = raw[1:]  # strip leading slash before drive letter
     return os.path.normpath(unquote(raw))
 
 
@@ -245,22 +233,12 @@ class LSPClient:
             await self._cleanup_process()
             raise
 
-    @staticmethod
-    def _win_wrap_cmd(cmd: List[str]) -> List[str]:
-        """On Windows, wrap .cmd/.bat shims so CreateProcess can run them."""
-        exe = cmd[0]
-        if exe.lower().endswith((".cmd", ".bat")):
-            return ["cmd.exe", "/c", *cmd]
-        return cmd
-
     async def _spawn(self) -> None:
         env = dict(os.environ)
         if self._env:
             env.update(self._env)
 
         cmd = self._command
-        if sys.platform == "win32":
-            cmd = self._win_wrap_cmd(cmd)
 
         try:
             self._proc = await asyncio.create_subprocess_exec(

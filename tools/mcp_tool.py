@@ -1450,7 +1450,7 @@ class MCPServerTask:
                     for _pid in new_pids:
                         _stdio_pids.pop(_pid, None)
                     for pid in new_pids:
-                        # ``os.kill(pid, 0)`` is NOT a no-op on Windows
+# ``os.kill(pid, 0)`` probes process existence
                         # (bpo-14484). Use the cross-platform check.
                         pid_alive = _pid_exists(pid)
                         pgroup_alive = False

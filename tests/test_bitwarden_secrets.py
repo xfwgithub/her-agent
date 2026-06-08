@@ -69,10 +69,7 @@ def her_home(tmp_path, monkeypatch):
          f"bws-x86_64-unknown-linux-musl-{bw._BWS_VERSION}.zip"),
         ("Linux", "aarch64", "",
          f"bws-aarch64-unknown-linux-gnu-{bw._BWS_VERSION}.zip"),
-        ("Windows", "AMD64", "",
-         f"bws-x86_64-pc-windows-msvc-{bw._BWS_VERSION}.zip"),
-        ("Windows", "ARM64", "",
-         f"bws-aarch64-pc-windows-msvc-{bw._BWS_VERSION}.zip"),
+
     ],
 )
 def test_platform_asset_name(system, machine, libc_text, expected):
@@ -148,7 +145,7 @@ def test_safe_extract_member_rejects_traversal(tmp_path, evil_name):
 
 def test_safe_extract_member_rejects_absolute_path(tmp_path):
     # An absolute member name should never resolve inside dest.
-    abs_member = "/etc/cron.d/evil" if os.name != "nt" else "C:/Windows/evil"
+    abs_member = "/etc/cron.d/evil"
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
         zf.writestr(abs_member, b"pwned")

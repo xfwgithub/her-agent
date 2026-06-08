@@ -329,22 +329,6 @@ def test_on_session_end_stops_live_bot():
 # Plugin register() — platform gating + tool registration
 # ---------------------------------------------------------------------------
 
-def test_register_refuses_on_windows():
-    import plugins.google_meet as plugin
-
-    calls = {"tools": [], "cli": [], "hooks": []}
-
-    class _Ctx:
-        def register_tool(self, **kw): calls["tools"].append(kw["name"])
-        def register_cli_command(self, **kw): calls["cli"].append(kw["name"])
-        def register_hook(self, name, fn): calls["hooks"].append(name)
-
-    with patch.object(plugin.platform, "system", return_value="Windows"):
-        plugin.register(_Ctx())
-
-    assert calls == {"tools": [], "cli": [], "hooks": []}
-
-
 def test_register_wires_tools_cli_and_hook_on_linux():
     import plugins.google_meet as plugin
 
@@ -748,17 +732,6 @@ def test_cli_install_flags_parse():
     ns = parser.parse_args(["install", "--realtime", "--yes"])
     assert ns.realtime is True
     assert ns.yes is True
-
-
-def test_cmd_install_refuses_windows(capsys):
-    from plugins.google_meet.cli import _cmd_install
-
-    with patch("plugins.google_meet.cli.platform" if False else "platform.system",
-               return_value="Windows"):
-        rc = _cmd_install(realtime=False, assume_yes=True)
-    assert rc == 1
-    out = capsys.readouterr().out
-    assert "Windows" in out
 
 
 def test_cmd_install_runs_pip_and_playwright(capsys):

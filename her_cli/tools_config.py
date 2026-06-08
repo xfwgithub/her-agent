@@ -841,9 +841,7 @@ def _run_post_setup(post_setup_key: str):
             _print_info("    Installing Node.js dependencies for browser tools...")
             import subprocess
             # Use the resolved npm_bin absolute path so subprocess.Popen can
-            # execute npm.cmd on Windows (CreateProcessW otherwise rejects
-            # batch shims).  On POSIX npm_bin is the plain path — same
-            # behaviour as before.
+            # execute it.
             result = subprocess.run(
                 # --workspaces=false restricts the install to the repo root
                 # only. The remaining workspaces (ui-tui, web) are installed
@@ -912,10 +910,6 @@ def _run_post_setup(post_setup_key: str):
         # version of Chromium matches the CLI. Fall back to npx shim on
         # setups where the local bin stub isn't present.
         local_ab = PROJECT_ROOT / "node_modules" / ".bin" / "agent-browser"
-        if sys.platform == "win32":
-            local_ab_win = local_ab.with_suffix(".cmd")
-            if local_ab_win.exists():
-                local_ab = local_ab_win
         install_cmd = (
             [str(local_ab), "install", "--with-deps"]
             if local_ab.exists()
@@ -951,7 +945,7 @@ def _run_post_setup(post_setup_key: str):
         if not camofox_dir.exists() and _npm_bin:
             _print_info("    Installing Camofox browser server...")
             import subprocess
-            # Absolute npm path so .cmd shim executes on Windows.
+            # Absolute npm path so subprocess can resolve it.
             result = subprocess.run(
                 # --workspaces=false skips workspace package resolution. See #38772.
                 [_npm_bin, "install", "--silent", "--workspaces=false"],

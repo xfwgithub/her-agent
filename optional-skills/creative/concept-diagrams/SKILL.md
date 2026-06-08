@@ -5,7 +5,7 @@ version: 0.1.0
 author: v1k22 (original PR), ported into her-agent
 license: MIT
 dependencies: []
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [diagrams, svg, visualization, education, physics, chemistry, engineering]

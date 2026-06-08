@@ -32,7 +32,7 @@ SKILL.md Format (YAML Frontmatter, agentskills.io compatible):
     version: 1.0.0                # Optional
     license: MIT                  # Optional (agentskills.io)
     platforms: [macos]            # Optional — restrict to specific OS platforms
-                                  #   Valid: macos, linux, windows
+                                  #   Valid: macos, linux
                                   #   Omit to load on all platforms (default)
     prerequisites:                # Optional — legacy runtime requirements
       env_vars: [API_KEY]         #   Legacy env var names are normalized into
@@ -73,7 +73,7 @@ from her_constants import get_her_home, display_her_home
 import os
 import re
 from enum import Enum
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path, PurePosixPath
 from typing import Dict, Any, List, Optional, Set, Tuple
 
 from tools.registry import registry, tool_error
@@ -99,7 +99,6 @@ MAX_DESCRIPTION_LENGTH = 1024
 _PLATFORM_MAP = {
     "macos": "darwin",
     "linux": "linux",
-    "windows": "win32",
 }
 _ENV_VAR_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _REMOTE_ENV_BACKENDS = frozenset(
@@ -115,20 +114,14 @@ def _skill_lookup_path_error(name: str) -> Optional[str]:
     on-disk lookup path, so it must stay relative and free of ``..`` segments —
     otherwise ``name="../outside"`` or an absolute path could select a skill
     (and read files) outside the skills directory. Mirrors the ``file_path``
-    validation done later via ``tools.path_security``. We also reject Windows
-    drive paths (e.g. ``C:\\skills``), whose ``:`` would otherwise be misread as
-    a plugin namespace separator.
+    validation done later via ``tools.path_security``.
     """
     from tools.path_security import has_traversal_component
 
     if not isinstance(name, str):
         return "Skill name must be a string."
     candidate = name.strip()
-    if (
-        PurePosixPath(candidate).is_absolute()
-        or PureWindowsPath(candidate).is_absolute()
-        or PureWindowsPath(candidate).drive
-    ):
+    if PurePosixPath(candidate).is_absolute():
         return "Skill name must be a relative path within the skills directory."
     if has_traversal_component(candidate):
         return "Skill name cannot contain '..' path traversal components."
@@ -874,10 +867,6 @@ def skill_view(
         JSON string with skill content or error message
     """
     try:
-        # Validate before the ':' qualified-name dispatch so a Windows drive
-        # path (e.g. C:\skills\foo) can't be reinterpreted as a plugin
-        # namespace, and so a traversal/absolute name never reaches the
-        # search-dir join that builds direct_path below.
         lookup_error = _skill_lookup_path_error(name)
         if lookup_error:
             return json.dumps(

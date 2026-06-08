@@ -2,7 +2,7 @@
 name: osint-investigation
 description: Public-records OSINT investigation framework — SEC EDGAR filings, USAspending contracts, Senate lobbying, OFAC sanctions, ICIJ offshore leaks, NYC property records (ACRIS), OpenCorporates registries, CourtListener court records, Wayback Machine archives, Wikipedia + Wikidata, GDELT news monitoring. Entity resolution across sources, cross-link analysis, timing correlation, evidence chains. Python stdlib only.
 version: 0.1.0
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 author: her Agent (adapted from ShinMegamiBoson/OpenPlanter, MIT)
 metadata:
   her:
@@ -20,7 +20,7 @@ entities across heterogeneous sources, build cross-links with explicit
 confidence, run statistical timing tests, and produce structured evidence
 chains.
 
-**Python stdlib only.** Zero install. Works on Linux, macOS, Windows. Most
+**Python stdlib only.** Zero install. Works on Linux and macOS. Most
 sources work with no API key (OpenCorporates has an optional free token
 that raises rate limits).
 

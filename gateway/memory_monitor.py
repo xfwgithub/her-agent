@@ -20,7 +20,7 @@ Design notes (parity with the Cline port):
   * Baseline snapshot logged immediately on start.
   * Daemon thread — never blocks process exit.
   * Uses ``resource`` (stdlib, Linux/macOS) first and falls back to
-    ``psutil`` when ``resource`` isn't available (Windows).  Both are
+    ``psutil`` when ``resource`` isn't available.  Both are
     optional; when neither works we emit a single WARNING and disable
     the monitor rather than crashing the gateway.
 
@@ -70,7 +70,7 @@ def _get_rss_mb() -> Optional[int]:
     except Exception:
         pass
 
-    # Fallback: psutil (Windows, or unusual unix without resource).
+    # Fallback: psutil (for systems without resource).
     try:
         import psutil  # type: ignore
 

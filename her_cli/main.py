@@ -77,7 +77,6 @@ def _set_process_title() -> None:
       2. ctypes ``prctl(PR_SET_NAME)`` (Linux only, 15-char limit).
       3. ctypes ``pthread_setname_np`` (macOS only, kernel thread name —
          changes lldb/top but not ``ps aux``).
-      4. No-op on Windows (the .exe name is already ``her.exe``).
     """
     # Strategy 1: setproctitle (best — works on macOS, Linux, BSD)
     try:
@@ -6520,40 +6519,6 @@ def _find_stale_dashboard_pids(
     dashboard_pids: list[int] = []
 
     try:
-        if sys.platform == "win32":
-            # wmic may emit text in the system code page (for example cp936
-            # on zh-CN systems), not UTF-8. In text mode, subprocess output
-            # decoding depends on Python's configuration (locale-dependent
-            # by default, or UTF-8 in UTF-8 mode). The important protection
-            # here is errors="ignore": it prevents a reader-thread
-            # UnicodeDecodeError from leaving result.stdout=None and turning
-            # the later .split() into an AttributeError (#17049).
-            result = subprocess.run(
-                ["wmic", "process", "get", "ProcessId,CommandLine", "/FORMAT:LIST"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                encoding="utf-8",
-                errors="ignore",
-            )
-            if result.returncode != 0 or result.stdout is None:
-                return []
-            current_cmd = ""
-            for line in result.stdout.split("\n"):
-                line = line.strip()
-                if line.startswith("CommandLine="):
-                    current_cmd = line[len("CommandLine=") :]
-                elif line.startswith("ProcessId="):
-                    pid_str = line[len("ProcessId=") :]
-                    if (
-                        any(p in current_cmd for p in patterns)
-                        and int(pid_str) != self_pid
-                    ):
-                        try:
-                            dashboard_pids.append(int(pid_str))
-                        except ValueError:
-                            pass
-        else:
             # Linux / macOS: scan the process table via ps and match against
             # the same explicit patterns list used on Windows.  Using ps
             # (rather than `pgrep -f "her.*dashboard"`) keeps us consistent
@@ -6729,15 +6694,13 @@ def _kill_stale_dashboard_processes(
     frontend/backend mismatches (new auth headers the old backend doesn't
     recognise → every API call 401s).
 
-    POSIX: SIGTERM, wait up to ~3s for graceful exit, SIGKILL any survivors.
-    Windows: ``taskkill /PID <pid> /F`` since there's no clean SIGTERM
-    equivalent for background console apps.
+    SIGTERM, wait up to ~3s for graceful exit, SIGKILL any survivors.
 
     The dashboard isn't auto-restarted because we don't know the original
     launch args (--host, --port, --insecure, --no-open).  The user
     restarts it manually; a hint is printed.
     """
-    pids = _find_stale_dashboard_pids(exclude_pids=exclude_pids)
+    pids = _find_stale_dashboard_pids()
     if not pids:
         return
 
@@ -6747,63 +6710,45 @@ def _kill_stale_dashboard_processes(
     killed: list[int] = []
     failed: list[tuple[int, str]] = []
 
-    if sys.platform == "win32":
-        for pid in pids:
-            try:
-                result = subprocess.run(
-                    ["taskkill", "/PID", str(pid), "/F"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-                if result.returncode == 0:
-                    killed.append(pid)
-                else:
-                    failed.append((pid, (result.stderr or result.stdout or "").strip()))
-            except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
-                failed.append((pid, str(e)))
-    else:
-        import signal as _signal
-        import time as _time
+    import signal as _signal
+    import time as _time
 
-        # SIGTERM first — give each process a chance to shut down cleanly
-        # (uvicorn closes its socket, flushes logs, etc.).
-        for pid in pids:
-            try:
-                os.kill(pid, _signal.SIGTERM)
-            except ProcessLookupError:
-                # Already gone — count as killed.
-                killed.append(pid)
-            except (PermissionError, OSError) as e:
-                failed.append((pid, str(e)))
+    # SIGTERM first — give each process a chance to shut down cleanly
+    # (uvicorn closes its socket, flushes logs, etc.).
+    for pid in pids:
+        try:
+            os.kill(pid, _signal.SIGTERM)
+        except ProcessLookupError:
+            # Already gone — count as killed.
+            killed.append(pid)
+        except (PermissionError, OSError) as e:
+            failed.append((pid, str(e)))
 
-        # Poll for exit up to ~3s total.
-        deadline = _time.monotonic() + 3.0
-        pending = [
-            p for p in pids if p not in killed and p not in {f[0] for f in failed}
-        ]
-        while pending and _time.monotonic() < deadline:
-            _time.sleep(0.1)
-            still_pending = []
-            # On Windows, os.kill(pid, 0) is NOT a no-op. Route through
-            # the cross-platform existence check.
-            from gateway.status import _pid_exists
-            for pid in pending:
-                if _pid_exists(pid):
-                    still_pending.append(pid)
-                else:
-                    killed.append(pid)
-            pending = still_pending
-
-        # SIGKILL any survivors.
+    # Poll for exit up to ~3s total.
+    deadline = _time.monotonic() + 3.0
+    pending = [
+        p for p in pids if p not in killed and p not in {f[0] for f in failed}
+    ]
+    while pending and _time.monotonic() < deadline:
+        _time.sleep(0.1)
+        still_pending = []
+        from gateway.status import _pid_exists
         for pid in pending:
-            try:
-                os.kill(pid, _signal.SIGKILL)
+            if _pid_exists(pid):
+                still_pending.append(pid)
+            else:
                 killed.append(pid)
-            except ProcessLookupError:
-                killed.append(pid)
-            except (PermissionError, OSError) as e:
-                failed.append((pid, str(e)))
+        pending = still_pending
+
+    # SIGKILL any survivors.
+    for pid in pending:
+        try:
+            os.kill(pid, _signal.SIGKILL)
+            killed.append(pid)
+        except ProcessLookupError:
+            killed.append(pid)
+        except (PermissionError, OSError) as e:
+            failed.append((pid, str(e)))
 
     for pid in killed:
         print(f"    ✓ stopped PID {pid}")
@@ -7575,7 +7520,7 @@ def _run_install_with_heartbeat(
 
 
 def _is_windows() -> bool:
-    return sys.platform == "win32"
+    return False
 
 
 def _venv_scripts_dir() -> Path | None:
@@ -8640,8 +8585,6 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
         sys.exit(1)
 
     git_cmd = ["git"]
-    if sys.platform == "win32":
-        git_cmd = ["git", "-c", "windows.appendAtomically=false"]
 
     # Fetch both origin and upstream; prefer upstream as the canonical reference.
     # Note: upstream/<branch> may not exist for non-main branches (a fork's
@@ -9119,41 +9062,19 @@ def _cmd_update_impl(args, gateway_mode: bool):
     git_dir = PROJECT_ROOT / ".git"
 
     if not git_dir.exists():
-        if sys.platform == "win32":
-            use_zip_update = True
-        else:
-            from her_cli.config import detect_install_method
-            method = detect_install_method(PROJECT_ROOT)
-            if method == "pip":
-                _cmd_update_pip(args)
-                return
-            print("✗ Not a git repository. Please reinstall:")
-            print(
-                "  curl -fsSL https://her-agent.nousresearch.com/install.sh | bash"
-            )
-            sys.exit(1)
-
-    # On Windows, git can fail with "unable to write loose object file: Invalid argument"
-    # due to filesystem atomicity issues. Set the recommended workaround.
-    if sys.platform == "win32" and git_dir.exists():
-        subprocess.run(
-            [
-                "git",
-                "-c",
-                "windows.appendAtomically=false",
-                "config",
-                "windows.appendAtomically",
-                "false",
-            ],
-            cwd=PROJECT_ROOT,
-            check=False,
-            capture_output=True,
+        from her_cli.config import detect_install_method
+        method = detect_install_method(PROJECT_ROOT)
+        if method == "pip":
+            _cmd_update_pip(args)
+            return
+        print("✗ Not a git repository. Please reinstall:")
+        print(
+            "  curl -fsSL https://her-agent.nousresearch.com/install.sh | bash"
         )
+        sys.exit(1)
 
     # Build git command once — reused for fork detection and the update itself.
     git_cmd = ["git"]
-    if sys.platform == "win32":
-        git_cmd = ["git", "-c", "windows.appendAtomically=false"]
 
     # Discard npm lockfile churn before any stash/branch logic. npm rewrites
     # tracked package-lock.json files non-deterministically at install/build
@@ -10372,14 +10293,8 @@ def _cmd_update_impl(args, gateway_mode: bool):
         print("  her model              # Select provider and model")
 
     except subprocess.CalledProcessError as e:
-        if sys.platform == "win32":
-            print(f"⚠ Git update failed: {e}")
-            print("→ Falling back to ZIP download...")
-            print()
-            _update_via_zip(args)
-        else:
-            print(f"✗ Update failed: {e}")
-            sys.exit(1)
+        print(f"✗ Update failed: {e}")
+        sys.exit(1)
 
 
 def _coalesce_session_name_args(argv: list) -> list:
@@ -10810,8 +10725,7 @@ def cmd_profile(args):
                 print(f"Installed from: {dist_source}")
             print(f"  (run `her profile info {name}` for full manifest)")
         if alias_name:
-            is_windows = sys.platform == "win32"
-            wrapper = _get_wrapper_dir() / (f"{alias_name}.bat" if is_windows else alias_name)
+            wrapper = _get_wrapper_dir() / alias_name
             print(f"Alias:   {alias_name} → her -p {name}  ({wrapper})")
         print()
 
@@ -11111,16 +11025,15 @@ def _report_dashboard_status() -> int:
         # Best-effort: show the full cmdline so users can tell profiles apart.
         cmdline = ""
         try:
-            if sys.platform != "win32":
-                cmdline_path = f"/proc/{pid}/cmdline"
-                if os.path.exists(cmdline_path):
-                    with open(cmdline_path, "rb") as f:
-                        cmdline = (
-                            f.read()
-                            .replace(b"\x00", b" ")
-                            .decode("utf-8", errors="replace")
-                            .strip()
-                        )
+            cmdline_path = f"/proc/{pid}/cmdline"
+            if os.path.exists(cmdline_path):
+                with open(cmdline_path, "rb") as f:
+                    cmdline = (
+                        f.read()
+                        .replace(b"\x00", b" ")
+                        .decode("utf-8", errors="replace")
+                        .strip()
+                    )
         except (OSError, ValueError):
             pass
         if cmdline:

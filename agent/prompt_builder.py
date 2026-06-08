@@ -11,7 +11,7 @@ import threading
 from collections import OrderedDict
 from pathlib import Path
 
-from her_constants import get_her_home, get_skills_dir, is_wsl
+from her_constants import get_her_home, get_skills_dir
 from typing import Optional
 
 from agent.runtime_cwd import resolve_agent_cwd
@@ -665,22 +665,13 @@ PLATFORM_HINTS = {
 # the machine/OS the agent's tools actually run on.
 # ---------------------------------------------------------------------------
 
-WSL_ENVIRONMENT_HINT = (
-    "You are running inside WSL (Windows Subsystem for Linux). "
-    "The Windows host filesystem is mounted under /mnt/ — "
-    "/mnt/c/ is the C: drive, /mnt/d/ is D:, etc. "
-    "The user's Windows files are typically at "
-    "/mnt/c/Users/<username>/Desktop/, Documents/, Downloads/, etc. "
-    "When the user references Windows paths or desktop files, translate "
-    "to the /mnt/c/ equivalent. You can list /mnt/c/Users/ to discover "
-    "the Windows username if needed."
-)
+
 
 
 # Non-local terminal backends that run commands (and therefore every file
 # tool: read_file, write_file, patch, search_files) inside a separate
 # container / remote host rather than on the machine where her itself
-# runs. For these backends, host info (Windows/Linux/macOS, $HOME, cwd) is
+# runs. For these backends, host info (Linux/macOS, $HOME, cwd) is
 # misleading — the agent should only see the machine it can actually touch.
 _REMOTE_TERMINAL_BACKENDS = frozenset({
     "docker", "singularity", "modal", "daytona", "ssh",
@@ -710,15 +701,7 @@ _BACKEND_FALLBACK_DESCRIPTIONS: dict[str, str] = {
 _BACKEND_PROBE_CACHE: dict[tuple[str, str], str] = {}
 
 
-_WINDOWS_BASH_SHELL_HINT = (
-    "Shell: on this Windows host your `terminal` tool runs commands through "
-    "bash (git-bash / MSYS), NOT PowerShell or cmd.exe. Use POSIX shell "
-    "syntax (`ls`, `$HOME`, `&&`, `|`, single-quoted strings) inside terminal "
-    "calls. MSYS-style paths like `/c/Users/<user>/...` work alongside "
-    "native `C:\\Users\\<user>\\...` paths. PowerShell builtins "
-    "(`Get-ChildItem`, `$env:FOO`, `Select-String`) will NOT work — use their "
-    "POSIX equivalents (`ls`, `$FOO`, `grep`)."
-)
+
 
 
 def _probe_remote_backend(env_type: str) -> str | None:
@@ -807,16 +790,12 @@ def build_environment_hints() -> str:
 
     Always emits a factual block describing the execution environment:
     - For **local** terminal backends: the host OS, user home, current
-      working directory (plus a Windows-only note about hostname != user
-      and a Windows-only note that `terminal` shells out to bash, not
-      PowerShell).
+      working directory.
     - For **remote / sandbox** terminal backends (docker, singularity,
       modal, daytona, ssh): host info is **suppressed**
       because the agent's tools can't touch the host — only the backend
       matters. A live probe inside the backend reports its OS, user, $HOME,
       and cwd. Falls back to a static summary if the probe fails.
-
-    The WSL environment hint is appended unchanged when running under WSL.
     """
     import platform
     import sys
@@ -829,11 +808,7 @@ def build_environment_hints() -> str:
     if not is_remote_backend:
         # --- Host info block (local backend: host == where tools run) ---
         host_lines: list[str] = []
-        if is_wsl():
-            host_lines.append("Host: WSL (Windows Subsystem for Linux)")
-        elif sys.platform == "win32":
-            host_lines.append(f"Host: Windows ({platform.release()})")
-        elif sys.platform == "darwin":
+        if sys.platform == "darwin":
             mac_ver = platform.mac_ver()[0]
             host_lines.append(f"Host: macOS ({mac_ver or platform.release()})")
         else:
@@ -845,19 +820,7 @@ def build_environment_hints() -> str:
         except OSError:
             pass
 
-        if sys.platform == "win32" and not is_wsl():
-            host_lines.append(
-                "Note: on Windows, the machine hostname (e.g. from `hostname` "
-                "or uname) is NOT the username. Use the 'User home directory' "
-                "above to construct paths under C:\\Users\\<user>\\, never the "
-                "hostname."
-            )
         hints.append("\n".join(host_lines))
-
-        # Windows-local terminal runs bash, not PowerShell — the model must
-        # know this or it will issue PowerShell syntax and fail.
-        if sys.platform == "win32" and not is_wsl():
-            hints.append(_WINDOWS_BASH_SHELL_HINT)
     else:
         # --- Remote backend block (host info suppressed) ---
         probe = _probe_remote_backend(backend)
@@ -884,9 +847,6 @@ def build_environment_hints() -> str:
                 f"them, probe directly with a terminal call like "
                 f"`uname -a && whoami && pwd`."
             )
-
-    if is_wsl():
-        hints.append(WSL_ENVIRONMENT_HINT)
 
     # Embedder-supplied environment description. Lets a host that wraps her
     # (e.g. a sandbox runner / managed platform) explain the environment the

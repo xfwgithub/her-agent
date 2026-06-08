@@ -56,12 +56,9 @@ _LOG_FORMAT_VERBOSE = "%(asctime)s - %(name)s - %(levelname)s%(session_tag)s - %
 def _safe_stderr():  # type: ignore[return]
     """Return a stderr stream that tolerates Unicode on all platforms.
 
-    On Windows the console encoding is often a legacy MBCS codec
-    (cp949, cp1252, …) that raises ``UnicodeEncodeError`` for characters
-    like the em-dash (U+2014).  We wrap ``sys.stderr`` in a
-    ``TextIOWrapper`` with ``errors='replace'`` so log lines are never
-    lost — un-encodable characters are replaced with ``?`` instead of
-    crashing the process.
+    We wrap ``sys.stderr`` in a ``TextIOWrapper`` with ``errors='replace'``
+    so log lines are never lost — un-encodable characters are replaced with
+    ``?`` instead of crashing the process.
     """
     stream = sys.stderr
     encoding = getattr(stream, "encoding", None) or "utf-8"

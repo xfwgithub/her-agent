@@ -4,7 +4,7 @@ description: "Extract text from PDFs/scans (pymupdf, marker-pdf)."
 version: 2.3.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [PDF, Documents, Research, Arxiv, Text-Extraction, OCR]

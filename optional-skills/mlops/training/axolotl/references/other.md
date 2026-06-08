@@ -289,7 +289,7 @@ For providers supporting Docker:
 
 See Section 6 for Mac-specific issues.
 
-We recommend using WSL2 (Windows Subsystem for Linux) or Docker.
+We recommend using Docker.
 
 Install PyTorch: https://pytorch.org/get-started/locally/
 

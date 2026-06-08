@@ -4,7 +4,7 @@ description: "Use when building creative browser demos with @chenglou/pretext â€
 version: 1.0.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [creative-coding, typography, pretext, ascii-art, canvas, generative, text-layout, kinetic-typography]

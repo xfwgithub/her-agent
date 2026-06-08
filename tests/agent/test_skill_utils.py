@@ -110,7 +110,7 @@ class TestSkillMatchesPlatformTermux:
     must load there regardless of whether Python reports sys.platform as
     "linux" (pre-3.13) or "android" (3.13+). Reported by user @LikiusInik
     in May 2026 — only 3 built-in skills appeared on Termux because every
-    github/productivity/mlops skill is tagged platforms:[linux,macos,windows]
+    github/productivity/mlops skill is tagged platforms:[linux,macos]
     and sys.platform=="android" did not start with "linux".
     """
 
@@ -131,10 +131,8 @@ class TestSkillMatchesPlatformTermux:
         ):
             assert skill_matches_platform(fm) is True
 
-    def test_linux_macos_windows_skill_loads_on_termux(self):
-        # The common "[linux, macos, windows]" tag used by github-*,
-        # productivity, mlops, etc.
-        fm = {"platforms": ["linux", "macos", "windows"]}
+    def test_linux_macos_skill_loads_on_termux(self):
+        fm = {"platforms": ["linux", "macos"]}
         with patch("agent.skill_utils.sys.platform", "android"), patch(
             "agent.skill_utils.is_termux", return_value=True
         ):
@@ -153,13 +151,6 @@ class TestSkillMatchesPlatformTermux:
         # macOS-only skills (apple-notes, imessage, ...) should NOT load
         # on Termux. The Termux fallback only widens platforms:[linux,...].
         fm = {"platforms": ["macos"]}
-        with patch("agent.skill_utils.sys.platform", "android"), patch(
-            "agent.skill_utils.is_termux", return_value=True
-        ):
-            assert skill_matches_platform(fm) is False
-
-    def test_windows_only_skill_still_excluded_on_termux(self):
-        fm = {"platforms": ["windows"]}
         with patch("agent.skill_utils.sys.platform", "android"), patch(
             "agent.skill_utils.is_termux", return_value=True
         ):

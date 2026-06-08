@@ -145,7 +145,7 @@ of screenshot context, not ~600K.
 ## Limitations
 
 - **macOS only.** cua-driver uses private Apple SPIs that don't exist on
-  Linux or Windows. For cross-platform GUI automation, use the `browser`
+  Linux. For cross-platform GUI automation, use the `browser`
   toolset.
 - **Private SPI risk.** Apple can change SkyLight's symbol surface in any
   OS update. Pin the driver version with the `HER_CUA_DRIVER_VERSION`

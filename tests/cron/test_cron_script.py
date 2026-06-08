@@ -372,10 +372,6 @@ class TestScriptPathContainment:
         assert success is True
         assert output == "abs ok"
 
-    @pytest.mark.skipif(
-        sys.platform == "win32",
-        reason="Symlinks require elevated privileges on Windows",
-    )
     def test_symlink_escape_blocked(self, cron_env, tmp_path):
         """Symlinks pointing outside scripts/ must be rejected."""
         from cron.scheduler import _run_job_script
@@ -487,19 +483,6 @@ class TestCronjobToolScriptValidation:
         ))
         assert update_result["success"] is True
         assert "script" not in update_result["job"]
-
-    def test_windows_absolute_path_rejected(self, cron_env, monkeypatch):
-        monkeypatch.setenv("HER_INTERACTIVE", "1")
-        from tools.cronjob_tools import cronjob
-
-        result = json.loads(cronjob(
-            action="create",
-            schedule="every 1h",
-            prompt="Monitor things",
-            script="C:\\Users\\evil\\script.py",
-        ))
-        assert result["success"] is False
-
 
 class TestRunJobEnvVarCleanup:
     """Test that run_job() env vars are cleaned up even on early failure."""

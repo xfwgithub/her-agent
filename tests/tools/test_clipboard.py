@@ -20,19 +20,14 @@ import pytest
 from her_cli.clipboard import (
     save_clipboard_image,
     has_clipboard_image,
-    _is_wsl,
     _linux_save,
     _macos_pngpaste,
     _macos_osascript,
     _macos_has_image,
     _xclip_save,
     _xclip_has_image,
-    _wsl_save,
-    _wsl_has_image,
     _wayland_save,
     _wayland_has_image,
-    _windows_save,
-    _windows_has_image,
     _convert_to_png,
 )
 from cli import _should_auto_attach_clipboard_image_on_paste
@@ -52,14 +47,6 @@ class TestSaveClipboardImage:
         with patch("her_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "darwin"
             with patch("her_cli.clipboard._macos_save", return_value=False) as m:
-                save_clipboard_image(dest)
-                m.assert_called_once_with(dest)
-
-    def test_dispatches_to_windows_on_win32(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard.sys") as mock_sys:
-            mock_sys.platform = "win32"
-            with patch("her_cli.clipboard._windows_save", return_value=False) as m:
                 save_clipboard_image(dest)
                 m.assert_called_once_with(dest)
 
@@ -201,142 +188,6 @@ class TestMacosOsascript:
         with patch("her_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is False
 
-
-# ── WSL detection ────────────────────────────────────────────────────────
-
-class TestIsWsl:
-    def setup_method(self):
-        # _is_wsl is her_constants.is_wsl; reset the function's own module
-        # globals so this stays stable even if her_constants was imported
-        # through a different module object earlier in a large xdist run.
-        import her_constants
-        her_constants._wsl_detected = None
-        _is_wsl.__globals__["_wsl_detected"] = None
-
-    def teardown_method(self):
-        # Reset again after the test so we don't leak a cached value
-        # (True/False) into whichever test the xdist worker runs next.
-        import her_constants
-        her_constants._wsl_detected = None
-        _is_wsl.__globals__["_wsl_detected"] = None
-
-    def test_wsl2_detected(self):
-        content = "Linux version 5.15.0 (microsoft-standard-WSL2)"
-        with patch.dict(_is_wsl.__globals__, {"open": mock_open(read_data=content)}):
-            assert _is_wsl() is True
-
-    def test_wsl1_detected(self):
-        content = "Linux version 4.4.0-microsoft-standard"
-        with patch.dict(_is_wsl.__globals__, {"open": mock_open(read_data=content)}):
-            assert _is_wsl() is True
-
-    def test_regular_linux(self):
-        # GHA hosted runners are Azure VMs whose real /proc/version often
-        # contains "microsoft". Patching builtins.open with mock_open is
-        # supposed to intercept her_constants.is_wsl's `open` call,
-        # but if another test on the same xdist worker already cached
-        # _wsl_detected=True, the mock never runs because the function
-        # short-circuits on the cache. setup_method resets, so we just
-        # need to be sure the patched `open` is actually reached.
-        content = "Linux version 6.14.0-37-generic (buildd@lcy02-amd64-049)"
-        with patch.dict(_is_wsl.__globals__, {"open": mock_open(read_data=content)}):
-            assert _is_wsl() is False
-
-    def test_proc_version_missing(self):
-        with patch.dict(_is_wsl.__globals__, {"open": MagicMock(side_effect=FileNotFoundError)}):
-            assert _is_wsl() is False
-
-    def test_result_is_cached(self):
-        content = "Linux version 5.15.0 (microsoft-standard-WSL2)"
-        opener = mock_open(read_data=content)
-        with patch.dict(_is_wsl.__globals__, {"open": opener}):
-            assert _is_wsl() is True
-            assert _is_wsl() is True
-            opener.assert_called_once()  # only read once
-
-
-# ── WSL (powershell.exe) ────────────────────────────────────────────────
-
-class TestWslHasImage:
-    def test_clipboard_has_image(self):
-        with patch("her_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="True\n", returncode=0)
-            assert _wsl_has_image() is True
-
-    def test_clipboard_no_image(self):
-        with patch("her_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="False\n", returncode=0)
-            assert _wsl_has_image() is False
-
-    def test_falls_back_to_get_clipboard_image(self):
-        with patch("her_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.side_effect = [
-                MagicMock(stdout="False\n", returncode=0),
-                MagicMock(stdout="True\n", returncode=0),
-            ]
-            assert _wsl_has_image() is True
-            assert mock_run.call_count == 2
-
-    def test_powershell_not_found(self):
-        with patch("her_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
-            assert _wsl_has_image() is False
-
-    def test_powershell_error(self):
-        with patch("her_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="", returncode=1)
-            assert _wsl_has_image() is False
-
-
-class TestWslSave:
-    def test_successful_extraction(self, tmp_path):
-        dest = tmp_path / "out.png"
-        b64_png = base64.b64encode(FAKE_PNG).decode()
-        with patch("her_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout=b64_png + "\n", returncode=0)
-            assert _wsl_save(dest) is True
-        assert dest.read_bytes() == FAKE_PNG
-
-    def test_falls_back_to_get_clipboard_extraction(self, tmp_path):
-        dest = tmp_path / "out.png"
-        b64_png = base64.b64encode(FAKE_PNG).decode()
-        with patch("her_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.side_effect = [
-                MagicMock(stdout="", returncode=1),
-                MagicMock(stdout=b64_png + "\n", returncode=0),
-            ]
-            assert _wsl_save(dest) is True
-            assert mock_run.call_count == 2
-        assert dest.read_bytes() == FAKE_PNG
-
-    def test_no_image_returns_false(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="", returncode=1)
-            assert _wsl_save(dest) is False
-        assert not dest.exists()
-
-    def test_empty_output(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="", returncode=0)
-            assert _wsl_save(dest) is False
-
-    def test_powershell_not_found(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
-            assert _wsl_save(dest) is False
-
-    def test_invalid_base64(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="not-valid-base64!!!", returncode=0)
-            assert _wsl_save(dest) is False
-
-    def test_timeout(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard.subprocess.run",
-                   side_effect=subprocess.TimeoutExpired("powershell.exe", 15)):
-            assert _wsl_save(dest) is False
 
 
 # ── Wayland (wl-paste) ──────────────────────────────────────────────────
@@ -541,177 +392,6 @@ class TestXclipSave:
             assert _xclip_save(tmp_path / "out.png") is False
 
 
-# ── Linux dispatch ──────────────────────────────────────────────────────
-
-class TestLinuxSave:
-    """Test that _linux_save dispatches correctly to WSL → Wayland → X11."""
-
-    def setup_method(self):
-        import her_cli.clipboard as cb
-        cb._wsl_detected = None
-
-    def test_wsl_tried_first(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._is_wsl", return_value=True):
-            with patch("her_cli.clipboard._wsl_save", return_value=True) as m:
-                assert _linux_save(dest) is True
-                m.assert_called_once_with(dest)
-
-    def test_wsl_fails_falls_through_to_xclip(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._is_wsl", return_value=True):
-            with patch("her_cli.clipboard._wsl_save", return_value=False):
-                with patch.dict(os.environ, {}, clear=True):
-                    with patch("her_cli.clipboard._xclip_save", return_value=True) as m:
-                        assert _linux_save(dest) is True
-                        m.assert_called_once_with(dest)
-
-    def test_wayland_tried_when_display_set(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._is_wsl", return_value=False):
-            with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                with patch("her_cli.clipboard._wayland_save", return_value=True) as m:
-                    assert _linux_save(dest) is True
-                    m.assert_called_once_with(dest)
-
-    def test_wayland_fails_falls_through_to_xclip(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._is_wsl", return_value=False):
-            with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                with patch("her_cli.clipboard._wayland_save", return_value=False):
-                    with patch("her_cli.clipboard._xclip_save", return_value=True) as m:
-                        assert _linux_save(dest) is True
-                        m.assert_called_once_with(dest)
-
-    def test_xclip_used_on_plain_x11(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._is_wsl", return_value=False):
-            with patch.dict(os.environ, {}, clear=True):
-                with patch("her_cli.clipboard._xclip_save", return_value=True) as m:
-                    assert _linux_save(dest) is True
-                    m.assert_called_once_with(dest)
-
-
-# ── Native Windows (PowerShell) ─────────────────────────────────────────
-
-class TestWindowsHasImage:
-    def setup_method(self):
-        import her_cli.clipboard as cb
-        cb._ps_exe = False  # reset cache
-
-    def test_clipboard_has_image(self):
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(stdout="True\n", returncode=0)
-                assert _windows_has_image() is True
-
-    def test_clipboard_no_image(self):
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(stdout="False\n", returncode=0)
-                assert _windows_has_image() is False
-
-    def test_falls_back_to_get_clipboard_image(self):
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.side_effect = [
-                    MagicMock(stdout="False\n", returncode=0),
-                    MagicMock(stdout="True\n", returncode=0),
-                ]
-                assert _windows_has_image() is True
-                assert mock_run.call_count == 2
-
-    def test_no_powershell_available(self):
-        with patch("her_cli.clipboard._get_ps_exe", return_value=None):
-            assert _windows_has_image() is False
-
-    def test_powershell_error(self):
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(stdout="", returncode=1)
-                assert _windows_has_image() is False
-
-    def test_subprocess_exception(self):
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run",
-                       side_effect=subprocess.TimeoutExpired("powershell", 5)):
-                assert _windows_has_image() is False
-
-
-class TestWindowsSave:
-    def setup_method(self):
-        import her_cli.clipboard as cb
-        cb._ps_exe = False  # reset cache
-
-    def test_successful_extraction(self, tmp_path):
-        dest = tmp_path / "out.png"
-        b64_png = base64.b64encode(FAKE_PNG).decode()
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(stdout=b64_png + "\n", returncode=0)
-                assert _windows_save(dest) is True
-        assert dest.read_bytes() == FAKE_PNG
-
-    def test_falls_back_to_filedrop_image(self, tmp_path):
-        dest = tmp_path / "out.png"
-        b64_png = base64.b64encode(FAKE_PNG).decode()
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.side_effect = [
-                    MagicMock(stdout="", returncode=1),
-                    MagicMock(stdout="", returncode=1),
-                    MagicMock(stdout=b64_png + "\n", returncode=0),
-                ]
-                assert _windows_save(dest) is True
-                assert mock_run.call_count == 3
-        assert dest.read_bytes() == FAKE_PNG
-
-    def test_no_image_returns_false(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(stdout="", returncode=1)
-                assert _windows_save(dest) is False
-        assert not dest.exists()
-
-    def test_empty_output(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(stdout="", returncode=0)
-                assert _windows_save(dest) is False
-
-    def test_no_powershell_returns_false(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._get_ps_exe", return_value=None):
-            assert _windows_save(dest) is False
-
-    def test_invalid_base64(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(stdout="not-valid-base64!!!", returncode=0)
-                assert _windows_save(dest) is False
-
-    def test_timeout(self, tmp_path):
-        dest = tmp_path / "out.png"
-        with patch("her_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("her_cli.clipboard.subprocess.run",
-                       side_effect=subprocess.TimeoutExpired("powershell", 15)):
-                assert _windows_save(dest) is False
-
-
-class TestHasClipboardImageWin32:
-    """Verify has_clipboard_image dispatches to _windows_has_image on win32."""
-
-    def test_dispatches_on_win32(self):
-        with patch("her_cli.clipboard.sys") as mock_sys:
-            mock_sys.platform = "win32"
-            with patch("her_cli.clipboard._windows_has_image", return_value=True) as m:
-                assert has_clipboard_image() is True
-                m.assert_called_once()
-
-
 # ── BMP conversion ──────────────────────────────────────────────────────
 
 class TestConvertToPng:
@@ -822,54 +502,12 @@ class TestConvertToPng:
 # ── has_clipboard_image dispatch ─────────────────────────────────────────
 
 class TestHasClipboardImage:
-    def setup_method(self):
-        import her_cli.clipboard as cb
-        cb._wsl_detected = None
-
     def test_macos_dispatch(self):
         with patch("her_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "darwin"
             with patch("her_cli.clipboard._macos_has_image", return_value=True) as m:
                 assert has_clipboard_image() is True
                 m.assert_called_once()
-
-    def test_linux_wsl_dispatch(self):
-        with patch("her_cli.clipboard.sys") as mock_sys:
-            mock_sys.platform = "linux"
-            with patch("her_cli.clipboard._is_wsl", return_value=True):
-                with patch("her_cli.clipboard._wsl_has_image", return_value=True) as m:
-                    assert has_clipboard_image() is True
-                    m.assert_called_once()
-
-    def test_wsl_falls_through_to_wayland_when_windows_path_empty(self):
-        """WSLg often bridges images to wl-paste even when powershell.exe check fails."""
-        with patch("her_cli.clipboard.sys") as mock_sys:
-            mock_sys.platform = "linux"
-            with patch("her_cli.clipboard._is_wsl", return_value=True):
-                with patch("her_cli.clipboard._wsl_has_image", return_value=False) as wsl:
-                    with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                        with patch("her_cli.clipboard._wayland_has_image", return_value=True) as wl:
-                            assert has_clipboard_image() is True
-                            wsl.assert_called_once()
-                            wl.assert_called_once()
-
-    def test_linux_wayland_dispatch(self):
-        with patch("her_cli.clipboard.sys") as mock_sys:
-            mock_sys.platform = "linux"
-            with patch("her_cli.clipboard._is_wsl", return_value=False):
-                with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                    with patch("her_cli.clipboard._wayland_has_image", return_value=True) as m:
-                        assert has_clipboard_image() is True
-                        m.assert_called_once()
-
-    def test_linux_x11_dispatch(self):
-        with patch("her_cli.clipboard.sys") as mock_sys:
-            mock_sys.platform = "linux"
-            with patch("her_cli.clipboard._is_wsl", return_value=False):
-                with patch.dict(os.environ, {}, clear=True):
-                    with patch("her_cli.clipboard._xclip_has_image", return_value=True) as m:
-                        assert has_clipboard_image() is True
-                        m.assert_called_once()
 
 
 # ═════════════════════════════════════════════════════════════════════════

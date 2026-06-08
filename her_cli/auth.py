@@ -54,10 +54,6 @@ try:
     import fcntl
 except Exception:
     fcntl = None
-try:
-    import msvcrt
-except Exception:
-    msvcrt = None
 
 # =============================================================================
 # Constants
@@ -905,7 +901,7 @@ def _file_lock(
 
     lock_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if fcntl is None and msvcrt is None:
+    if fcntl is None:
         holder.depth = 1
         try:
             yield
@@ -913,20 +909,11 @@ def _file_lock(
             holder.depth = 0
         return
 
-    # On Windows, msvcrt.locking needs the file to have content and the
-    # file pointer at position 0. Ensure the lock file has at least 1 byte.
-    if msvcrt and (not lock_path.exists() or lock_path.stat().st_size == 0):
-        lock_path.write_text(" ", encoding="utf-8")
-
-    with lock_path.open("r+" if msvcrt else "a+", encoding="utf-8") as lock_file:
+    with lock_path.open("a+", encoding="utf-8") as lock_file:
         deadline = time.monotonic() + max(1.0, timeout_seconds)
         while True:
             try:
-                if fcntl:
-                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                else:
-                    lock_file.seek(0)
-                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
             except (BlockingIOError, OSError, PermissionError):
                 if time.monotonic() >= deadline:
@@ -938,17 +925,10 @@ def _file_lock(
             yield
         finally:
             holder.depth = 0
-            if fcntl:
-                try:
-                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
-                except (OSError, IOError):
-                    pass
-            elif msvcrt:
-                try:
-                    lock_file.seek(0)
-                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
-                except (OSError, IOError):
-                    pass
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            except (OSError, IOError):
+                pass
 
 
 @contextmanager

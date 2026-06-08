@@ -168,10 +168,6 @@ export function getVSCodeStyleConfigDir(
     return join(homeDir, 'Library', 'Application Support', appName, 'User')
   }
 
-  if (platform === 'win32') {
-    return env['APPDATA'] ? join(env['APPDATA'], appName, 'User') : null
-  }
-
   return join(homeDir, '.config', appName, 'User')
 }
 

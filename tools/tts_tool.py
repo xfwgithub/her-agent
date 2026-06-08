@@ -154,8 +154,8 @@ def _import_piper():
     """Lazy import Piper. Returns the PiperVoice class or raises ImportError.
 
     Piper is an optional, fully-local neural TTS engine (Home Assistant /
-    Open Home Foundation). ``pip install piper-tts`` provides cross-platform
-    wheels (Linux / macOS / Windows, x86_64 + ARM64) with embedded espeak-ng.
+    Open Home Foundation). ``pip install piper-tts`` provides wheels
+    (Linux / macOS, x86_64 + ARM64) with embedded espeak-ng.
     Voice models (.onnx + .onnx.json) are downloaded on first use.
     """
     from piper import PiperVoice
@@ -646,8 +646,6 @@ def _quote_command_tts_placeholder(value: str, quote_context: Optional[str]) -> 
             .replace("$", r"\$")
             .replace("`", r"\`")
         )
-    if os.name == "nt":
-        return subprocess.list2cmdline([value])
     return shlex.quote(value)
 
 
@@ -684,18 +682,6 @@ def _render_command_tts_template(
 def _terminate_command_tts_process_tree(proc: subprocess.Popen) -> None:
     """Best-effort termination of a shell process and all of its children."""
     if proc.poll() is not None:
-        return
-
-    if os.name == "nt":
-        try:
-            subprocess.run(
-                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=5,
-            )
-        except Exception:
-            proc.kill()
         return
 
     import psutil
@@ -739,11 +725,8 @@ def _run_command_tts(command: str, timeout: float) -> subprocess.CompletedProces
         "stdout": subprocess.PIPE,
         "stderr": subprocess.PIPE,
         "text": True,
+        "start_new_session": True,
     }
-    if os.name == "nt":
-        popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-    else:
-        popen_kwargs["start_new_session"] = True
 
     proc = subprocess.Popen(command, **popen_kwargs)
     try:

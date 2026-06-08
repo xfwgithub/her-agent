@@ -4,7 +4,7 @@ description: "Operate the Antigravity CLI (agy): plugins, auth, sandbox."
 version: 0.1.0
 author: Tony Simons (asimons81), her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Coding-Agent, Antigravity, CLI, Auth, Plugins, Sandbox]
@@ -153,7 +153,7 @@ paths below — do not `cat` them through the terminal.
   (read with `read_file`).
 - Don't confuse persistent JSON settings with launch-time overrides.
 - `~/.gemini/antigravity-cli/bin/agentapi` is a thin wrapper to `agy agentapi`.
-- On WSL, token storage is file-based, so auth issues are usually local-file /
+- Token storage is file-based, so auth issues are usually local-file /
   session-state problems, not browser-only problems.
 - Workspace identity can depend on launch directory and the `.antigravitycli`
   project marker.

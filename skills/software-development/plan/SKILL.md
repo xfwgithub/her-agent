@@ -4,7 +4,7 @@ description: "Plan mode: write an actionable markdown plan to .her/plans/, no ex
 version: 2.0.0
 author: her Agent (writing-craft adapted from obra/superpowers)
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [planning, plan-mode, implementation, workflow, design, documentation]

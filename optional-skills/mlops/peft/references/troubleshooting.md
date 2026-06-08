@@ -31,7 +31,6 @@ pip install .
 # Install triton (Linux only)
 pip install triton
 
-# Windows: Triton not supported, use CUDA backend
 # Set environment variable to disable triton
 export CUDA_VISIBLE_DEVICES=0
 ```

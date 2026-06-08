@@ -359,71 +359,7 @@ class TestGatewayRuntimeStatus:
         assert payload["platforms"]["discord"]["error_message"] is None
 
 
-class TestTerminatePid:
-    def test_force_uses_taskkill_on_windows(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(status, "_IS_WINDOWS", True)
-
-        def fake_run(cmd, capture_output=False, text=False, timeout=None):
-            calls.append((cmd, capture_output, text, timeout))
-            return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-        monkeypatch.setattr(status.subprocess, "run", fake_run)
-
-        status.terminate_pid(123, force=True)
-
-        assert calls == [
-            (["taskkill", "/PID", "123", "/T", "/F"], True, True, 10)
-        ]
-
-    def test_force_falls_back_to_sigterm_when_taskkill_missing(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(status, "_IS_WINDOWS", True)
-
-        def fake_run(*args, **kwargs):
-            raise FileNotFoundError
-
-        def fake_kill(pid, sig):
-            calls.append((pid, sig))
-
-        monkeypatch.setattr(status.subprocess, "run", fake_run)
-        monkeypatch.setattr(status.os, "kill", fake_kill)
-
-        status.terminate_pid(456, force=True)
-
-        assert calls == [(456, status.signal.SIGTERM)]
-
-
 class TestScopedLocks:
-    def test_windows_file_lock_uses_high_offset(self, tmp_path, monkeypatch):
-        lock_path = tmp_path / "gateway.lock"
-        handle = open(lock_path, "a+", encoding="utf-8")
-        fd = handle.fileno()
-        calls = []
-
-        def fake_locking(fd, mode, size):
-            calls.append((fd, mode, size, handle.tell()))
-
-        monkeypatch.setattr(status, "_IS_WINDOWS", True)
-        monkeypatch.setattr(
-            status,
-            "msvcrt",
-            SimpleNamespace(LK_NBLCK=1, LK_UNLCK=2, locking=fake_locking),
-            raising=False,
-        )
-
-        try:
-            assert status._try_acquire_file_lock(handle) is True
-            status._release_file_lock(handle)
-        finally:
-            handle.close()
-
-        assert calls == [
-            (fd, 1, 1, status._WINDOWS_LOCK_OFFSET),
-            (fd, 2, 1, status._WINDOWS_LOCK_OFFSET),
-        ]
-        assert lock_path.read_text(encoding="utf-8") == "\n"
-
     def test_acquire_scoped_lock_rejects_live_other_process(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HER_GATEWAY_LOCK_DIR", str(tmp_path / "locks"))
         lock_path = tmp_path / "locks" / "telegram-bot-token-2bb80d537b1da3e3.lock"

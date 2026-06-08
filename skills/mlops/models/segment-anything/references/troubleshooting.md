@@ -47,9 +47,6 @@ python -c "from segment_anything import sam_model_registry; print('OK')"
 ```bash
 # Install all optional dependencies
 pip install opencv-python pycocotools matplotlib onnxruntime onnx
-
-# For pycocotools on Windows
-pip install pycocotools-windows
 ```
 
 ## Model Loading Issues

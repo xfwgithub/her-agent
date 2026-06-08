@@ -4,7 +4,7 @@ description: Free web search via DuckDuckGo — text, news, images, videos. No A
 version: 1.3.0
 author: gamedevCloudy
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [search, duckduckgo, web-search, free, fallback]

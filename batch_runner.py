@@ -20,15 +20,12 @@ Usage:
     python batch_runner.py --dataset_file=data.jsonl --batch_size=10 --run_name=my_run --distribution=image_gen
 """
 
-# IMPORTANT: her_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See her_bootstrap.py for full rationale.
 try:
     import her_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     # Graceful fallback when her_bootstrap isn't registered in the venv
     # yet — happens during partial ``her update`` where git-reset landed
-    # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
-    # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
+    # new code but ``uv pip install -e .`` didn't finish.
     pass
 
 import json

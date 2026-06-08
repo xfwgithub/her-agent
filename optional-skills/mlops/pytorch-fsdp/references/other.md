@@ -597,9 +597,9 @@ torch.distributed supports four built-in backends, each with different capabilit
 
 MPI supports CUDA only if the implementation used to build PyTorch supports it.
 
-PyTorch distributed package supports Linux (stable), MacOS (stable), and Windows (prototype). By default for Linux, the Gloo and NCCL backends are built and included in PyTorch distributed (NCCL only when building with CUDA). MPI is an optional backend that can only be included if you build PyTorch from source. (e.g. building PyTorch on a host that has MPI installed.)
+PyTorch distributed package supports Linux (stable) and MacOS (stable). By default for Linux, the Gloo and NCCL backends are built and included in PyTorch distributed (NCCL only when building with CUDA). MPI is an optional backend that can only be included if you build PyTorch from source. (e.g. building PyTorch on a host that has MPI installed.)
 
-As of PyTorch v1.8, Windows supports all collective communications backend but NCCL, If the init_method argument of init_process_group() points to a file it must adhere to the following schema:
+As of PyTorch v1.8, if the init_method argument of init_process_group() points to a file it must adhere to the following schema:
 
 Local file system, init_method="file:///d:/tmp/some_file"
 
@@ -663,7 +663,7 @@ Initialization is not thread-safe. Process group creation should be performed fr
 
 Return True if the distributed package is available.
 
-Otherwise, torch.distributed does not expose any other APIs. Currently, torch.distributed is available on Linux, MacOS and Windows. Set USE_DISTRIBUTED=1 to enable it when building PyTorch from source. Currently, the default value is USE_DISTRIBUTED=1 for Linux and Windows, USE_DISTRIBUTED=0 for MacOS.
+Otherwise, torch.distributed does not expose any other APIs. Currently, torch.distributed is available on Linux and MacOS. The default value is USE_DISTRIBUTED=1 for Linux, USE_DISTRIBUTED=0 for MacOS.
 
 Initialize the default distributed process group.
 

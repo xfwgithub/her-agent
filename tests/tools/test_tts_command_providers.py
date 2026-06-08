@@ -9,7 +9,7 @@ and max_text_length lookup.
 Nothing here talks to a real TTS engine. The shell command itself is
 portable: we write bytes to ``{output_path}`` using ``python -c`` so
 the tests run identically on Linux, macOS, and (with minor quoting
-differences) Windows.
+differences).
 """
 
 import json
@@ -402,7 +402,6 @@ class TestGenerateCommandTts:
                 {},
             )
 
-    @pytest.mark.skipif(os.name == "nt", reason="POSIX-only timeout semantics")
     def test_timeout_raises_runtime(self, tmp_path):
         config = {
             "command": f'"{sys.executable}" -c "import time; time.sleep(10)"',

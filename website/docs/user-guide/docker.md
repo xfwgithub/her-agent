@@ -656,9 +656,9 @@ model:
 
 ### Standalone Docker run (no Compose)
 
-If your inference server runs directly on the host (not in Docker), use `host.docker.internal` on macOS/Windows, or `--network host` on Linux:
+If your inference server runs directly on the host (not in Docker), use `host.docker.internal` on macOS, or `--network host` on Linux:
 
-**macOS / Windows:**
+**macOS:**
 
 ```sh
 docker run -d \
@@ -715,7 +715,7 @@ You should see a JSON response listing your served model. If this fails, check:
 
 ### Ollama
 
-Ollama works the same way. If Ollama runs on the host, use `host.docker.internal:11434` (macOS/Windows) or `127.0.0.1:11434` (Linux with `--network host`). If Ollama runs in its own container on the same Docker network:
+Ollama works the same way. If Ollama runs on the host, use `host.docker.internal:11434` (macOS) or `127.0.0.1:11434` (Linux with `--network host`). If Ollama runs in its own container on the same Docker network:
 
 ```yaml
 model:

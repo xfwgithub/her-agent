@@ -871,28 +871,6 @@ class TestEnvironmentHints:
         assert "6.8.0-generic" in result
         assert "User home directory:" in result
         assert "Current working directory:" in result
-        # Linux must NOT get the Windows-specific callouts.
-        assert "PowerShell" not in result
-        assert "hostname" not in result
-        assert "WSL" not in result
-
-    def test_build_environment_hints_on_windows_local(self, monkeypatch):
-        import agent.prompt_builder as _pb
-        import sys
-        monkeypatch.setattr(_pb, "is_wsl", lambda: False)
-        monkeypatch.setattr(sys, "platform", "win32")
-        monkeypatch.delenv("TERMINAL_ENV", raising=False)
-        _pb._clear_backend_probe_cache()
-        result = _pb.build_environment_hints()
-        assert "Host: Windows" in result
-        assert "User home directory:" in result
-        # Two Windows-specific callouts that must ALWAYS appear together:
-        # hostname warning + bash-not-PowerShell warning.
-        assert "hostname" in result
-        assert "NOT the username" in result
-        assert "bash" in result
-        assert "PowerShell" in result
-
     def test_build_environment_hints_on_macos_local(self, monkeypatch):
         import agent.prompt_builder as _pb
         import sys
@@ -903,7 +881,6 @@ class TestEnvironmentHints:
         result = _pb.build_environment_hints()
         assert "Host: macOS" in result
         assert "User home directory:" in result
-        # macOS must NOT get the Windows-specific callouts.
         assert "PowerShell" not in result
         assert "hostname" not in result
 
@@ -912,7 +889,6 @@ class TestEnvironmentHints:
         import agent.prompt_builder as _pb
         import sys
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
-        monkeypatch.setattr(sys, "platform", "win32")
         monkeypatch.setenv("TERMINAL_ENV", "docker")
         # Force the probe to fail so we exercise the static fallback path
         # deterministically (the live probe would try to spin up docker).
@@ -920,7 +896,7 @@ class TestEnvironmentHints:
         _pb._clear_backend_probe_cache()
         result = _pb.build_environment_hints()
         # Host suppression: none of the local-backend lines should appear.
-        assert "Host: Windows" not in result
+        assert "Host:" not in result
         assert "User home directory:" not in result
         assert "PowerShell" not in result
         # Backend info must appear instead.

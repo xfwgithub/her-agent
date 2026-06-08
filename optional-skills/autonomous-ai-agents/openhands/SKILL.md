@@ -126,7 +126,7 @@ The cli prints all stderr from LiteLLM/Authlib first — see Pitfalls. Parse onl
 - **`pip install openhands-ai` is the wrong package.** That's the legacy V0 SDK. The new CLI is `uv tool install openhands --python 3.12`. There is no maintained conda package.
 - **Resume ID format is fiddly.** The CLI ends with `Conversation ID: f46573d9cfdb45e492ca189bde40019b` (no dashes) and then a `Hint: openhands --resume f46573d9-cfdb-45e4-92ca-189bde40019b` (with dashes). Use the dashed form.
 - **Headless ignores `--llm-approve`.** If you pass it, you get an argparse error. Headless mode hardcodes always-approve.
-- **No Windows support upstream.** The OpenHands docs require WSL on Windows. This skill is gated `[linux, macos]` accordingly.
+- **No upstream support on non-Linux platforms.** The OpenHands docs require a Linux environment. This skill is gated `[linux, macos]` accordingly.
 - **`~/.openhands/conversations/<id>/` accumulates.** Each run persists a trajectory. Clean it up if running batches.
 - **Heavy install (~200 packages).** Use `uv tool install` (isolated venv) to avoid dependency conflicts with the active project.
 

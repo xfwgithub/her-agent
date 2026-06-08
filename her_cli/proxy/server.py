@@ -274,10 +274,8 @@ async def run_server(
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGINT, signal.SIGTERM):
             try:
-                loop.add_signal_handler(sig, stop_event.set)  # windows-footgun: ok
+                loop.add_signal_handler(sig, stop_event.set)
             except NotImplementedError:
-                # Windows / restricted environments — Ctrl+C will still
-                # raise KeyboardInterrupt and unwind us.
                 pass
 
     try:

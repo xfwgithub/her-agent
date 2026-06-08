@@ -4,7 +4,7 @@ description: "Generate images, video, and audio with ComfyUI — install, launch
 version: 5.1.0
 author: [kshitijk4poor, alt-glitch, purzbeats]
 license: MIT
-platforms: [macos, linux, windows]
+platforms: [macos, linux]
 compatibility: "Requires ComfyUI (local, Comfy Desktop, or Comfy Cloud) and comfy-cli (auto-installed via pipx/uvx by the setup script)."
 prerequisites:
   commands: ["python3"]
@@ -277,8 +277,7 @@ python3 scripts/hardware_check.py --json --check-pytorch
 | `marginal` | SD1.5 works; SDXL tight; Flux/video unlikely                  | Local OK for light workflows, else **Path A (Cloud)** |
 | `cloud`    | No usable GPU, <6 GB VRAM, <16 GB Apple unified, Intel Mac, Rosetta Python | **Switch to Cloud** unless user explicitly forces local |
 
-The script also surfaces `wsl: true` (WSL2 with NVIDIA passthrough) and
-`rosetta: true` (x86_64 Python on Apple Silicon — must reinstall as ARM64).
+The script also surfaces `rosetta: true` (x86_64 Python on Apple Silicon — must reinstall as ARM64).
 
 If verdict is `cloud` but the user wants local, do not proceed silently.
 Show the `notes` array verbatim and ask whether they want to (a) switch to
@@ -293,8 +292,6 @@ user has already told you their hardware:
 |-----------|------------------|
 | `verdict: cloud` from hardware check | **Path A: Comfy Cloud** |
 | No GPU / want to try without commitment | **Path A: Comfy Cloud** |
-| Windows + NVIDIA + non-technical | **Path B: ComfyUI Desktop** |
-| Windows + NVIDIA + technical | **Path C: Portable** or **Path D: comfy-cli** |
 | Linux + any GPU | **Path D: comfy-cli** (easiest) |
 | macOS + Apple Silicon | **Path B: Desktop** or **Path D: comfy-cli** |
 | Headless / server / CI / agents | **Path D: comfy-cli** |
@@ -342,26 +339,14 @@ required for `/api/prompt`, `/api/upload/*`, `/api/view`, etc.
 
 ---
 
-### Path B: ComfyUI Desktop (Windows / macOS)
+### Path B: ComfyUI Desktop (macOS)
 
 One-click installer for non-technical users. Currently Beta.
 
 **Docs:** https://docs.comfy.org/installation/desktop
-- **Windows (NVIDIA):** https://download.comfy.org/windows/nsis/x64
 - **macOS (Apple Silicon):** https://comfy.org
 
 Linux is **not supported** for Desktop — use Path D.
-
----
-
-### Path C: ComfyUI Portable (Windows Only)
-
-**Docs:** https://docs.comfy.org/installation/comfyui_portable_windows
-
-Download from https://github.com/comfyanonymous/ComfyUI/releases, extract,
-run `run_nvidia_gpu.bat`. Update via `update/update_comfyui_stable.bat`.
-
----
 
 ### Path D: comfy-cli (All Platforms — Recommended for Agents)
 

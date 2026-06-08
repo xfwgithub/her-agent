@@ -214,12 +214,7 @@ def _her_bin_dir() -> str:
 
 
 def _detect_target() -> str | None:
-    """Return the Rust target triple for the current platform, or None.
-
-    Windows is intentionally unsupported — tirith does not ship a Windows
-    build. Callers should treat `None` as "this platform will never have
-    tirith" and silently fall back to pattern-matching guards.
-    """
+    """Return the Rust target triple for the current platform, or None."""
     system = platform.system()
     machine = platform.machine().lower()
 
@@ -480,7 +475,7 @@ def _resolve_tirith_path(configured_path: str) -> str:
     explicit = _is_explicit_path(configured_path)
     install_failed = _resolved_path is _INSTALL_FAILED
 
-    # Platform has no tirith build (Windows etc.). Cache the verdict and
+    # Platform has no tirith build. Cache the verdict and
     # return the unexpanded configured path — the spawn loop will fail-open
     # via the dedupe'd OSError handler, but only after the first call; on
     # subsequent calls the fast-path above short-circuits before spawning.
@@ -615,7 +610,7 @@ def ensure_installed(*, log_failures: bool = True):
             return path
         return None
 
-    # Platform has no tirith build (e.g. Windows) — don't probe PATH,
+    # Platform has no tirith build — don't probe PATH,
     # don't start a download thread, don't write a disk failure marker.
     # Pattern-matching guards still run; this path stays silent.
     if not is_platform_supported():
@@ -708,7 +703,7 @@ def check_command_security(command: str) -> dict:
     if not cfg["tirith_enabled"]:
         return {"action": "allow", "findings": [], "summary": ""}
 
-    # Unsupported platform (Windows etc.) — tirith has no binary here and
+    # Unsupported platform — tirith has no binary here and
     # never will. Skip the resolver entirely so we don't even try to spawn.
     # Pattern-matching guards still run via the rest of approval.py.
     if not is_platform_supported():
@@ -738,10 +733,7 @@ def check_command_security(command: str) -> dict:
     except OSError as exc:
         # Covers FileNotFoundError, PermissionError, exec format error.
         # Dedupe by ``(errno, exc class)`` so a transient failure mode
-        # surfaces once but doesn't drown the log on every command —
-        # commonly seen on Windows when the configured path "tirith"
-        # isn't on PATH yet (background install still running, or
-        # install marked failed for the day).
+        # surfaces once but doesn't drown the log on every command.
         spawn_key = f"tirith_spawn_failed:{type(exc).__name__}:{getattr(exc, 'errno', '')}"
         _warn_once(spawn_key, "tirith spawn failed: %s", exc)
         if fail_open:

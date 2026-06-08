@@ -4,7 +4,7 @@ description: Give her phone capabilities without core tool changes. Provision an
 version: 1.0.0
 author: Nous Research
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [telephony, phone, sms, mms, voice, twilio, bland.ai, vapi, calling, texting]

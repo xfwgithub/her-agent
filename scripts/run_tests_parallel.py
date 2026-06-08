@@ -218,17 +218,6 @@ def _kill_tree(proc: "subprocess.Popen", pgid: int | None = None) -> None:
     if proc.pid is None:
         return
 
-    if sys.platform == "win32":
-        try:
-            
-            subprocess.run(
-                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=10,
-            )  # windows-footgun: ok
-        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-            pass
     else:
         # POSIX: kill the captured pgid. Local-import signal so the
         # SIGKILL attribute is never referenced on Windows.
@@ -299,13 +288,12 @@ def _run_one_file(
     # still alive — defeating the whole cleanup. None on Windows where
     # the pgid concept doesn't apply (taskkill walks ppid chain instead).
     pgid: int | None = None
-    if sys.platform != "win32":
-        try:
-            pgid = os.getpgid(proc.pid)
-        except (ProcessLookupError, PermissionError):
-            # Astonishingly fast child? Already dead. _kill_tree's
-            # fallback will handle this case as a no-op.
-            pgid = None
+    try:
+        pgid = os.getpgid(proc.pid)
+    except (ProcessLookupError, PermissionError):
+        # Astonishingly fast child? Already dead. _kill_tree's
+        # fallback will handle this case as a no-op.
+        pgid = None
 
     try:
         output, _ = proc.communicate(timeout=file_timeout)

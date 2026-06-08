@@ -14,7 +14,7 @@ and walk away. The verifier runs the runner over the leaker file in a
 subprocess, then waits for the grandchild PID to disappear from the
 kernel's process table.
 
-POSIX-only: Windows has its own grandchild lifecycle (no shared session,
+POSIX-only: the grandchild lifecycle (no shared session,
 ``taskkill /F /T`` semantics). Marked accordingly.
 """
 
@@ -50,10 +50,6 @@ def _pid_alive(pid: int) -> bool:
     (someone else's pid). We treat PermissionError as "alive" because
     the process exists and that's all we need to know.
     """
-    if sys.platform == "win32":  # pragma: no cover — POSIX-only test
-        # On Windows we'd use OpenProcess + GetExitCodeProcess; this
-        # test is skipped on Windows so the path is unreachable.
-        raise RuntimeError("_pid_alive POSIX-only")
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -63,7 +59,6 @@ def _pid_alive(pid: int) -> bool:
     return True
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only probe")
 @pytest.mark.live_system_guard_bypass
 def test_grandchild_leak_is_killed_by_runner(tmp_path: Path) -> None:
     """Run the parallel runner over a probe file and verify cleanup.

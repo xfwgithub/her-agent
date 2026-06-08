@@ -128,7 +128,7 @@ Skills can restrict themselves to specific operating systems using the `platform
 |-------|---------|
 | `macos` | macOS (Darwin) |
 | `linux` | Linux |
-| `windows` | Windows |
+
 
 ```yaml
 platforms: [macos]            # macOS only (e.g., iMessage, Apple Reminders, FindMy)

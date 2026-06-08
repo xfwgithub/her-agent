@@ -157,15 +157,15 @@ def _normalize_job_record(job: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _secure_dir(path: Path):
-    """Set directory to owner-only access (0700). No-op on Windows."""
+    """Set directory to owner-only access (0700)."""
     try:
         os.chmod(path, 0o700)
     except (OSError, NotImplementedError):
-        pass  # Windows or other platforms where chmod is not supported
+        pass
 
 
 def _secure_file(path: Path):
-    """Set file to owner-only read/write (0600). No-op on Windows."""
+    """Set file to owner-only read/write (0600)."""
     try:
         if path.exists():
             os.chmod(path, 0o600)

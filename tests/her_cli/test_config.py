@@ -205,9 +205,6 @@ class TestLoadConfigParseFailure:
     def test_corrupt_symlink_config_not_backed_up(self, tmp_path):
         """Symlinked config.yaml is not copied (mirrors Gemini #21541 lstat
         guard) — avoids clobbering whatever the symlink points at."""
-        import sys as _sys
-        if _sys.platform == "win32":
-            pytest.skip("symlink creation requires privileges on Windows")
         from her_cli import config as cfg_mod
         cfg_mod._CONFIG_PARSE_WARNED.clear()
 
@@ -284,9 +281,6 @@ class TestSaveEnvValueSecure:
             assert os.environ["TENOR_API_KEY"] == "sk-test-secret"
 
     def test_save_env_value_hardens_file_permissions_on_posix(self, tmp_path):
-        if os.name == "nt":
-            return
-
         with patch.dict(os.environ, {"HER_HOME": str(tmp_path)}):
             save_env_value("TENOR_API_KEY", "sk-test-secret")
             env_mode = (tmp_path / ".env").stat().st_mode & 0o777

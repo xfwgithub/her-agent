@@ -34,11 +34,9 @@
 curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
 ```
 
-支持 Linux、macOS、WSL2 和 Android (Termux)。安装程序会自动处理平台特定的配置。
+支持 Linux、macOS 和 Android (Termux)。安装程序会自动处理平台特定的配置。
 
 > **Android / Termux：** 已测试的手动安装路径请参考 [Termux 指南](https://her-agent.nousresearch.com/docs/getting-started/termux)。在 Termux 上，her 会安装精选的 `.[termux]` 扩展，因为完整的 `.[all]` 扩展会拉取 Android 不兼容的语音依赖。
->
-> **Windows：** 原生 Windows 不受支持。请安装 [WSL2](https://learn.microsoft.com/zh-cn/windows/wsl/install) 并运行上述命令。
 
 安装后：
 

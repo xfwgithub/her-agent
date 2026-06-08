@@ -1,18 +1,17 @@
 """Abstract service manager interface.
 
-Wraps the existing systemd (Linux host), launchd (macOS host), Windows
-Scheduled Task (native Windows host), and s6 (container) backends behind
-a common Protocol. Only the s6 backend supports runtime registration
-(for per-profile gateways) — host backends raise NotImplementedError
-from those methods, and callers MUST check supports_runtime_registration()
-before invoking them.
+Wraps the existing systemd (Linux host), launchd (macOS host), and
+s6 (container) backends behind a common Protocol. Only the s6 backend
+supports runtime registration (for per-profile gateways) — host backends
+raise NotImplementedError from those methods, and callers MUST check
+supports_runtime_registration() before invoking them.
 
 Host-side call sites (setup wizard, uninstall, status) continue to use
-the existing module-level functions in her_cli.gateway and
-her_cli.gateway_windows directly. This protocol is a thin facade
-used by new code that needs to be backend-agnostic — specifically the
-profile create/delete hooks (Phase 4) and the s6 dispatch path in
-``her gateway start/stop/restart`` when running inside a container.
+the existing module-level functions in her_cli.gateway directly. This
+protocol is a thin facade used by new code that needs to be
+backend-agnostic — specifically the profile create/delete hooks (Phase 4)
+and the s6 dispatch path in ``her gateway start/stop/restart`` when
+running inside a container.
 """
 from __future__ import annotations
 
@@ -20,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Literal, Protocol, runtime_checkable
 
-ServiceManagerKind = Literal["systemd", "launchd", "windows", "s6", "none"]
+ServiceManagerKind = Literal["systemd", "launchd", "s6", "none"]
 
 # Profile name → service directory mapping. Profile names must be safe
 # as filesystem directory names because the s6 backend creates a service
@@ -87,7 +86,6 @@ def detect_service_manager() -> ServiceManagerKind:
 
     Returns:
         "s6" — inside a container when /init is s6-svscan (Phase 2+)
-        "windows" — native Windows host
         "launchd" — macOS host
         "systemd" — Linux host with a working user/system bus
         "none" — anything else (Termux, sandbox shells, etc.)
@@ -103,14 +101,11 @@ def detect_service_manager() -> ServiceManagerKind:
     from her_constants import is_container
     from her_cli.gateway import (
         is_macos,
-        is_windows,
         supports_systemd_services,
     )
 
     if is_container() and _s6_running():
         return "s6"
-    if is_windows():
-        return "windows"
     if is_macos():
         return "launchd"
     if supports_systemd_services():
@@ -155,13 +150,12 @@ def _s6_running() -> bool:
 # Backend wrappers
 #
 # These adapters are thin facades over the existing module-level functions
-# in ``her_cli.gateway`` (systemd/launchd) and ``her_cli.gateway_windows``
-# (Windows Scheduled Tasks). The protocol's ``name`` parameter is currently
-# unused for host backends — they operate on whichever profile is currently
-# active (set via the ``her -p <profile>`` flag before the call). This
-# matches existing host-side semantics; the parameter shape is designed
-# for s6 where each profile maps to a distinct service directory.
-# ---------------------------------------------------------------------------
+    # in ``her_cli.gateway`` (systemd/launchd). The protocol's ``name`` parameter
+    # is currently unused for host backends — they operate on whichever profile
+    # is currently active (set via the ``her -p <profile>`` flag before the
+    # call). This matches existing host-side semantics; the parameter shape is
+    # designed for s6 where each profile maps to a distinct service directory.
+    # ---------------------------------------------------------------------------
 
 
 class _RegistrationUnsupportedMixin:
@@ -241,56 +235,6 @@ class LaunchdServiceManager(_RegistrationUnsupportedMixin):
         return _probe_launchd_service_running()
 
 
-class WindowsServiceManager(_RegistrationUnsupportedMixin):
-    """Thin wrapper around ``her_cli.gateway_windows`` (Scheduled Task /
-    Startup-folder fallback).
-
-    The native Windows backend uses a Scheduled Task rather than a true
-    init-system service, but for protocol purposes the lifecycle is the
-    same: start / stop / restart / is_running. ``install`` accepts a
-    handful of Windows-specific kwargs (start_now, start_on_login,
-    elevated_handoff) that are passed straight through — non-Windows
-    callers should never invoke ``install`` on this wrapper.
-    """
-
-    kind: ServiceManagerKind = "windows"
-
-    def install(
-        self,
-        *,
-        force: bool = False,
-        start_now: bool | None = None,
-        start_on_login: bool | None = None,
-        elevated_handoff: bool = False,
-    ) -> None:
-        from her_cli import gateway_windows
-        gateway_windows.install(
-            force=force,
-            start_now=start_now,
-            start_on_login=start_on_login,
-            elevated_handoff=elevated_handoff,
-        )
-
-    def start(self, name: str) -> None:
-        from her_cli import gateway_windows
-        gateway_windows.start()
-
-    def stop(self, name: str) -> None:
-        from her_cli import gateway_windows
-        gateway_windows.stop()
-
-    def restart(self, name: str) -> None:
-        from her_cli import gateway_windows
-        gateway_windows.restart()
-
-    def is_running(self, name: str) -> bool:
-        from her_cli import gateway_windows
-        from her_cli.gateway import find_gateway_pids
-        if not gateway_windows.is_installed():
-            return False
-        return bool(find_gateway_pids())
-
-
 def get_service_manager() -> ServiceManager:
     """Return the ServiceManager instance for the current environment.
 
@@ -302,8 +246,6 @@ def get_service_manager() -> ServiceManager:
         return SystemdServiceManager()
     if kind == "launchd":
         return LaunchdServiceManager()
-    if kind == "windows":
-        return WindowsServiceManager()
     if kind == "s6":
         return S6ServiceManager()
     raise RuntimeError("no supported service manager detected")

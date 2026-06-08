@@ -105,7 +105,6 @@ class TestGetAndPoll:
 # Orphaned-pipe reconciliation (issue #17327)
 # =========================================================================
 
-@pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only: uses setsid/fcntl")
 class TestOrphanedPipeReconciliation:
     """Regression tests for issue #17327.
 
@@ -1072,89 +1071,6 @@ def test_drain_notifications_empty_queue():
 # ---------------------------------------------------------------------------
 
 
-class TestTerminateHostPidWindows:
-    """Windows branch uses ``taskkill /T /F`` — the documented MS tree-kill
-    primitive. We can't use psutil's ``children(recursive=True)`` /
-    ``.terminate()`` path on Windows because (1) Windows doesn't maintain
-    a Unix-style process tree so the walk is unreliable, and (2)
-    ``Process.terminate()`` on Windows is ``TerminateProcess()`` for the
-    target handle only, not the tree.
-    """
-
-    def test_windows_invokes_taskkill_with_tree_and_force_flags(self, monkeypatch):
-        """The Windows branch must shell out to ``taskkill /PID N /T /F``."""
-        from tools import process_registry as pr
-
-        captured = {}
-
-        def fake_run(args, **kwargs):
-            captured["args"] = args
-            captured["kwargs"] = kwargs
-            return MagicMock(returncode=0, stderr="", stdout="")
-
-        monkeypatch.setattr(pr, "_IS_WINDOWS", True)
-        monkeypatch.setattr(pr.subprocess, "run", fake_run)
-
-        pr.ProcessRegistry._terminate_host_pid(12345)
-
-        assert captured["args"][0] == "taskkill"
-        assert "/PID" in captured["args"]
-        assert "12345" in captured["args"]
-        assert "/T" in captured["args"], "Tree flag required to reach descendants"
-        assert "/F" in captured["args"], "Force flag required for headless Chromium"
-
-    def test_windows_falls_back_to_os_kill_when_taskkill_missing(self, monkeypatch):
-        """If ``taskkill.exe`` is somehow unavailable, fall back to a bare
-        ``os.kill(pid, SIGTERM)`` so we at least try to kill the parent."""
-        from tools import process_registry as pr
-
-        kill_calls = []
-
-        def fake_run(*args, **kwargs):
-            raise FileNotFoundError("taskkill not found")
-
-        def fake_kill(pid, sig):
-            kill_calls.append((pid, sig))
-
-        monkeypatch.setattr(pr, "_IS_WINDOWS", True)
-        monkeypatch.setattr(pr.subprocess, "run", fake_run)
-        monkeypatch.setattr(pr.os, "kill", fake_kill)
-
-        pr.ProcessRegistry._terminate_host_pid(12345)
-
-        assert kill_calls == [(12345, signal.SIGTERM)]
-
-    def test_windows_does_not_call_psutil(self, monkeypatch):
-        """The Windows branch must NOT exercise the psutil tree-walk
-        (it's unreliable on Windows — see the function docstring)."""
-        from tools import process_registry as pr
-        import psutil
-
-        psutil_calls = []
-
-        class _BoomProcess:
-            def __init__(self, pid):
-                psutil_calls.append(("Process", pid))
-
-            def children(self, recursive=False):
-                psutil_calls.append(("children", recursive))
-                return []
-
-            def terminate(self):
-                psutil_calls.append(("terminate",))
-
-        def fake_run(args, **kwargs):
-            return MagicMock(returncode=0, stderr="", stdout="")
-
-        monkeypatch.setattr(pr, "_IS_WINDOWS", True)
-        monkeypatch.setattr(pr.subprocess, "run", fake_run)
-        monkeypatch.setattr(psutil, "Process", _BoomProcess)
-
-        pr.ProcessRegistry._terminate_host_pid(12345)
-
-        assert psutil_calls == [], (
-            f"Windows branch must not touch psutil, but saw {psutil_calls!r}"
-        )
 
 
 class TestTerminateHostPidPosix:
@@ -1184,7 +1100,6 @@ class TestTerminateHostPidPosix:
             def terminate(self):
                 terminate_order.append(self.pid)
 
-        monkeypatch.setattr(pr, "_IS_WINDOWS", False)
         monkeypatch.setattr(psutil, "Process", _FakeParent)
 
         pr.ProcessRegistry._terminate_host_pid(12345)
@@ -1200,7 +1115,6 @@ class TestTerminateHostPidPosix:
         def boom(pid):
             raise psutil.NoSuchProcess(pid)
 
-        monkeypatch.setattr(pr, "_IS_WINDOWS", False)
         monkeypatch.setattr(psutil, "Process", boom)
 
         # Must not raise.
@@ -1218,7 +1132,6 @@ class TestTerminateHostPidPosix:
         def fake_kill(pid, sig):
             kill_calls.append((pid, sig))
 
-        monkeypatch.setattr(pr, "_IS_WINDOWS", False)
         monkeypatch.setattr(psutil, "Process", boom)
         monkeypatch.setattr(pr.os, "kill", fake_kill)
 

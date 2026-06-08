@@ -4,7 +4,7 @@ description: "Iterative Python via live Jupyter kernel (hamelnb)."
 version: 1.0.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [jupyter, notebook, repl, data-science, exploration, iterative]

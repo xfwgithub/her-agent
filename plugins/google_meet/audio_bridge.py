@@ -13,8 +13,6 @@ macOS: requires BlackHole 2ch to be installed. This module only
 verifies its presence and returns the device name; routing OS default
 input is left to the user (or a future switchaudio-osx integration) to
 avoid surprising the user's system audio state.
-
-Windows: not supported in v2.
 """
 
 from __future__ import annotations
@@ -69,8 +67,6 @@ class AudioBridge:
             return self._setup_linux()
         if system == "Darwin":
             return self._setup_darwin()
-        if system == "Windows":
-            raise RuntimeError("windows not supported in v2")
         raise RuntimeError(f"unsupported platform: {system}")
 
     def teardown(self) -> None:
@@ -239,6 +235,4 @@ def chrome_fake_audio_flags(bridge_info: dict) -> list[str]:
         return ["--use-fake-ui-for-media-stream"]
     if system == "Darwin":
         return ["--use-fake-ui-for-media-stream"]
-    if system == "Windows":
-        raise RuntimeError("windows not supported in v2")
     raise RuntimeError(f"unsupported platform: {system}")

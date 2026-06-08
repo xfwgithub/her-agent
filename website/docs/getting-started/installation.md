@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: "Installation"
-description: "Install her Agent on Linux, macOS, WSL2, native Windows, or Android via Termux"
+description: "Install her Agent on Linux, macOS, or Android via Termux"
 ---
 
 # Installation
@@ -9,16 +9,9 @@ description: "Install her Agent on Linux, macOS, WSL2, native Windows, or Androi
 Get her Agent up and running in under two minutes!
 
 ## Quick Install
-### Linux / macOS / WSL2 / Android (Termux)
+### Linux / macOS / Android (Termux)
 ```bash
 curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
-```
-
-### Windows (native)
-
-Run in powershell:
-```powershell
-iex (irm https://her-agent.nousresearch.com/install.ps1) 
 ```
 
 ### What the Installer Does
@@ -70,7 +63,7 @@ That logs you in, sets Nous as your provider, and turns on the Tool Gateway in o
 
 ## Prerequisites
 
-**Installer:** On non-Windows platforms, the only prerequisite is **Git**. The installer automatically handles everything else:
+**Installer:** The only prerequisite is **Git**. The installer automatically handles everything else:
 
 - **uv** (fast Python package manager)
 - **Python 3.11** (via uv, no sudo needed)

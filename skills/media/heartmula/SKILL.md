@@ -2,7 +2,7 @@
 name: heartmula
 description: "HeartMuLa: Suno-like song generation from lyrics + tags."
 version: 1.0.0
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [music, audio, generation, ai, heartmula, heartcodec, lyrics, songs]

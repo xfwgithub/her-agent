@@ -154,10 +154,10 @@ trainer = L.Trainer(strategy=strategy)
 
 ### 4. DDP Spawn
 
-**Windows-compatible DDP**:
+**Spawn-based DDP**:
 
 ```python
-# Use when DDP doesn't work (e.g., Windows, Jupyter)
+# Use when DDP doesn't work (e.g., Jupyter)
 trainer = L.Trainer(
     accelerator='gpu',
     devices=2,
@@ -361,7 +361,7 @@ model.eval()
 | FSDP | High | Medium | Large models (7-70B) |
 | DeepSpeed ZeRO-2 | Medium | Fast | Medium models (1-13B) |
 | DeepSpeed ZeRO-3 | Very High | Slower | Massive models (70B+) |
-| DDP Spawn | Low | Slow | Windows, debugging |
+| DDP Spawn | Low | Slow | Debugging |
 
 ## Best Practices
 

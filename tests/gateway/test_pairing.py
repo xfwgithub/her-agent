@@ -38,10 +38,6 @@ class TestSecureWrite:
         assert target.exists()
         assert json.loads(target.read_text()) == {"hello": "world"}
 
-    @pytest.mark.skipif(
-        sys.platform.startswith("win"),
-        reason="POSIX file modes are not enforced on Windows",
-    )
     def test_sets_file_permissions(self, tmp_path):
         target = tmp_path / "secret.json"
         _secure_write(target, "data")

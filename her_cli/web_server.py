@@ -1204,13 +1204,7 @@ def _spawn_her_action(subcommand: List[str], name: str) -> subprocess.Popen:
         "stderr": subprocess.STDOUT,
         "env": {**os.environ, "HER_NONINTERACTIVE": "1"},
     }
-    if sys.platform == "win32":
-        popen_kwargs["creationflags"] = (
-            subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
-            | getattr(subprocess, "DETACHED_PROCESS", 0)
-        )
-    else:
-        popen_kwargs["start_new_session"] = True
+    popen_kwargs["start_new_session"] = True
 
     proc = subprocess.Popen(cmd, **popen_kwargs)
     # The child inherits its own duplicated fd for stdout/stderr, so the
@@ -6891,9 +6885,7 @@ async def open_profile_terminal_endpoint(name: str):
     try:
         command = _profile_setup_command(name)
 
-        if sys.platform.startswith("win"):
-            subprocess.Popen(["cmd.exe", "/c", "start", "", command])
-        elif sys.platform == "darwin":
+        if sys.platform == "darwin":
             escaped = command.replace("\\", "\\\\").replace('"', '\\"')
             applescript = (
                 'tell application "Terminal"\n'

@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 PLATFORM_MAP = {
     "macos": "darwin",
     "linux": "linux",
-    "windows": "win32",
 }
 
 EXCLUDED_SKILL_DIRS = frozenset(

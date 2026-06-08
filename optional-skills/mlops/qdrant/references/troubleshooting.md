@@ -11,7 +11,7 @@
 # Start Docker daemon
 sudo systemctl start docker
 
-# Or use Docker Desktop on Mac/Windows
+# Or use Docker Desktop on Mac
 open -a Docker
 ```
 
@@ -77,7 +77,7 @@ docker port <container_id>
 # Docker on Linux
 client = QdrantClient(host="localhost", port=6333)
 
-# Docker on Mac/Windows with networking issues
+# Docker on Mac with networking issues
 client = QdrantClient(host="127.0.0.1", port=6333)
 
 # Inside Docker network

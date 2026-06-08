@@ -4,7 +4,7 @@ description: "Run 150+ AI apps via inference.sh CLI (infsh) — image generation
 version: 1.0.0
 author: okaris
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [AI, image-generation, video, LLM, search, inference, FLUX, Veo, Claude]

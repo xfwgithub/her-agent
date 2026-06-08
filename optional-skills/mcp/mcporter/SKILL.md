@@ -4,7 +4,7 @@ description: Use the mcporter CLI to list, configure, auth, and call MCP servers
 version: 1.0.0
 author: community
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [MCP, Tools, API, Integrations, Interop]

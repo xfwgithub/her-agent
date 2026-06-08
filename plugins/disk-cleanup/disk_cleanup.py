@@ -65,8 +65,6 @@ def get_log_file() -> Path:
 
 def is_safe_path(path: Path) -> bool:
     """Accept only paths under HER_HOME or ``/tmp/her-*``.
-
-    Rejects Windows mounts (``/mnt/c`` etc.) and any system directory.
     """
     her_home = get_her_home()
     try:

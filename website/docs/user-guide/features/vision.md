@@ -70,7 +70,7 @@ This is especially useful when `Cmd+Enter`, `Cmd+Z`, or `Shift+Cmd+Z` are being 
 | **Apple Terminal** | ✅ | ✅ | n/a | If Cmd+←/→/⌫ gets rewritten, use Ctrl+A / Ctrl+E / Ctrl+U fallbacks |
 | **Linux X11 desktop** | ✅ | ✅ | n/a | Requires `xclip` (`apt install xclip`) |
 | **Linux Wayland desktop** | ✅ | ✅ | n/a | Requires `wl-paste` (`apt install wl-clipboard`) |
-| **WSL2 (Windows Terminal)** | ✅ | ✅ | n/a | Uses `powershell.exe` — no extra install needed |
+
 | **VS Code / Cursor / Windsurf (local)** | ✅ | ✅ | ✅ | Recommended for better Cmd+Enter / undo / redo parity |
 | **VS Code / Cursor / Windsurf (SSH)** | ❌² | ❌² | ❌³ | Run `/terminal-setup` on the local machine instead |
 | **SSH terminal (any)** | ❌² | ❌² | n/a | Remote clipboard not accessible |
@@ -125,33 +125,9 @@ echo $XDG_SESSION_TYPE
 ```
 :::
 
-### WSL2
-
-**No extra setup required.** her detects WSL2 automatically (via `/proc/version`) and uses `powershell.exe` to access the Windows clipboard through .NET's `System.Windows.Forms.Clipboard`. This is built into WSL2's Windows interop — `powershell.exe` is available by default.
-
-The clipboard data is transferred as base64-encoded PNG over stdout, so no file path conversion or temp files are needed.
-
-:::info WSLg Note
-If you're running WSLg (WSL2 with GUI support), her tries the PowerShell path first, then falls back to `wl-paste`. WSLg's clipboard bridge only supports BMP format for images — her auto-converts BMP to PNG using Pillow (if installed) or ImageMagick's `convert` command.
-:::
-
-#### Verify WSL2 clipboard access
-
-```bash
-# 1. Check WSL detection
-grep -i microsoft /proc/version
-
-# 2. Check PowerShell is accessible
-which powershell.exe
-
-# 3. Copy an image, then check
-powershell.exe -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::ContainsImage()"
-# Should print "True"
-```
-
 ## SSH & Remote Sessions
 
-**Clipboard image paste does not fully work over SSH.** When you SSH into a remote machine, the her CLI runs on the remote host. Clipboard tools (`xclip`, `wl-paste`, `powershell.exe`, `osascript`) read the clipboard of the machine they run on — which is the remote server, not your local machine. Your local clipboard image is therefore inaccessible from the remote side.
+**Clipboard image paste does not fully work over SSH.** When you SSH into a remote machine, the her CLI runs on the remote host. Clipboard tools (`xclip`, `wl-paste`, `osascript`) read the clipboard of the machine they run on — which is the remote server, not your local machine. Your local clipboard image is therefore inaccessible from the remote side.
 
 Text can sometimes still bridge through terminal paste or OSC52, but image clipboard access and local screenshot temp paths remain tied to the machine running her.
 
@@ -177,7 +153,7 @@ Terminals are **text-based** interfaces. When you press Ctrl+V (or Cmd+V), the t
 
 If the clipboard contains only an image (no text), the terminal has nothing to send. There is no standard terminal escape sequence for binary image data. The terminal simply does nothing.
 
-This is why her uses a separate clipboard check — instead of receiving image data through the terminal paste event, it calls OS-level tools (`osascript`, `powershell.exe`, `xclip`, `wl-paste`) directly via subprocess to read the clipboard independently.
+This is why her uses a separate clipboard check — instead of receiving image data through the terminal paste event, it calls OS-level tools (`osascript`, `xclip`, `wl-paste`) directly via subprocess to read the clipboard independently.
 
 ## Supported Models
 

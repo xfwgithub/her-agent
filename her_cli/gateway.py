@@ -152,14 +152,7 @@ def _get_service_pids() -> set:
 
 
 def _get_parent_pid(pid: int) -> int | None:
-    """Return the parent PID for ``pid``, or ``None`` when unavailable.
-
-    Uses psutil (core dependency) which works on every platform.  The
-    older implementation shelled out to ``ps -o ppid= -p <pid>``, which
-    silently fails on Windows (no ``ps``) so the ancestor walk terminated
-    at self — the caller's dedup / exclude logic then couldn't distinguish
-    "her CLI that invoked this scan" from "real gateway process".
-    """
+    """Return the parent PID for ``pid``, or ``None`` when unavailable."""
     if pid <= 1:
         return None
     try:
@@ -170,7 +163,6 @@ def _get_parent_pid(pid: int) -> int | None:
         pass
     except Exception:
         return None
-    # Fallback: shell out to ps (POSIX only — bare ``ps`` doesn't exist on Windows).
     if not shutil.which("ps"):
         return None
     try:
@@ -261,11 +253,7 @@ def _graceful_restart_via_sigusr1(pid: int, drain_timeout: float) -> bool:
     import time as _time
 
     deadline = _time.monotonic() + max(drain_timeout, 1.0)
-    # IMPORTANT Windows note: ``os.kill(pid, 0)`` is NOT a no-op on
-    # Windows — Python's implementation calls ``TerminateProcess(handle, 0)``
-    # for sig=0, hard-killing the target. Use the cross-platform
-    # ``_pid_exists`` helper in gateway.status which does OpenProcess +
-    # WaitForSingleObject on Windows.
+
     from gateway.status import _pid_exists
 
     while _time.monotonic() < deadline:
@@ -368,76 +356,7 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
 
     try:
         if is_windows():
-            # Prefer wmic when present (fast, stable output format).  On
-            # modern Windows 11 / Win 10 late builds, wmic has been
-            # removed as part of the WMIC deprecation — fall back to
-            # PowerShell's Get-CimInstance.  Any OSError here (FileNotFoundError
-            # on missing wmic) trips the fallback.
-            wmic_path = shutil.which("wmic")
-            used_fallback = False
-            result = None
-            if wmic_path is not None:
-                try:
-                    result = subprocess.run(
-                        [
-                            wmic_path,
-                            "process",
-                            "get",
-                            "ProcessId,CommandLine",
-                            "/FORMAT:LIST",
-                        ],
-                        capture_output=True,
-                        text=True,
-                        encoding="utf-8",
-                        errors="ignore",
-                        timeout=10,
-                    )
-                except (OSError, subprocess.TimeoutExpired):
-                    result = None
-            if result is None or result.returncode != 0 or not (result.stdout or ""):
-                # Fallback: PowerShell Get-CimInstance, emit LIST-style output
-                # so the downstream parser below doesn't need to branch.
-                powershell = shutil.which("powershell") or shutil.which("pwsh")
-                if powershell is None:
-                    return []
-                ps_cmd = (
-                    "Get-CimInstance Win32_Process | "
-                    "ForEach-Object { "
-                    "  'CommandLine=' + ($_.CommandLine -replace \"`r`n\",' ' -replace \"`n\",' '); "
-                    "  'ProcessId=' + $_.ProcessId; "
-                    "  '' "
-                    "}"
-                )
-                try:
-                    result = subprocess.run(
-                        [powershell, "-NoProfile", "-Command", ps_cmd],
-                        capture_output=True,
-                        text=True,
-                        encoding="utf-8",
-                        errors="ignore",
-                        timeout=15,
-                    )
-                except (OSError, subprocess.TimeoutExpired):
-                    return []
-                used_fallback = True
-            if result.returncode != 0 or result.stdout is None:
-                return []
-            current_cmd = ""
-            for line in result.stdout.split("\n"):
-                line = line.strip()
-                if line.startswith("CommandLine="):
-                    current_cmd = line[len("CommandLine=") :]
-                elif line.startswith("ProcessId="):
-                    pid_str = line[len("ProcessId=") :]
-                    current_cmd_lc = current_cmd.lower()
-                    if any(p in current_cmd_lc for p in patterns) and (
-                        all_profiles or _matches_current_profile(current_cmd)
-                    ):
-                        try:
-                            _append_unique_pid(pids, int(pid_str), exclude_pids)
-                        except ValueError:
-                            pass
-                    current_cmd = ""
+            pass
         else:
             # Try /proc first (works in Docker without procps installed),
             # fall back to ps -A eww.
@@ -507,51 +426,12 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
     except (OSError, subprocess.TimeoutExpired):
         return []
 
-    # Windows-specific: collapse venv launcher stubs.  A venv-built
-    # ``pythonw.exe`` in ``<venv>/Scripts/`` is a ~100 KB launcher exe
-    # that spawns the base Python (e.g. ``C:\Program Files\Python311\
-    # pythonw.exe``) with the same command line, preserving the venv's
-    # ``pyvenv.cfg`` context.  This is standard Windows CPython venv
-    # behaviour — BUT it means every gateway run produces two pythonw
-    # PIDs with identical command lines (one launcher stub, one actual
-    # interpreter) which is confusing in ``gateway status`` output.
-    # Filter the stub: if a PID in our result is the PARENT of another
-    # PID in our result, and both are pythonw.exe, the parent is the
-    # launcher stub — drop it, keep the child.
-    if is_windows() and len(pids) > 1:
-        pids = _filter_venv_launcher_stubs(pids)
+
 
     return pids
 
 
-def _filter_venv_launcher_stubs(pids: list[int]) -> list[int]:
-    """Drop venv-launcher ``pythonw.exe`` stubs that are parents of the real
-    interpreter process.  See comment at the tail of ``_scan_gateway_pids``.
 
-    Uses ``psutil`` (core dependency).  Safe on any platform; only invoked
-    on Windows by the caller because the stub pattern is Windows-specific.
-    """
-    try:
-        import psutil  # type: ignore
-    except ImportError:
-        return pids
-
-    pid_set = set(pids)
-    # Collect each PID's parent so we can flag "child of another matched PID".
-    parent_of: dict[int, int | None] = {}
-    for pid in pids:
-        try:
-            parent_of[pid] = psutil.Process(pid).ppid()
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
-            parent_of[pid] = None
-
-    # For each child whose parent is also in our set, drop the parent.
-    drop: set[int] = set()
-    for pid, ppid in parent_of.items():
-        if ppid is not None and ppid in pid_set:
-            drop.add(ppid)
-
-    return [p for p in pids if p not in drop]
 
 
 def find_gateway_pids(
@@ -623,24 +503,6 @@ def launch_detached_profile_gateway_restart(profile: str, old_pid: int) -> bool:
     """Relaunch a manually-run profile gateway after its current PID exits."""
     if old_pid <= 0:
         return False
-
-    # The watcher is a tiny Python subprocess that polls the old PID and
-    # respawns the gateway once it's gone.  Both legs of the chain need
-    # platform-appropriate detach semantics:
-    #
-    # POSIX — ``start_new_session=True`` (os.setsid in the child) detaches
-    # from the parent's process group so Ctrl+C in the CLI doesn't
-    # propagate and the watcher/gateway survive the CLI exiting.
-    #
-    # Windows — ``start_new_session`` is silently accepted but does NOT
-    # detach.  The watcher stays attached to the CLI's console and dies
-    # when the user closes the terminal, leaving ``her update`` users
-    # with no running gateway until they re-invoke ``her gateway``
-    # manually.  The Win32 equivalent is the ``CREATE_NEW_PROCESS_GROUP |
-    # DETACHED_PROCESS | CREATE_NO_WINDOW`` creationflags bundle.
-    #
-    # ``windows_detach_popen_kwargs()`` returns the right kwargs for the
-    # host platform and is a no-op on POSIX (just ``start_new_session=True``).
     from her_cli._subprocess_compat import windows_detach_popen_kwargs
 
     watcher = textwrap.dedent(
@@ -654,44 +516,21 @@ def launch_detached_profile_gateway_restart(profile: str, old_pid: int) -> bool:
         cmd = sys.argv[2:]
         deadline = time.monotonic() + 120
         while time.monotonic() < deadline:
-            # ``os.kill(pid, 0)`` is not a no-op on Windows — use the
-            # cross-platform existence check.
             from gateway.status import _pid_exists
             if not _pid_exists(pid):
                 break
             time.sleep(0.2)
 
-        # Platform-appropriate detach for the respawned gateway.  On POSIX
-        # start_new_session=True maps to os.setsid; on Windows we need
-        # explicit creationflags because start_new_session is a no-op there.
-        # CREATE_BREAKAWAY_FROM_JOB is critical: the watcher itself may have
-        # been spawned inside a job object (Electron/Tauri parent), and
-        # without breakaway the respawned gateway would die when that job
-        # tears down. See _subprocess_compat.windows_detach_flags().
-        _popen_kwargs = {
-            "stdout": subprocess.DEVNULL,
-            "stderr": subprocess.DEVNULL,
-        }
-        if sys.platform == "win32":
-            _CREATE_NEW_PROCESS_GROUP = 0x00000200
-            _DETACHED_PROCESS = 0x00000008
-            _CREATE_NO_WINDOW = 0x08000000
-            _CREATE_BREAKAWAY_FROM_JOB = 0x01000000
-            _popen_kwargs["creationflags"] = (
-                _CREATE_NEW_PROCESS_GROUP
-                | _DETACHED_PROCESS
-                | _CREATE_NO_WINDOW
-                | _CREATE_BREAKAWAY_FROM_JOB
-            )
-        else:
-            _popen_kwargs["start_new_session"] = True
-        subprocess.Popen(cmd, **_popen_kwargs)
+        subprocess.Popen(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
         """
     ).strip()
 
     try:
-        # Same platform-aware detach for the watcher process itself — so
-        # closing the user's terminal doesn't kill the watcher.
         subprocess.Popen(
             [
                 sys.executable,
@@ -1252,8 +1091,7 @@ def stop_profile_gateway() -> bool:
         print(f"⚠ Permission denied to kill PID {pid}")
         return False
 
-    # Wait briefly for it to exit. On Windows, os.kill(pid, 0) is NOT
-    # a no-op — route through the cross-platform existence check.
+    # Wait briefly for it to exit.
     import time as _time
     from gateway.status import _pid_exists
 
@@ -1336,28 +1174,7 @@ def is_macos() -> bool:
 
 
 def is_windows() -> bool:
-    return sys.platform == "win32"
-
-
-def _windows_gateway_should_absorb_console_controls() -> bool:
-    """Return True for detached Windows gateway runs that should ignore Ctrl+C.
-
-    Foreground ``her gateway run`` must remain interruptible from
-    PowerShell/CMD. Detached service-style launches opt in via
-    ``HER_GATEWAY_DETACHED=1``; older wrappers without the env marker are
-    treated as detached when no interactive stdin is attached.
-    """
-    if not is_windows():
-        return False
-
-    detached = os.getenv("HER_GATEWAY_DETACHED", "").strip().lower()
-    if detached in {"1", "true", "yes", "on"}:
-        return True
-
-    try:
-        return not bool(sys.stdin and sys.stdin.isatty())
-    except (ValueError, OSError):
-        return True
+    return False
 
 
 # =============================================================================
@@ -3834,8 +3651,6 @@ def _all_platforms() -> list[dict]:
     platforms = [dict(p) for p in _PLATFORMS]
 
     # Drop platforms that can't function on this host. See docstring.
-    if sys.platform == "win32":
-        platforms = [p for p in platforms if p.get("key") != "matrix"]
 
     by_key = {p["key"]: p for p in platforms}
 

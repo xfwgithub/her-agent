@@ -124,9 +124,6 @@ export function applyPrintableInsert(
 export const shouldRouteMultiCharInputAsPaste = (text: string): boolean => text.includes('\n')
 
 export function shouldPreserveCtrlJNewline(env: MinimalEnv = process.env): boolean {
-  if (env.WT_SESSION) {
-    return true
-  }
 
   if (env.SSH_CONNECTION || env.SSH_CLIENT || env.SSH_TTY) {
     return true
@@ -144,7 +141,7 @@ export function shouldPreserveCtrlJNewline(env: MinimalEnv = process.env): boole
     return true
   }
 
-  return (env.WSL_DISTRO_NAME ?? '').toLowerCase().includes('microsoft')
+  return false
 }
 
 function prevPos(s: string, p: number) {

@@ -99,7 +99,7 @@ When resuming a previous session (`her -c` or `her --resume <id>`), a "Previous 
 | Key | Action |
 |-----|--------|
 | `Enter` | Send message |
-| `Alt+Enter`, `Ctrl+J`, or `Shift+Enter` | New line (multi-line input). `Shift+Enter` requires a terminal that distinguishes it from `Enter` — see below. On Windows Terminal, `Alt+Enter` is captured by the terminal (fullscreen toggle); use `Ctrl+Enter` or `Ctrl+J` instead. |
+| `Alt+Enter`, `Ctrl+J`, or `Shift+Enter` | New line (multi-line input). `Shift+Enter` requires a terminal that distinguishes it from `Enter` — see below. |
 | `Alt+V` | Paste an image from the clipboard when supported by the terminal |
 | `Ctrl+V` | Paste text and opportunistically attach clipboard images |
 | `Ctrl+B` | Start/stop voice recording when voice mode is enabled (`voice.record_key`, default: `ctrl+b`) |
@@ -234,10 +234,9 @@ Most terminals send the same byte sequence for `Enter` and `Shift+Enter` by defa
 |---|---|
 | Kitty, foot, WezTerm, Ghostty | Distinct `Shift+Enter` enabled by default |
 | iTerm2 (recent), Alacritty, VS Code terminal, Warp | Supported once the Kitty protocol is enabled in settings |
-| Windows Terminal Preview 1.25+ | Supported once the Kitty protocol is enabled in settings |
-| macOS Terminal.app, stock Windows Terminal (stable) | Not supported — `Shift+Enter` is indistinguishable from `Enter` |
+| macOS Terminal.app | Not supported — `Shift+Enter` is indistinguishable from `Enter` |
 
-Where the terminal cannot distinguish them, `Alt+Enter` and `Ctrl+J` continue to work everywhere. **On Windows Terminal specifically, `Alt+Enter` is captured by the terminal (toggles fullscreen) and never reaches her — use `Ctrl+Enter` (delivered as `Ctrl+J`) or `Ctrl+J` directly for a newline.**
+Where the terminal cannot distinguish them, `Alt+Enter` and `Ctrl+J` continue to work everywhere.
 
 ## Interrupting the Agent
 
@@ -289,7 +288,7 @@ On Unix systems, press **`Ctrl+Z`** to suspend her to the background — just li
 her Agent has been suspended. Run `fg` to bring her Agent back.
 ```
 
-Type `fg` in your shell to resume the session exactly where you left off. This is not supported on Windows.
+Type `fg` in your shell to resume the session exactly where you left off.
 
 ## Tool Progress Display
 

@@ -75,16 +75,6 @@ class TestResolveherUidGid:
         assert uid == 1000
         assert gid == 911
 
-    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific")
-    def test_windows_returns_none_none(self, monkeypatch):
-        monkeypatch.setenv("HER_UID", "1000")
-        monkeypatch.setenv("HER_GID", "911")
-        from her_cli.config import _resolve_her_uid_gid
-        uid, gid = _resolve_her_uid_gid()
-        assert uid is None
-        assert gid is None
-
-
 # ---------------------------------------------------------------------------
 # _chown_to_her_uid
 # ---------------------------------------------------------------------------
@@ -148,27 +138,12 @@ class TestChownToherUid:
             # Must not raise — the catch is non-fatal.
             cfg._chown_to_her_uid(d)
 
-    def test_attributeerror_swallowed_for_windows_compat(self, tmp_path, monkeypatch):
-        """os.chown doesn't exist on Windows. Catching AttributeError keeps
-        the helper portable."""
-        monkeypatch.setenv("HER_UID", "1000")
-        monkeypatch.setenv("HER_GID", "911")
-        from her_cli import config as cfg
-
-        d = tmp_path / "subdir"
-        d.mkdir()
-
-        with patch.object(cfg.os, "chown", side_effect=AttributeError("no chown on this platform")):
-            cfg._chown_to_her_uid(d)  # must not raise
-
-
 # ---------------------------------------------------------------------------
 # End-to-end: _secure_dir now also chowns
 # ---------------------------------------------------------------------------
 
 
 class TestSecureDirChown:
-    @pytest.mark.skipif(sys.platform == "win32", reason="chown is no-op on Windows")
     def test_secure_dir_invokes_chown_when_env_set(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HER_UID", "1000")
         monkeypatch.setenv("HER_GID", "911")
@@ -181,7 +156,6 @@ class TestSecureDirChown:
             cfg._secure_dir(d)
         mock_chown.assert_called_once_with(d, 1000, 911)
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="chown is no-op on Windows")
     def test_secure_dir_no_chown_when_env_unset(self, tmp_path, monkeypatch):
         monkeypatch.delenv("HER_UID", raising=False)
         monkeypatch.delenv("HER_GID", raising=False)

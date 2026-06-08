@@ -293,4 +293,4 @@ her always writes the script and the auto-generated `her_tools.py` RPC stub into
 
 ## Platform Support
 
-Code execution requires Unix domain sockets and is available on **Linux and macOS only**. It is automatically disabled on Windows — the agent falls back to regular sequential tool calls.
+Code execution requires Unix domain sockets and is available on **Linux and macOS only**.

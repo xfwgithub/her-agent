@@ -70,9 +70,6 @@ def _clear_active() -> None:
 
 
 def _pid_alive(pid: int) -> bool:
-    # ``os.kill(pid, 0)`` is NOT a no-op on Windows (bpo-14484) — it
-    # routes through GenerateConsoleCtrlEvent and can kill the target.
-    # Use the cross-platform existence check.
     from gateway.status import _pid_exists
     return _pid_exists(pid)
 
@@ -310,7 +307,7 @@ def stop(*, reason: str = "requested") -> Dict[str, Any]:
             time.sleep(0.5)
         if _pid_alive(pid):
             try:
-                os.kill(pid, signal.SIGKILL)  # windows-footgun: ok — POSIX-only plugin (google_meet registers no-op on Windows; see __init__.py)
+                os.kill(pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
 

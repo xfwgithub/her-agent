@@ -4,7 +4,7 @@ description: "Throwaway experiments to validate an idea before build."
 version: 1.0.0
 author: her Agent (adapted from gsd-build/get-shit-done)
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [spike, prototype, experiment, feasibility, throwaway, exploration, research, planning, mvp, proof-of-concept]

@@ -137,7 +137,6 @@ No secrets land in `~/.her/.env` for Entra mode — `azure-identity` caches toke
 5. **Azure CLI** — `az login` session.
 6. **Azure Developer CLI** — `azd auth login`.
 7. **Azure PowerShell** — `Connect-AzAccount`.
-8. **Broker** (Windows / WSL only) — Web Account Manager.
 
 Interactive browser credential is excluded by default for unattended her runs; use Azure CLI, Azure Developer CLI, managed identity, workload identity, or service principal credentials instead.
 

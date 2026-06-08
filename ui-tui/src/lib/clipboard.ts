@@ -3,7 +3,6 @@ import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
 const CLIPBOARD_MAX_BUFFER = 4 * 1024 * 1024
-const POWERSHELL_ARGS = ['-NoProfile', '-NonInteractive', '-Command', 'Get-Clipboard -Raw'] as const
 
 type ClipboardRun = typeof execFileAsync
 
@@ -32,23 +31,15 @@ export function isUsableClipboardText(text: null | string): text is string {
 
 function readClipboardCommands(
   platform: NodeJS.Platform,
-  env: NodeJS.ProcessEnv
+  _env: NodeJS.ProcessEnv
 ): Array<{ args: readonly string[]; cmd: string }> {
   if (platform === 'darwin') {
     return [{ cmd: 'pbpaste', args: [] }]
   }
 
-  if (platform === 'win32') {
-    return [{ cmd: 'powershell', args: POWERSHELL_ARGS }]
-  }
-
   const attempts: Array<{ args: readonly string[]; cmd: string }> = []
 
-  if (env.WSL_INTEROP || env.WSL_DISTRO_NAME) {
-    attempts.push({ cmd: 'powershell.exe', args: POWERSHELL_ARGS })
-  }
-
-  if (env.WAYLAND_DISPLAY) {
+  if (_env.WAYLAND_DISPLAY) {
     attempts.push({ cmd: 'wl-paste', args: ['--type', 'text'] })
   }
 
@@ -62,8 +53,6 @@ function readClipboardCommands(
  *
  * Uses native platform tools in fallback order:
  * - macOS: pbpaste
- * - Windows: PowerShell Get-Clipboard -Raw
- * - WSL: powershell.exe Get-Clipboard -Raw
  * - Linux Wayland: wl-paste --type text
  * - Linux X11: xclip -selection clipboard -out
  */
@@ -76,8 +65,7 @@ export async function readClipboardText(
     try {
       const result = await run(attempt.cmd, [...attempt.args], {
         encoding: 'utf8',
-        maxBuffer: CLIPBOARD_MAX_BUFFER,
-        windowsHide: true
+        maxBuffer: CLIPBOARD_MAX_BUFFER
       })
 
       if (typeof result.stdout === 'string') {
@@ -91,42 +79,24 @@ export async function readClipboardText(
   return null
 }
 
-// PowerShell on Windows/WSL decodes piped stdin with the system ANSI code
-// page (e.g. CP936), not UTF-8, so $input-based writes mangle CJK/emoji. We
-// instead base64-encode the UTF-8 bytes and pass them as a -Command argument,
-// decoding with UTF8.GetString — this removes the stdin-encoding variable
-// entirely (also immune to BOM injection on redirect). PowerShell entries set
-// stdin=false; every other backend reads UTF-8 stdin natively.
-type WriteCmd = { args: readonly string[]; cmd: string; stdin: boolean }
-
-function _powershellWriteScript(b64: string): string {
-  return `Set-Clipboard -Value ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${b64}')))`
-}
+type WriteCmd = { args: readonly string[]; cmd: string }
 
 function writeClipboardCommands(
   platform: NodeJS.Platform,
   env: NodeJS.ProcessEnv
 ): WriteCmd[] {
   if (platform === 'darwin') {
-    return [{ cmd: 'pbcopy', args: [], stdin: true }]
-  }
-
-  if (platform === 'win32') {
-    return [{ cmd: 'powershell', args: ['-NoProfile', '-NonInteractive'], stdin: false }]
+    return [{ cmd: 'pbcopy', args: [] }]
   }
 
   const attempts: WriteCmd[] = []
 
-  if (env.WSL_INTEROP || env.WSL_DISTRO_NAME) {
-    attempts.push({ cmd: 'powershell.exe', args: ['-NoProfile', '-NonInteractive'], stdin: false })
-  }
-
   if (env.WAYLAND_DISPLAY) {
-    attempts.push({ cmd: 'wl-copy', args: ['--type', 'text/plain'], stdin: true })
+    attempts.push({ cmd: 'wl-copy', args: ['--type', 'text/plain'] })
   }
 
-  attempts.push({ cmd: 'xclip', args: ['-selection', 'clipboard', '-in'], stdin: true })
-  attempts.push({ cmd: 'xsel', args: ['--clipboard', '--input'], stdin: true })
+  attempts.push({ cmd: 'xclip', args: ['-selection', 'clipboard', '-in'] })
+  attempts.push({ cmd: 'xsel', args: ['--clipboard', '--input'] })
 
   return attempts
 }
@@ -136,8 +106,6 @@ function writeClipboardCommands(
  *
  * Tries native platform tools in fallback order:
  * - macOS: pbcopy
- * - Windows: PowerShell Set-Clipboard
- * - WSL: powershell.exe Set-Clipboard
  * - Linux Wayland: wl-copy --type text/plain
  * - Linux X11: xclip -selection clipboard -in
  * - Linux X11 alt: xsel --clipboard --input
@@ -156,18 +124,10 @@ export async function writeClipboardText(
   for (const cmdEntry of candidates) {
     try {
       const ok = await new Promise<boolean>(resolve => {
-        if (cmdEntry.stdin) {
-          const child = start(cmdEntry.cmd, [...cmdEntry.args], { stdio: ['pipe', 'ignore', 'ignore'], windowsHide: true })
-          child.once('error', () => resolve(false))
-          child.once('close', (code: number | null) => resolve(code === 0))
-          child.stdin?.end(text)
-        } else {
-          const b64 = Buffer.from(text, 'utf8').toString('base64')
-          const script = _powershellWriteScript(b64)
-          const child = start(cmdEntry.cmd, [...cmdEntry.args, '-Command', script], { stdio: ['ignore', 'ignore', 'ignore'], windowsHide: true })
-          child.once('error', () => resolve(false))
-          child.once('close', (code: number | null) => resolve(code === 0))
-        }
+        const child = start(cmdEntry.cmd, [...cmdEntry.args], { stdio: ['pipe', 'ignore', 'ignore'] })
+        child.once('error', () => resolve(false))
+        child.once('close', (code: number | null) => resolve(code === 0))
+        child.stdin?.end(text)
       })
 
       if (ok) {

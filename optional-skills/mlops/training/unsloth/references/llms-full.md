@@ -48,7 +48,6 @@ Our docs will guide you through running & training your own model locally.
 * Supports **all models**: [TTS,](https://docs.unsloth.ai/basics/text-to-speech-tts-fine-tuning) multimodal, [BERT](https://docs.unsloth.ai/get-started/unsloth-notebooks#other-important-notebooks) and more. Any model that works in transformers works in Unsloth.
 * **0% loss in accuracy** - no approximation methods - all exact.
 * [MultiGPU](https://docs.unsloth.ai/basics/multi-gpu-training-with-unsloth) works already but a much better version is coming!
-* Unsloth supports Linux, Windows, Colab, Kaggle, **NVIDIA** and [**AMD**](https://docs.unsloth.ai/new/fine-tuning-llms-on-amd-gpus-with-unsloth) & **Intel**. See:
 
 {% content-ref url="beginner-start-here/unsloth-requirements" %}
 [unsloth-requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements)
@@ -63,8 +62,6 @@ pip install unsloth
 ```
 
 Use our official **Docker image**: `unsloth/unsloth`. Read our [**Docker guide**](https://docs.unsloth.ai/get-started/install-and-update/docker)**.**
-
-For Windows install instructions, see [here](https://docs.unsloth.ai/get-started/install-and-update/windows-installation).
 
 {% content-ref url="install-and-update" %}
 [install-and-update](https://docs.unsloth.ai/get-started/install-and-update)
@@ -102,7 +99,6 @@ You can think of a fine-tuned model as a specialized agent designed to do specif
 
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FLrqITvuoKyiMl8mqfu5B%2Flarge%20sloth%20wave.png?alt=media&#x26;token=3077792b-90ff-459d-aa52-57abcf219adf" alt="" width="188"><figcaption></figcaption></figure>
 
-
 # Beginner? Start here!
 
 If you're a beginner, here might be the first questions you'll ask before your first fine-tune. You can also always ask our community by joining our [Reddit page](https://www.reddit.com/r/unsloth/).
@@ -111,14 +107,13 @@ If you're a beginner, here might be the first questions you'll ask before your f
 
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FjT759hR4zq8ygzg1oEwI%2FLarge%20sloth%20Question%20mark.png?alt=media&#x26;token=ca8d2f56-889a-4da8-8106-da88d22e69d2" alt="" width="188"><figcaption></figcaption></figure>
 
-
 # Unsloth Requirements
 
 Here are Unsloth's requirements including system and GPU VRAM requirements.
 
 ## System Requirements
 
-* **Operating System**: Works on Linux and Windows.
+* **Operating System**: Works on Linux.
 * Supports NVIDIA GPUs since 2018+ including [Blackwell RTX 50](https://docs.unsloth.ai/basics/fine-tuning-llms-with-blackwell-rtx-50-series-and-unsloth) and [**DGX Spark**](https://docs.unsloth.ai/basics/fine-tuning-llms-with-nvidia-dgx-spark-and-unsloth).\
   Minimum CUDA Capability 7.0 (V100, T4, Titan V, RTX 20 & 50, A100, H100, L40 etc) [Check your GPU!](https://developer.nvidia.com/cuda-gpus) GTX 1070, 1080 works, but is slow.
 * The official [Unsloth Docker image](https://hub.docker.com/r/unsloth/unsloth) `unsloth/unsloth` is available on Docker Hub.
@@ -157,7 +152,6 @@ Check this table for VRAM requirements sorted by model parameters and fine-tunin
 | 81B              | 48GB               | 192GB              |
 | 90B              | 53GB               | 212GB              |
 | 405B             | 237 GB             | 950 GB             |
-
 
 # FAQ + Is Fine-tuning Right For Me?
 
@@ -253,7 +247,6 @@ There’s no single “best” approach to fine-tuning - only best practices for
 {% content-ref url="../fine-tuning-llms-guide/lora-hyperparameters-guide" %}
 [lora-hyperparameters-guide](https://docs.unsloth.ai/get-started/fine-tuning-llms-guide/lora-hyperparameters-guide)
 {% endcontent-ref %}
-
 
 # Unsloth Notebooks
 
@@ -442,7 +435,6 @@ To view a complete list of all our Kaggle notebooks, [click here](https://github
 {% hint style="info" %}
 Feel free to contribute to the notebooks by visiting our [repo](https://github.com/unslothai/notebooks)!
 {% endhint %}
-
 
 # All Our Models
 
@@ -908,21 +900,17 @@ Base models are usually used for fine-tuning purposes:
 | {% endtab %}   |                |                                                                  |                                                                                   |
 | {% endtabs %}  |                |                                                                  |                                                                                   |
 
-
 # Install & Update
 
 Learn to install Unsloth locally or online.
 
-Unsloth works on Linux, Windows, NVIDIA, AMD, Google Colab and more. See our [system requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements).
+Unsloth works on Linux, NVIDIA, AMD, Google Colab and more. See our [system requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements).
 
 **Recommended installation method:**
 
 ```
 pip install unsloth
 ```
-
-<table data-view="cards"><thead><tr><th data-type="content-ref"></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="install-and-update/pip-install">pip-install</a></td><td><a href="install-and-update/pip-install">pip-install</a></td></tr><tr><td><a href="install-and-update/docker">docker</a></td><td></td></tr><tr><td><a href="install-and-update/windows-installation">windows-installation</a></td><td></td></tr><tr><td><a href="install-and-update/updating">updating</a></td><td><a href="install-and-update/updating">updating</a></td></tr><tr><td><a href="install-and-update/amd">amd</a></td><td></td></tr><tr><td><a href="install-and-update/conda-install">conda-install</a></td><td><a href="install-and-update/conda-install">conda-install</a></td></tr><tr><td><a href="install-and-update/google-colab">google-colab</a></td><td><a href="install-and-update/google-colab">google-colab</a></td></tr></tbody></table>
-
 
 # Updating
 
@@ -947,7 +935,6 @@ pip install --force-reinstall --no-cache-dir --no-deps unsloth==2025.1.5
 ```
 
 '2025.1.5' is one of the previous old versions of Unsloth. Change it to a specific release listed on our [Github here](https://github.com/unslothai/unsloth/releases).
-
 
 # Pip Install
 
@@ -1050,7 +1037,6 @@ else: raise RuntimeError(f"Torch = {v} too new!")
 x = x.format(cuda.replace(".", ""), "-ampere" if is_ampere else "")
 print(f'pip install --upgrade pip && pip install "unsloth[{x}] @ git+https://github.com/unslothai/unsloth.git"')
 ```
-
 
 # Docker
 
@@ -1217,16 +1203,7 @@ docker run -d -e JUPYTER_PORT=8000 \
 * Use `USER_PASSWORD` for sudo operations inside container
 * SSH access requires public key authentication
 
-
-# Windows Installation
-
-See how to install Unsloth on Windows with or without WSL.
-
-For Windows, `pip install unsloth` now works, however you must have Pytorch previously installed.
-
 ## Method #1 - Docker:
-
-Docker might be the easiest way for Windows users to get started with Unsloth as there is no setup needed or dependency issues. [**`unsloth/unsloth`**](https://hub.docker.com/r/unsloth/unsloth) is Unsloth's only Docker image. For [Blackwell](https://docs.unsloth.ai/basics/fine-tuning-llms-with-blackwell-rtx-50-series-and-unsloth) and 50-series GPUs, use this same image - no separate image needed.
 
 For installation instructions, please follow our [Docker guide](https://docs.unsloth.ai/new/how-to-fine-tune-llms-with-unsloth-and-docker), otherwise here is a quickstart guide:
 
@@ -1278,8 +1255,6 @@ If you're new, follow our step-by-step [Fine-tuning Guide](https://docs.unsloth.
 {% endstep %}
 {% endstepper %}
 
-## Method #2 - Windows directly:
-
 {% hint style="info" %}
 Python 3.13 now works with Unsloth!
 {% endhint %}
@@ -1294,8 +1269,6 @@ You should install the latest version of your GPUs driver. Download drivers here
 {% step %}
 **Install Visual Studio C++**
 
-You will need Visual Studio, with C++ installed. By default, C++ is not installed with Visual Studio, so make sure you select all of the C++ options. Also select options for Windows 10/11 SDK.
-
 * Launch the Installer here:  [Visual Studio Community Edition](https://visualstudio.microsoft.com/vs/community/)
 * In the installer, navigate to individual components and select all the options listed here:
   * **.NET Framework 4.8 SDK**
@@ -1304,17 +1277,10 @@ You will need Visual Studio, with C++ installed. By default, C++ is not installe
   * **MSBuild**
   * **MSVC v143 - VS 2022 C++ x64/x86 build tools**
   * **C++ 2022 Redistributable Update**
-  * **C++ CMake tools for Windows**
   * **C++/CLI support for v143 build tools (Latest)**
   * **MSBuild support for LLVM (clang-cl) toolset**
-  * **C++ Clang Compiler for Windows (19.1.1)**
-  * **Windows 11 SDK (10.0.22621.0)**
-  * **Windows Universal CRT SDK**
   * **C++ 2022 Redistributable MSMs**
 
-**Easier method:** Or you can open an elevated Command Prompt or PowerShell:
-
-* Search for "cmd" or "PowerShell", right-click it, and choose "Run as administrator."
 * Paste and run this command (update the Visual Studio path if necessary):
 
 ```
@@ -1358,21 +1324,17 @@ You will need the correct version of PyTorch that is compatible with your CUDA d
 Open Conda command prompt or your terminal with Python and run the command:
 
 ```
-pip install "unsloth[windows] @ git+https://github.com/unslothai/unsloth.git"
+
 ```
 
 {% endstep %}
 {% endstepper %}
 
 {% hint style="warning" %}
-If you're using GRPO or plan to use vLLM, currently vLLM does not support Windows directly but only via WSL or Linux.
 {% endhint %}
 
 ### **Notes**
 
-To run Unsloth directly on Windows:
-
-* Install Triton from this Windows fork and follow the instructions [here](https://github.com/woct0rdho/triton-windows) (be aware that the Windows fork requires PyTorch >= 2.4 and CUDA 12)
 * In the SFTTrainer, set `dataset_num_proc=1` to avoid a crashing issue:
 
 ```python
@@ -1391,8 +1353,6 @@ For **advanced installation instructions** or if you see weird errors during ins
 3. Install `xformers` manually. You can try installing `vllm` and seeing if `vllm` succeeds. Check if `xformers` succeeded with `python -m xformers.info` Go to <https://github.com/facebookresearch/xformers>. Another option is to install `flash-attn` for Ampere GPUs.
 4. Double check that your versions of Python, CUDA, CUDNN, `torch`, `triton`, and `xformers` are compatible with one another. The [PyTorch Compatibility Matrix](https://github.com/pytorch/pytorch/blob/main/RELEASE.md#release-compatibility-matrix) may be useful.
 5. Finally, install `bitsandbytes` and check it with `python -m bitsandbytes`
-
-## Method #3 - Windows using PowerShell:
 
 #### **Step 1: Install Prerequisites**
 
@@ -1422,29 +1382,21 @@ For **advanced installation instructions** or if you see weird errors during ins
 4. **Install Conda**
    1. Download and install **Miniconda** from the [official website](https://docs.anaconda.com/miniconda/install/#quick-command-line-install)
    2. Follow installation instruction from the website
-   3. To check whether `conda` is already installed, you can test it with `conda` in your PowerShell
 
 #### **Step 2: Run the Unsloth Installation Script**
 
-1. **Download the** [**unsloth\_windows.ps1**](https://github.com/unslothai/notebooks/blob/main/unsloth_windows.ps1) **PowerShell script by going through this link**.
-2. **Open PowerShell as Administrator**:
-   * Right-click Start and select **"Windows PowerShell (Admin)"**.
 3. **Navigate to the script’s location** using `cd`:
 
-   ```powershell
    cd path\to\script\folder
    ```
 4. **Run the script**:
 
-   ```powershell
-   powershell.exe -ExecutionPolicy Bypass -File .\unsloth_windows.ps1
    ```
 
 #### **Step 3: Using Unsloth**
 
 Activate the environment after the installation completes:
 
-```powershell
 conda activate unsloth_env
 ```
 
@@ -1452,18 +1404,12 @@ conda activate unsloth_env
 
 ***
 
-## Method #4 - Windows via WSL:
-
 WSL is Window's subsystem for Linux.
 
 1. Install python though [Python's official site](https://www.python.org/downloads/windows/).
-2. Start WSL (Should already be preinstalled). Open command prompt as admin then run:
 
 ```
-wsl -d ubuntu
 ```
-
-Optional: If WSL is not preinstalled, go to the Microsoft store and search "Ubuntu" and the app that says Ubuntu will be WSL. Install it and run it and continue from there.
 
 3. Update WSL:
 
@@ -1495,7 +1441,6 @@ pip3 install notebook
 </strong></code></pre>
 
 8. Download any Colab notebook from Unsloth, import it into your Jupyter Notebook, adjust the parameters as needed, and execute the script.
-
 
 # AMD
 
@@ -1617,7 +1562,6 @@ To force 4bit, you need to specify the actual model name like `unsloth/gemma-3-4
 
 AMD GPUs also need the bitsandbytes `blocksize` to be 128 and not 64 - this also means our pre-quantized models (for example [unsloth/Llama-3.2-1B-Instruct-unsloth-bnb-4bit](https://huggingface.co/unsloth/Llama-3.2-1B-Instruct-bnb-4bit)) from [HuggingFace](https://huggingface.co/unsloth) for now will not work - we auto switch to downloading the full BF16 weights, then quantize on the fly if we detect an AMD GPU.
 
-
 # Conda Install
 
 To install Unsloth locally on Conda, follow the steps below:
@@ -1649,7 +1593,6 @@ rm -rf ~/miniconda3/miniconda.sh
 ~/miniconda3/bin/conda init bash
 ~/miniconda3/bin/conda init zsh
 ```
-
 
 # Google Colab
 
@@ -1738,7 +1681,6 @@ trainer.train()
 # (3) Adding an evaluation loop / OOMs
 # (4) Customized chat templates
 ```
-
 
 # Fine-tuning LLMs Guide
 
@@ -1844,8 +1786,6 @@ We would recommend beginners to utilise our pre-made [notebooks](https://docs.un
 [unsloth-requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements)
 {% endcontent-ref %}
 
-Next, you'll need to install Unsloth. Unsloth currently only supports Windows and Linux devices. Once you install Unsloth, you can copy and paste our notebooks and use them in your own local environment. We have many installation methods:
-
 {% content-ref url="install-and-update" %}
 [install-and-update](https://docs.unsloth.ai/get-started/install-and-update)
 {% endcontent-ref %}
@@ -1906,7 +1846,6 @@ To learn more about fine-tuning tips and tricks, head over to our blogs which pr
 If you need any help on fine-tuning, you can also join our Discord server [here](https://discord.gg/unsloth) or [Reddit r/unsloth](https://www.reddit.com/r/unsloth/). Thanks for reading and hopefully this was helpful!
 
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FPEvp4xsbVObJZ1lawDj8%2Fsloth%20sparkling%20square.png?alt=media&#x26;token=876bf67d-7470-4977-a6cc-3ee02cc9440b" alt="" width="188"><figcaption></figcaption></figure>
-
 
 # What Model Should I Use?
 
@@ -1983,7 +1922,6 @@ We recommend starting with **Instruct models**, as they allow direct fine-tuning
 {% hint style="info" %}
 We recommend experimenting with both models when possible. Fine-tune each one and evaluate the outputs to see which aligns better with your goals.
 {% endhint %}
-
 
 # Datasets Guide
 
@@ -2482,7 +2420,6 @@ This radiograph appears to be a panoramic view of the upper and lower dentition,
 
 For more details, view our dataset section in the [notebook here](https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Llama3.2_\(11B\)-Vision.ipynb#scrollTo=vITh0KVJ10qX).
 
-
 # LoRA Hyperparameters Guide
 
 Optimal lora rank. alpha, number of epochs, batch size & gradient accumulation, QLoRA vs LoRA, target modules and more!
@@ -2820,7 +2757,6 @@ Fine-tuning has no single "best" approach, only best practices. Experimentation 
 {% endhint %}
 
 ***Acknowledgements:** A huge thank you to* [*Eyera*](https://huggingface.co/Orenguteng) *for contributing to this guide!*
-
 
 # Tutorial: How to Finetune Llama-3 and Use In Ollama
 
@@ -3182,7 +3118,6 @@ If you need any help on finetuning, you can also join our Discord server [here](
 And finally, we want to thank you for reading and following this far! We hope this made you understand some of the nuts and bolts behind finetuning language models, and we hope this was useful!
 
 To access our Alpaca dataset example click [here](https://colab.research.google.com/drive/1WZDi7APtQ9VsvOrQSSC5DDtxq159j8iZ?usp=sharing), and our CSV / Excel finetuning guide is [here](https://colab.research.google.com/drive/1VYkncZMfGFkeCEgN2IzbZIKEDkyQuJAS?usp=sharing).
-
 
 # Reinforcement Learning (RL) Guide
 
@@ -3587,7 +3522,6 @@ We also need to from the KV Cache in 16bit. Llama 3.1 8B has 32 layers, and both
 4. Advanced GRPO notebook via Unsloth. <https://docs.unsloth.ai/basics/reinforcement-learning-guide/tutorial-train-your-own-reasoning-model-with-grpo>
 5. GRPO from a base model notebook: <https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Qwen3_(4B)-GRPO.ipynb>
 
-
 # Tutorial: Train your own Reasoning model with GRPO
 
 Beginner's Guide to transforming a model like Llama 3.1 (8B) into a reasoning model by using Unsloth and GRPO.
@@ -3608,8 +3542,6 @@ These instructions are for our pre-made Google Colab [notebooks](https://docs.un
 ### Install Unsloth
 
 If you're using our Colab notebook, click **Runtime > Run all**. We'd highly recommend you checking out our [Fine-tuning Guide](https://docs.unsloth.ai/get-started/fine-tuning-llms-guide) before getting started.
-
-If installing locally, ensure you have the correct [requirements](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements) and use `pip install unsloth` on Linux or follow our [Windows install ](https://docs.unsloth.ai/get-started/install-and-update/windows-installation)instructions.
 
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FCovHTH7dI2GcwNZm5TxF%2Fimage.png?alt=media&#x26;token=a157e33b-ad01-4174-a01c-67f742e4e732" alt=""><figcaption></figcaption></figure>
 {% endstep %}
@@ -3676,19 +3608,16 @@ Now, to prepare the dataset:
 import re
 from datasets import load_dataset, Dataset
 
-
 # Helper functions to extract answers from different formats
 def extract_xml_answer(text: str) -> str:
     answer = text.split("<answer>")[-1]
     answer = answer.split("</answer>")[0]
     return answer.strip()
 
-
 def extract_hash_answer(text: str) -> str | None:
     if "####" not in text:
         return None
     return text.split("####")[1].strip()
-
 
 # Function to prepare the GSM8K dataset
 def get_gsm8k_questions(split="train") -> Dataset:
@@ -3703,7 +3632,6 @@ def get_gsm8k_questions(split="train") -> Dataset:
         }
     )
     return data
-
 
 dataset = get_gsm8k_questions()
 ```
@@ -3858,7 +3786,6 @@ Great to learn about how to prep your dataset and explanations behind Reinforcem
 {% embed url="<https://www.youtube.com/watch?v=juOh1afy-IE>" %}
 
 {% embed url="<https://www.youtube.com/watch?v=oF0_eMhzRaQ>" %}
-
 
 # Advanced RL Documentation
 
@@ -4087,7 +4014,6 @@ optimizer_steps_per_generation = steps_per_generation / gradient_accumulation_st
 unique_prompts = effective_batch_size / num_generations   # must be > 2
 ```
 
-
 # Memory Efficient RL
 
 We're excited to introduce more efficient reinforcement learning (RL) in Unsloth with multiple algorithmic advancements:
@@ -4274,7 +4200,6 @@ Standy mode enabled:
 | Oversize GPU segments |       0    |       0    |       0    |       0    |
 |===========================================================================|
 
-
 Without Standby:
 
 |===========================================================================|
@@ -4357,7 +4282,6 @@ All our GRPO notebooks have Unsloth Standby on by default and all optimizations!
 * [Mistral v0.3 (7B)](https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Mistral_v0.3_\(7B\)-GRPO.ipynb)
 * [Qwen2.5 (3B)](https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Qwen2.5_\(3B\)-GRPO.ipynb)
 
-
 # RL Reward Hacking
 
 Learn what is Reward Hacking in Reinforcement Learning and how to counter it.
@@ -4387,7 +4311,6 @@ We can stop the RL algorithm from using cached data by wiping the cache with a l
 #### Cheating
 
 RL learns to edit the timing function to make it output 0 time as passed. We can stop the RL algorithm from using global or cached variables by restricting it's `locals` and `globals`. We are also going to use `exec` to create the function, so we have to save the output to an empty dict. We also disallow global variable access via `types.FunctionType(f.__code__, {})`\\
-
 
 # GSPO Reinforcement Learning
 
@@ -4445,7 +4368,6 @@ training_args = GRPOConfig(
     loss_type = "dr_grpo",
 )
 ```
-
 
 # Reinforcement Learning - DPO, ORPO & KTO
 
@@ -4523,7 +4445,6 @@ dpo_trainer = DPOTrainer(
 )
 dpo_trainer.train()
 ```
-
 
 # DeepSeek-OCR: How to Run & Fine-tune
 
@@ -4770,7 +4691,6 @@ An example from the 200K Persian dataset we used (you may use your own), showing
 
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FFc3XCgysVPglrvWoYpzh%2FScreenshot%202025-11-04%20at%206.10.16%E2%80%AFAM.png?alt=media&#x26;token=829f33d3-b367-4202-b61b-d822a96dced8" alt="" width="563"><figcaption></figcaption></figure>
 
-
 # How to Fine-tune LLMs with Unsloth & Docker
 
 Learn how to fine-tune LLMs or do Reinforcement Learning (RL) with Unsloth's Docker image.
@@ -4780,8 +4700,6 @@ Local training can be complex due to dependency hell or breaking environments. U
 * **Unsloth official Docker image:** [**`unsloth/unsloth`**](https://hub.docker.com/r/unsloth/unsloth)
 
 **Why Use Unsloth & Docker?**
-
-Unsloth’s Docker image is stable, up-to-date and works in [supported setups](https://docs.unsloth.ai/get-started/beginner-start-here/unsloth-requirements#system-requirements) like Windows.
 
 * Fully contained dependencies keep your system clean. Runs safely without root.
 * Use locally or on any platform with pre-installed notebooks.
@@ -4927,7 +4845,6 @@ docker run -d -e JUPYTER_PORT=8000 \
 * Container runs as non-root `unsloth` user by default
 * Use `USER_PASSWORD` for sudo operations inside container
 * SSH access requires public key authentication
-
 
 # Vision Reinforcement Learning (VLM RL)
 
@@ -5106,7 +5023,6 @@ If you'd like to read more about reinforcement learning, check out out RL guide:
 
 ***Authors:** A huge thank you to* [*Keith*](https://www.linkedin.com/in/keith-truongcao-7bb84a23b/) *and* [*Datta*](https://www.linkedin.com/in/datta0/) *for contributing to this article!*
 
-
 # gpt-oss Reinforcement Learning
 
 You can now train OpenAI [gpt-oss](https://docs.unsloth.ai/models/gpt-oss-how-to-run-and-fine-tune) with RL and GRPO via [Unsloth](https://github.com/unslothai/unsloth). Unsloth now offers the <mark style="background-color:$success;">**fastest inference**</mark> (3x faster), **lowest VRAM usage** (50% less) and **longest context** (8x longer) for gpt-oss RL vs. any implementation - with no accuracy degradation.\
@@ -5270,7 +5186,6 @@ Our notebooks include step-by-step guides on how to navigate the whole process a
 {% hint style="info" %}
 **Hardware:** The 2048 example runs on a free Colab T4, but training will be slow. A100/H100 is much faster. 4‑bit loading + LoRA lets you fit a 20B model into modest VRAM
 {% endhint %}
-
 
 # Tutorial: How to Train gpt-oss with RL
 
@@ -5695,7 +5610,6 @@ _ = model.generate(
   {% endstep %}
   {% endstepper %}
 
-
 # Unsloth Dynamic GGUFs on Aider Polyglot
 
 Performance of Unsloth Dynamic GGUFs on Aider Polyglot Benchmarks
@@ -5898,7 +5812,6 @@ export LLAMA_CACHE="unsloth/DeepSeek-V3.1-GGUF"
     --seed 3407 \
     -ot ".ffn_.*_exps.=CPU"
 ```
-
 
 # Qwen3-VL: How to Run & Fine-tune
 
@@ -6265,7 +6178,6 @@ ds_converted = [convert_to_converation(sample) for sample in dataset]
 
 Using map kicks in dataset standardization and arrow processing rules which can be strict and more complicated to define.
 
-
 # gpt-oss: How to Run & Fine-tune
 
 Run & fine-tune OpenAI's new open-source models!
@@ -6620,7 +6532,6 @@ Though gpt-oss supports only reasoning, you can still fine-tune it with a non-re
 Our gpt-oss-20b Conversational notebook uses OpenAI's example which is Hugging Face's Multilingual-Thinking dataset. The purpose of using this dataset is to enable the model to learn and develop reasoning capabilities in these four distinct languages.
 
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FQhnJE7SelxoTaAv6l8Ff%2Fwider%20gptoss%20image.png?alt=media&#x26;token=fd8d11f2-0159-44aa-a773-4cd2668f0a78" alt=""><figcaption></figcaption></figure>
-
 
 # Tutorial: How to Fine-tune gpt-oss
 
@@ -7145,7 +7056,6 @@ Yes! Unsloth now supports RL for gpt-oss with GRPO/GSPO. We made it work on a fr
 
 ***Acknowledgements:** A huge thank you to* [*Eyera*](https://huggingface.co/Orenguteng) *for contributing to this guide!*
 
-
 # Long Context gpt-oss Training
 
 We’re excited to introduce Unsloth Flex Attention support for OpenAI gpt-oss training that enables **>8× longer context lengths**, **>50% less VRAM usage** and **>1.5× faster training (with no accuracy degradation)** vs. all implementations including those using Flash Attention 3 (FA3). Unsloth Flex Attention makes it possible to train with a **60K context length** on a 80GB VRAM H100 GPU for BF16 LoRA. Also:
@@ -7523,7 +7433,6 @@ def eager_attention_forward(
 
 {% endcode %}
 
-
 # GLM-4.6: How to Run Locally
 
 A guide on how to run Z.ai's new GLM-4.6 model on your own local device!
@@ -7786,7 +7695,6 @@ You can also quantize the V cache, but you will need to **compile llama.cpp with
 
 `--cache-type-v f32, f16, bf16, q8_0, q4_0, q4_1, iq4_nl, q5_0, q5_1`&#x20;
 
-
 # IBM Granite 4.0
 
 How to run IBM Granite-4.0 with Unsloth GGUFs on llama.cpp, Ollama and how to fine-tune!
@@ -7944,7 +7852,6 @@ If you have an old version of Unsloth and/or are fine-tuning locally, install th
 ```
 pip install --upgrade --force-reinstall --no-cache-dir unsloth unsloth_zoo
 ```
-
 
 # DeepSeek-V3.1: How to Run Locally
 
@@ -8277,7 +8184,6 @@ You should use the `_1` variants for somewhat increased accuracy, albeit it's sl
 You can also quantize the V cache, but you will need to **compile llama.cpp with Flash Attention** support via `-DGGML_CUDA_FA_ALL_QUANTS=ON`, and use `--flash-attn` to enable it. Then you can use together with `--cache-type-k` :
 
 `--cache-type-v f32, f16, bf16, q8_0, q4_0, q4_1, iq4_nl, q5_0, q5_1`&#x20;
-
 
 # Qwen3-Coder: How to Run Locally
 
@@ -8627,7 +8533,6 @@ Here are the benchmarks for the 480B model:
 
 <table data-full-width="true"><thead><tr><th>Benchmark</th><th>Qwen3‑Coder 480B‑A35B‑Instruct</th><th>Kimi‑K2</th><th>DeepSeek‑V3 0324</th><th>Claude Sonnet‑4</th><th>GPT‑4.1</th></tr></thead><tbody><tr><td>BFCL‑v3</td><td><strong>68.7</strong></td><td>65.2</td><td>56.9</td><td>73.3</td><td>62.9</td></tr><tr><td>TAU‑Bench Retail</td><td><strong>77.5</strong></td><td>70.7</td><td>59.1</td><td>80.5</td><td>–</td></tr><tr><td>TAU‑Bench Airline</td><td><strong>60.0</strong></td><td>53.5</td><td>40.0</td><td>60.0</td><td>–</td></tr></tbody></table>
 
-
 # Gemma 3: How to Run & Fine-tune
 
 How to run Gemma 3 effectively with our GGUFs on llama.cpp, Ollama, Open WebUI and how to fine-tune with Unsloth!
@@ -8845,7 +8750,6 @@ For newer GPUs like RTX 30x or higher, A100s, H100s etc, these GPUs have bfloat1
 Float16 can only represent numbers up to **65504**, whilst bfloat16 can represent huge numbers up to **10^38**! But notice both number formats use only 16bits! This is because float16 allocates more bits so it can represent smaller decimals better, whilst bfloat16 cannot represent fractions well.
 
 But why float16? Let's just use float32! But unfortunately float32 in GPUs is very slow for matrix multiplications - sometimes 4 to 10x slower! So we cannot do this.
-
 
 # Gemma 3n: How to Run & Fine-tune
 
@@ -9134,7 +9038,6 @@ You can also choose to **Mix and Match** where you pick say, `S/4` sized sub blo
 {% hint style="info" %}
 **Fine-tune and try multimodal Gemma 3n inference with our** [**free Colab notebook**](https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Gemma3N_\(4B\)-Conversational.ipynb)
 {% endhint %}
-
 
 # Qwen3: How to Run & Fine-tune
 
@@ -9473,7 +9376,6 @@ Learn about:
 * Proximity-based scoring: better answers earn more points (e.g., predicting 9 when the answer is 10) and outliers are penalized
 
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FMUjDPzhhjMJXcljIhgbK%2Fqwen33%20mascot.png?alt=media&#x26;token=fcfa1104-8f6d-4f04-b72d-b9c085d3ecda" alt=""><figcaption></figcaption></figure>
-
 
 # Qwen3-2507
 
@@ -9920,13 +9822,11 @@ model, tokenizer = FastModel.from_pretrained(
 
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FMUjDPzhhjMJXcljIhgbK%2Fqwen33%20mascot.png?alt=media&#x26;token=fcfa1104-8f6d-4f04-b72d-b9c085d3ecda" alt=""><figcaption></figcaption></figure>
 
-
 # Tutorials: How To Fine-tune & Run LLMs
 
 Learn how to run and fine-tune models for optimal performance 100% locally with Unsloth.
 
 <table data-view="cards"><thead><tr><th></th><th data-hidden data-card-cover data-type="image">Cover image</th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="../new/deepseek-ocr-how-to-run-and-fine-tune">DeepSeek-OCR</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FP6V5vkGfGPBdRlkpB35Q%2Fdeepseek%20ocr%20logo.png?alt=media&#x26;token=43a73901-37a9-4cb9-a25c-fa01cf03baea">deepseek ocr logo.png</a></td><td><a href="../new/deepseek-ocr-how-to-run-and-fine-tune">deepseek-ocr-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="qwen3-vl-how-to-run-and-fine-tune">Qwen3-VL</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FXrFygtnLnqHhVmEIidg3%2Fqwen3-vl%20promo.png?alt=media&#x26;token=82f58481-4e0c-4977-af26-2ea08a227ad2">qwen3-vl promo.png</a></td><td><a href="qwen3-vl-how-to-run-and-fine-tune">qwen3-vl-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="../new/vision-reinforcement-learning-vlm-rl">Vision Reinforcement Learning</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FPOHnYqLRCh4d9TvBRNlY%2Fvision%20rl%20site.png?alt=media&#x26;token=26f859e5-53e5-444b-bf90-7f1901a9058a">vision rl site.png</a></td><td><a href="../new/vision-reinforcement-learning-vlm-rl">vision-reinforcement-learning-vlm-rl</a></td></tr><tr><td><a href="deepseek-v3.1-how-to-run-locally">DeepSeek-V3.1</a> Terminus</td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FOFWy2bZ6L6qr12m9fbEM%2Fdeepseek%20v3.1%20logo.png?alt=media&#x26;token=dd75f159-9266-4208-995f-b71d8e2ed4d3">deepseek v3.1 logo.png</a></td><td><a href="deepseek-v3.1-how-to-run-locally">deepseek-v3.1-how-to-run-locally</a></td></tr><tr><td><a href="gpt-oss-how-to-run-and-fine-tune">Run gpt-oss</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FX0pJKFv8zDMf4TJomAts%2Fgpt-oss%20image.png?alt=media&#x26;token=60c73c0d-cf83-4269-9619-f4b71e25767a">gpt-oss image.png</a></td><td><a href="gpt-oss-how-to-run-and-fine-tune">gpt-oss-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="qwen3-coder-how-to-run-locally">Qwen3 Coder</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FeDz30Gy6kQ8zzdMaxr5m%2Fqwen3-coder%201920.png?alt=media&#x26;token=efad8f53-6d06-48bd-98e6-96bde543702d">qwen3-coder 1920.png</a></td><td><a href="qwen3-coder-how-to-run-locally">qwen3-coder-how-to-run-locally</a></td></tr><tr><td><a href="gpt-oss-how-to-run-and-fine-tune/tutorial-how-to-fine-tune-gpt-oss">Fine-tune gpt-oss</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FdUKxTDoQUFZPpOixP1Cx%2Fsloth%20with%20comp.png?alt=media&#x26;token=16fbc4a3-3d03-4e6c-bc74-75cf1121c797">sloth with comp.png</a></td><td><a href="gpt-oss-how-to-run-and-fine-tune/tutorial-how-to-fine-tune-gpt-oss">tutorial-how-to-fine-tune-gpt-oss</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/magistral-how-to-run-and-fine-tune">Magistral 1.2</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FWjXaYZOxk8LMoq1gyVFS%2Fmagistral%20center.png?alt=media&#x26;token=337b3f36-87f1-4f62-b0b4-f1471e664f34">magistral center.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/magistral-how-to-run-and-fine-tune">magistral-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="gemma-3-how-to-run-and-fine-tune/gemma-3n-how-to-run-and-fine-tune">Gemma 3n</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FBszehKqh4ex9879rI5jv%2FGemma%203%20text%20only.png?alt=media&#x26;token=b66212ab-409b-4603-80fa-337bea439531">Gemma 3 text only.png</a></td><td><a href="gemma-3-how-to-run-and-fine-tune/gemma-3n-how-to-run-and-fine-tune">gemma-3n-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="qwen3-how-to-run-and-fine-tune/qwen3-2507"><strong>Qwen3-2507</strong></a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FEj2zfXu3PPd39PvAmQtx%2Fqwen3-2507.png?alt=media&#x26;token=c070db7b-bfe9-4a7f-9e75-bbd0b0a01a4d">qwen3-2507.png</a></td><td><a href="qwen3-how-to-run-and-fine-tune/qwen3-2507">qwen3-2507</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/deepseek-r1-0528-how-to-run-locally">DeepSeek-R1-0528</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FNSt3ekVji7Uk7G6PFd1G%2Fdeepseek%20r1-0528.png?alt=media&#x26;token=9e1472ad-731f-44bf-845d-d4ae89989266">deepseek r1-0528.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/deepseek-r1-0528-how-to-run-locally">deepseek-r1-0528-how-to-run-locally</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/kimi-k2-how-to-run-locally">Kimi K2</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FY0FqiyRvzwRiBOIWEPj6%2Fkimik2%20landcsape.png?alt=media&#x26;token=35aca81f-684b-4abc-a60b-632055b0aeaa">kimik2 landcsape.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/kimi-k2-how-to-run-locally">kimi-k2-how-to-run-locally</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/devstral-how-to-run-and-fine-tune">Devstral 2507</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FFp4c2fMEzTezm1B5oEaM%2Fdevstral%20logo.png?alt=media&#x26;token=59f165fe-0d50-4b1a-88cf-a4617865aaa9">devstral logo.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/devstral-how-to-run-and-fine-tune">devstral-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="../basics/fine-tuning-llms-with-blackwell-rtx-50-series-and-unsloth">Fine-tune on Blackwell &#x26; RTX 50 GPUs</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FlbVLSdgDVeTdrzqIqWSy%2Fnvidia-logo-white%20background.png?alt=media&#x26;token=91fec0de-66af-457e-a5eb-16e134bca0e3">nvidia-logo-white background.png</a></td><td><a href="../basics/fine-tuning-llms-with-blackwell-rtx-50-series-and-unsloth">fine-tuning-llms-with-blackwell-rtx-50-series-and-unsloth</a></td></tr><tr><td><a href="../basics/text-to-speech-tts-fine-tuning">TTS Fine-tuning</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FjnEy1VXc85HX4nCqeAAy%2Ftts%20finetuning%20landscape.png?alt=media&#x26;token=24aaf75b-c6ee-4dbb-817d-f9aaa7c9a7ff">tts finetuning landscape.png</a></td><td><a href="../basics/text-to-speech-tts-fine-tuning">text-to-speech-tts-fine-tuning</a></td></tr><tr><td><a href="qwen3-how-to-run-and-fine-tune">Qwen3</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2Fz30qbVABdBlqEnKatTf1%2Fqwen3.png?alt=media&#x26;token=efd4bb30-4926-4272-b15d-91c0a0fc5ac5">qwen3.png</a></td><td><a href="qwen3-how-to-run-and-fine-tune">qwen3-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/phi-4-reasoning-how-to-run-and-fine-tune">Phi-4 reasoning</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FLDayziE4Q7Gc52BMQfd4%2Fphi4%20reasoning2.png?alt=media&#x26;token=f3db5f93-dde0-49c3-97ed-cbf596d8d437">phi4 reasoning2.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/phi-4-reasoning-how-to-run-and-fine-tune">phi-4-reasoning-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="../basics/unsloth-dynamic-2.0-ggufs">Dynamic 2.0 GGUFs</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FdiwpvMM4VA4oZqaANJOE%2Fdynamic%20v2%20with%20unsloth.png?alt=media&#x26;token=adc64cb6-2b52-4565-a44e-ac4acbd4247d">dynamic v2 with unsloth.png</a></td><td><a href="../basics/unsloth-dynamic-2.0-ggufs">unsloth-dynamic-2.0-ggufs</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/llama-4-how-to-run-and-fine-tune">Llama 4</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2F8RZoiqWL4cXqTFwTAbg8%2Fllama%204%20only.png?alt=media&#x26;token=c6b0dd0e-b817-482b-9b8e-05d017a72319">llama 4 only.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/llama-4-how-to-run-and-fine-tune">llama-4-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/deepseek-v3-0324-how-to-run-locally">DeepSeek-V3-0324</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FuvkQHGJWBVejGmQDLMkz%2Fv30324.png?alt=media&#x26;token=941a8bdd-c5af-4144-9126-fa656335aba2">v30324.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/deepseek-v3-0324-how-to-run-locally">deepseek-v3-0324-how-to-run-locally</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/grok-2">Grok 2</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FvSsBLbk5dF9Fnzvn4qMF%2Fgrok%202%20logo.png?alt=media&#x26;token=ae67f692-d7d6-462c-aabb-a4de8af1ea92">grok 2 logo.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/grok-2">grok-2</a></td></tr><tr><td><a href="gemma-3-how-to-run-and-fine-tune">Gemma 3</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FML1v35ELOxO0AxBpXWCn%2Fgemma%203%20logo.png?alt=media&#x26;token=04fefb63-973d-4b36-a2f6-77414ddf8003">gemma 3 logo.png</a></td><td><a href="gemma-3-how-to-run-and-fine-tune">gemma-3-how-to-run-and-fine-tune</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/qwq-32b-how-to-run-effectively">QwQ-32B</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FhE7P8M1nQaMEkrLiaRj6%2Fqwq%20logo%20only.png?alt=media&#x26;token=c42d1143-dbf8-425e-b1e2-7d9700c02816">qwq logo only.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/qwq-32b-how-to-run-effectively">qwq-32b-how-to-run-effectively</a></td></tr><tr><td><a href="tutorials-how-to-fine-tune-and-run-llms/deepseek-r1-how-to-run-locally">DeepSeek-R1</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FEDGoGKoQdMunfGToescN%2Fdeepseek%20r1.png?alt=media&#x26;token=f2bafaeb-9cd3-4f9d-8c09-b645e72d7fe7">deepseek r1.png</a></td><td><a href="tutorials-how-to-fine-tune-and-run-llms/deepseek-r1-how-to-run-locally">deepseek-r1-how-to-run-locally</a></td></tr><tr><td><a href="../get-started/reinforcement-learning-rl-guide">Reinforcement Learning (RL)</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FDYDeJW7oBTYtXBqsVmPA%2Frl%20guide%20new.png?alt=media&#x26;token=78d922fe-09d5-4b5f-8ff5-10f573d59234">rl guide new.png</a></td><td><a href="../get-started/reinforcement-learning-rl-guide/tutorial-train-your-own-reasoning-model-with-grpo">tutorial-train-your-own-reasoning-model-with-grpo</a></td></tr><tr><td><a href="https://www.unsloth.ai/blog/mistral-small-3.1">Mistral Small 3.1</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2Fyr9mvoFQqL47zSAE574d%2Fmistral%20small%203.1.png?alt=media&#x26;token=e882995f-931e-4af2-a086-d0cefbf23635">mistral small 3.1.png</a></td><td><a href="https://www.unsloth.ai/blog/mistral-small-3.1">https://www.unsloth.ai/blog/mistral-small-3.1</a></td></tr><tr><td><a href="../get-started/fine-tuning-llms-guide/tutorial-how-to-finetune-llama-3-and-use-in-ollama">Llama 3</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FeLYVuPYGC1Giu97E8zWi%2Fllama%203logo.png?alt=media&#x26;token=2127b873-32cb-4a4a-9593-92a179b46c3b">llama 3logo.png</a></td><td><a href="../get-started/fine-tuning-llms-guide/tutorial-how-to-finetune-llama-3-and-use-in-ollama">tutorial-how-to-finetune-llama-3-and-use-in-ollama</a></td></tr><tr><td><a href="../basics/vision-fine-tuning">Vision Fine-tuning</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2F5KEw7Kdq4FF1owcZH5GU%2Fllama_3.2_vision_large_rectangle_jPUNULJrVe5O4AvDDWO1M.webp?alt=media&#x26;token=efafc3d6-e763-4e51-83d1-4199fbbf3b53">llama_3.2_vision_large_rectangle_jPUNULJrVe5O4AvDDWO1M.webp</a></td><td><a href="../basics/vision-fine-tuning">vision-fine-tuning</a></td></tr><tr><td><a href="../basics/continued-pretraining">Continued Pretraining</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FchkkXzhFudLPVKhnXiPR%2Fcontinued_pretraining_just_graph_HC0ALBypfCXyUUXClYPiN.webp?alt=media&#x26;token=61995f90-d6f3-4216-9ddd-0ed5f7342e57">continued_pretraining_just_graph_HC0ALBypfCXyUUXClYPiN.webp</a></td><td><a href="../basics/continued-pretraining">continued-pretraining</a></td></tr><tr><td><a href="https://unsloth.ai/blog/llama3-3">Llama 3.3</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FQzD8cVunL79qfLTr3RfN%2Fllama_3.3_website_9hQURhj6KfZ7EnBRaKbiu.webp?alt=media&#x26;token=57ae3812-0dd6-4254-b4d8-8b591be3608c">llama_3.3_website_9hQURhj6KfZ7EnBRaKbiu.webp</a></td><td><a href="https://unsloth.ai/blog/llama3-3">https://unsloth.ai/blog/llama3-3</a></td></tr><tr><td><a href="https://unsloth.ai/blog/gemma2">Gemma 2</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FTMjv4ruy6rjJoAmpEcq2%2Fgemma_2_long_OKsRGiTB8vrcIyXNWdgMw.avif?alt=media&#x26;token=accf6e7e-0cfa-4484-a671-f9bf93c84cc5">gemma_2_long_OKsRGiTB8vrcIyXNWdgMw.avif</a></td><td><a href="https://unsloth.ai/blog/gemma2">https://unsloth.ai/blog/gemma2</a></td></tr><tr><td><a href="https://unsloth.ai/blog/phi3">Phi-3</a></td><td><a href="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FrVYkfNhNa1nHacttNFHt%2Fphi3_unsloth_ynBY7FG3NTjIbS11ozN_g.webp?alt=media&#x26;token=cdac7cdd-0b9b-49a5-93cb-5434874e679d">phi3_unsloth_ynBY7FG3NTjIbS11ozN_g.webp</a></td><td><a href="https://unsloth.ai/blog/phi3">https://unsloth.ai/blog/phi3</a></td></tr></tbody></table>
-
 
 # DeepSeek-R1-0528: How to Run Locally
 
@@ -10200,7 +10100,6 @@ The best part about this whole reward function and notebook is you DO NOT need a
 {% endhint %}
 
 Unsloth makes R1-Qwen3 distill fine-tuning 2× faster, uses 70% less VRAM, and support 8× longer context lengths.
-
 
 # Magistral: How to Run & Fine-tune
 
@@ -11577,7 +11476,6 @@ Both are fantastic to deploy via vLLM. Read up on using TorchAO based FP8 quants
 
 [^3]: K quantization to reduce memory use. Can be f16, q8\_0, q4\_0
 
-
 # Llama 4: How to Run & Fine-tune
 
 How to run Llama 4 locally using our dynamic GGUFs which recovers accuracy compared to standard quantization.
@@ -11761,7 +11659,6 @@ We also had to convert `torch.nn.Parameter` to `torch.nn.Linear` for the MoE lay
 <figure><img src="https://3215535692-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FxhOjnexMCB3dmuQFQ2Zq%2Fuploads%2FsjJkQYziAFTZADH37vUy%2Fimage.png?alt=media&#x26;token=fbaeadfc-1220-4d6c-931c-9c34f03e285c" alt="" width="375"><figcaption></figcaption></figure>
 
 Llama 4 also now uses chunked attention - it's essentially sliding window attention, but slightly more efficient by not attending to previous tokens over the 8192 boundary.
-
 
 # Kimi K2: How to Run Locally
 
@@ -12018,7 +11915,6 @@ Write a Python program that shows 20 balls bouncing inside a spinning heptagon:\
 
 {% endcode %}
 
-
 # Grok 2
 
 Run xAI's Grok 2 model locally!
@@ -12190,7 +12086,6 @@ You should use the `_1` variants for somewhat increased accuracy, albeit it's sl
 You can also quantize the V cache, but you will need to **compile llama.cpp with Flash Attention** support via `-DGGML_CUDA_FA_ALL_QUANTS=ON`, and use `--flash-attn` to enable it. Then you can use together with `--cache-type-k` :
 
 `--cache-type-v f32, f16, bf16, q8_0, q4_0, q4_1, iq4_nl, q5_0, q5_1`&#x20;
-
 
 # Devstral: How to Run & Fine-tune
 
@@ -12379,7 +12274,6 @@ pip install --upgrade --force-reinstall --no-cache-dir unsloth unsloth_zoo
 [^1]: K quantization to reduce memory use. Can be f16, q8\_0, q4\_0
 
 [^2]: Must use --jinja to enable system prompt
-
 
 # DeepSeek-V3-0324: How to Run Locally
 
@@ -13292,7 +13186,6 @@ if __name__ == '__main__':
 
 [^4]: Context length
 
-
 # DeepSeek-R1: How to Run Locally
 
 A guide on how you can run our 1.58-bit Dynamic Quants for DeepSeek-R1 using llama.cpp.
@@ -13499,7 +13392,6 @@ We fixed all distilled and the original R1 versions with the correct padding tok
 
 <table data-full-width="true"><thead><tr><th>MoE Bits</th><th>Type</th><th>Disk Size</th><th>Accuracy</th><th>Link</th><th>Details</th></tr></thead><tbody><tr><td>1.58bit</td><td>UD-IQ1_S</td><td><strong>131GB</strong></td><td>Fair</td><td><a href="https://huggingface.co/unsloth/DeepSeek-R1-GGUF/tree/main/DeepSeek-R1-UD-IQ1_S">Link</a></td><td>MoE all 1.56bit. <code>down_proj</code> in MoE mixture of 2.06/1.56bit</td></tr><tr><td>1.73bit</td><td>UD-IQ1_M</td><td><strong>158GB</strong></td><td>Good</td><td><a href="https://huggingface.co/unsloth/DeepSeek-R1-GGUF/tree/main/DeepSeek-R1-UD-IQ1_M">Link</a></td><td>MoE all 1.56bit. <code>down_proj</code> in MoE left at 2.06bit</td></tr><tr><td>2.22bit</td><td>UD-IQ2_XXS</td><td><strong>183GB</strong></td><td>Better</td><td><a href="https://huggingface.co/unsloth/DeepSeek-R1-GGUF/tree/main/DeepSeek-R1-UD-IQ2_XXS">Link</a></td><td>MoE all 2.06bit. <code>down_proj</code> in MoE mixture of 2.5/2.06bit</td></tr><tr><td>2.51bit</td><td>UD-Q2_K_XL</td><td><strong>212GB</strong></td><td>Best</td><td><a href="https://huggingface.co/unsloth/DeepSeek-R1-GGUF/tree/main/DeepSeek-R1-UD-Q2_K_XL">Link</a></td><td>MoE all 2.5bit. <code>down_proj</code> in MoE mixture of 3.5/2.5bit</td></tr></tbody></table>
 
-
 # DeepSeek-R1 Dynamic 1.58-bit
 
 See performance comparison tables for Unsloth's Dynamic GGUF Quants vs Standard IMatrix Quants.
@@ -13576,7 +13468,6 @@ Read our full DeepSeek-R1 blogpost here: [unsloth.ai/blog/deepseekr1-dynamic](ht
 
 {% endtab %}
 {% endtabs %}
-
 
 # QwQ-32B: How to Run effectively
 
@@ -14211,7 +14102,6 @@ Since vLLM 0.7.3 (2025 February 20th) <https://github.com/vllm-project/vllm/rele
 
 All our GGUFs are at <https://huggingface.co/unsloth/QwQ-32B-GGUF>!
 
-
 # Phi-4 Reasoning: How to Run & Fine-tune
 
 Learn to run & fine-tune Phi-4 reasoning models locally with Unsloth + our Dynamic 2.0 quants
@@ -14335,7 +14225,6 @@ snapshot_download(
 
 * [Phi-4 (14B) fine-tuning notebook](https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Phi_4-Conversational.ipynb)
 
-
 # Running & Saving Models
 
 Learn how to save your finetuned model so you can run it in your favorite inference engine.
@@ -14343,7 +14232,6 @@ Learn how to save your finetuned model so you can run it in your favorite infere
 You can also run your fine-tuned models by using [Unsloth's 2x faster inference](https://docs.unsloth.ai/basics/running-and-saving-models/unsloth-inference).
 
 <table data-card-size="large" data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th><th data-hidden data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="running-and-saving-models/saving-to-gguf">Saving to GGUF</a></td><td><a href="running-and-saving-models/saving-to-gguf">saving-to-gguf</a></td><td><a href="running-and-saving-models/saving-to-gguf">saving-to-gguf</a></td></tr><tr><td><a href="running-and-saving-models/saving-to-ollama">Ollama</a></td><td><a href="running-and-saving-models/saving-to-ollama">saving-to-ollama</a></td><td><a href="running-and-saving-models/saving-to-ollama">saving-to-ollama</a></td></tr><tr><td><a href="running-and-saving-models/saving-to-vllm-for-deployment">vLLM</a></td><td><a href="running-and-saving-models/saving-to-vllm-for-deployment">saving-to-vllm-for-deployment</a></td><td><a href="running-and-saving-models/saving-to-vllm-for-deployment">saving-to-vllm-for-deployment</a></td></tr><tr><td><a href="running-and-saving-models/saving-to-sglang-for-deployment">SGLang</a></td><td><a href="running-and-saving-models/saving-to-sglang-for-deployment">saving-to-sglang-for-deployment</a></td><td><a href="running-and-saving-models/vllm-engine-arguments">vllm-engine-arguments</a></td></tr><tr><td><a href="running-and-saving-models/unsloth-inference">Unsloth Inference</a></td><td><a href="running-and-saving-models/unsloth-inference">unsloth-inference</a></td><td><a href="running-and-saving-models/unsloth-inference">unsloth-inference</a></td></tr><tr><td><a href="running-and-saving-models/troubleshooting-inference">Troubleshooting</a></td><td><a href="running-and-saving-models/troubleshooting-inference">troubleshooting-inference</a></td><td><a href="running-and-saving-models/troubleshooting-inference">troubleshooting-inference</a></td></tr><tr><td><a href="running-and-saving-models/vllm-engine-arguments">vLLM Engine Arguments</a></td><td><a href="running-and-saving-models/vllm-engine-arguments">vllm-engine-arguments</a></td><td><a href="running-and-saving-models/saving-to-sglang-for-deployment">saving-to-sglang-for-deployment</a></td></tr><tr><td><a href="running-and-saving-models/lora-hot-swapping-guide">LoRA Hotswapping</a></td><td><a href="running-and-saving-models/lora-hot-swapping-guide">lora-hot-swapping-guide</a></td><td></td></tr></tbody></table>
-
 
 # Saving to GGUF
 
@@ -14490,7 +14378,6 @@ python llama.cpp/convert_hf_to_gguf.py merged_model \
     --split-max-size 50G
 ```
 
-
 # Saving to Ollama
 
 See our guide below for the complete process on how to save to [Ollama](https://github.com/ollama/ollama):
@@ -14566,7 +14453,6 @@ You might sometimes encounter an issue where your model runs and produces good r
   * Mistral v0.3 7B Conversational notebook [**Open in Colab**](https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Mistral_v0.3_\(7B\)-Conversational.ipynb)
   * **More notebooks in our** [**notebooks docs**](https://docs.unsloth.ai/get-started/unsloth-notebooks)
 
-
 # Saving to vLLM for deployment
 
 Saving models to 16bit for vLLM deployment and serving
@@ -14634,7 +14520,6 @@ vllm serve unsloth/gpt-oss-120b
 ### :fire\_engine:vLLM Deployment Server Flags, Engine Arguments & Options
 
 Some important server flags to use are at [#vllm-deployment-server-flags-engine-arguments-and-options](#vllm-deployment-server-flags-engine-arguments-and-options "mention")
-
 
 # Saving to SGLang for deployment
 
@@ -14706,7 +14591,6 @@ python3 -m sglang.launch_server --model-path unsloth/Llama-3.2-1B-Instruct --hos
 
 Under construction
 
-
 # Unsloth Inference
 
 Learn how to run your finetuned model with Unsloth's faster inference.
@@ -14736,7 +14620,6 @@ import locale
 locale.getpreferredencoding = lambda: "UTF-8"
 ```
 
-
 # Troubleshooting Inference
 
 If you're experiencing issues when running or saving your model.
@@ -14765,7 +14648,6 @@ We save to `.bin` in Colab so it's like 4x faster, but set `safe_serialization =
 You can try reducing the maximum GPU usage during saving by changing `maximum_memory_usage`.
 
 The default is `model.save_pretrained(..., maximum_memory_usage = 0.75)`. Reduce it to say 0.5 to use 50% of GPU peak memory or lower. This can reduce OOM crashes during saving.
-
 
 # vLLM Engine Arguments
 
@@ -14828,7 +14710,6 @@ curl -X POST http://localhost:8000/v1/unload_lora_adapter \
     }'
 ```
 
-
 # LoRA Hot Swapping Guide
 
 ### :shaved\_ice: vLLM LoRA Hot Swapping / Dynamic LoRAs
@@ -14873,7 +14754,6 @@ curl -X POST http://localhost:8000/v1/unload_lora_adapter \
         "lora_name": "LORA_NAME"
     }'
 ```
-
 
 # Text-to-Speech (TTS) Fine-tuning
 
@@ -15121,7 +15001,6 @@ If you just want a different voice and are fine with the same delivery patterns,
 
 For anything more personalized or expressive, you need training with methods like LoRA to truly capture how someone speaks.
 
-
 # Unsloth Dynamic 2.0 GGUFs
 
 A big new upgrade to our Dynamic Quants!
@@ -15332,7 +15211,6 @@ And let's do inference!
 Read more on running Llama 4 here: <https://docs.unsloth.ai/basics/tutorial-how-to-run-and-fine-tune-llama-4>
 {% endhint %}
 
-
 # Vision Fine-tuning
 
 Learn how to fine-tune vision/multimodal LLMs with Unsloth
@@ -15519,7 +15397,6 @@ ds_converted = [convert_to_converation(sample) for sample in dataset]
 
 Using map kicks in dataset standardization and arrow processing rules which can be strict and more complicated to define.
 
-
 # Fine-tuning LLMs with NVIDIA DGX Spark and Unsloth
 
 Tutorial on how to fine-tune and do reinforcement learning (RL) with OpenAI gpt-oss on NVIDIA DGX Spark.
@@ -15658,7 +15535,6 @@ And that's it! Have fun training and running LLMs completely locally on your NVI
 Thanks to Tim from [AnythingLLM](https://github.com/Mintplex-Labs/anything-llm) for providing a great fine-tuning tutorial with Unsloth on DGX Spark:
 
 {% embed url="<https://www.youtube.com/watch?t=962s&v=zs-J9sKxvoM>" %}
-
 
 # Fine-tuning LLMs with Blackwell, RTX 50 series & Unsloth
 
@@ -15856,13 +15732,7 @@ If you are using mamba as your package just replace conda with mamba for all com
 
 ### WSL-Specific Notes
 
-If you're using WSL (Windows Subsystem for Linux) and encounter issues during xformers compilation (reminder Xformers is optional, but faster for training) follow these additional steps:
-
-1. **Increase WSL Memory Limit** Create or edit the WSL configuration file:
-
    ```bash
-   # Create or edit .wslconfig in your Windows user directory
-   # (typically C:\Users\YourUsername\.wslconfig)
 
    # Add these lines to the file
    [wsl2]
@@ -15874,8 +15744,6 @@ If you're using WSL (Windows Subsystem for Linux) and encounter issues during xf
 
    After making these changes, restart WSL:
 
-   ```powershell
-   wsl --shutdown
    ```
 2. **Install xformers** Use the following command to install xformers with optimized compilation for WSL:
 
@@ -15888,7 +15756,6 @@ If you're using WSL (Windows Subsystem for Linux) and encounter issues during xf
    ```
 
    The `--no-build-isolation` flag helps avoid potential build issues in WSL environments.
-
 
 # Multi-GPU Training with Unsloth
 
@@ -15923,7 +15790,6 @@ Also several contributors have created repos to enable or improve multi-GPU supp
 
 **Stay tuned for our official announcement!**\
 For more details, check out our ongoing [Pull Request](https://github.com/unslothai/unsloth/issues/2435) discussing multi-GPU support.
-
 
 # Finetuning from Last Checkpoint
 
@@ -16030,7 +15896,6 @@ trainer.add_callback(early_stopping_callback)
 ```
 
 Then train the model as usual via `trainer.train() .`
-
 
 # Troubleshooting & FAQs
 
@@ -16312,7 +16177,6 @@ To cite the usage of our Github package or our work in general:
 }
 ```
 
-
 # Chat Templates
 
 Learn the fundamentals and customization options of chat templates, including Conversational, ChatML, ShareGPT, Alpaca formats, and more!
@@ -16510,7 +16374,6 @@ tokenizer = get_chat_template(
 )
 ```
 
-
 # Quantization-Aware Training (QAT)
 
 Quantize models to 4-bit with Unsloth and PyTorch to recover accuracy.
@@ -16675,7 +16538,6 @@ pip install torchao==0.14.0 fbgemm-gpu-genai==1.3.0
 
 Huge thanks to the entire PyTorch and TorchAO team for their help and collaboration! Extreme thanks to Andrew Or, Jerry Zhang, Supriya Rao, Scott Roy and Mergen Nachin for helping on many discussions on QAT, and on helping to integrate it into Unsloth! Also thanks to the Executorch team as well!
 
-
 # Unsloth Environment Flags
 
 Advanced flags which might be useful if you see breaking finetunes, or you want to turn stuff off.
@@ -16690,7 +16552,6 @@ model, tokenizer = FastVisionModel.from_pretrained(
     use_exact_model_name = True,
 )
 ```
-
 
 # Continued Pretraining
 
@@ -16755,7 +16616,6 @@ trainer = UnslothTrainer(
 )
 ```
 
-
 # Unsloth Benchmarks
 
 Unsloth recorded benchmarks on NVIDIA GPUs.
@@ -16795,5 +16655,4 @@ We tested Llama 3.3 (70B) Instruct on a 80GB A100 and did 4bit QLoRA on all line
 | -------- | ------------------------ | ------------------ |
 | 48 GB    | 12,106                   | OOM                |
 | 80 GB    | 89,389                   | 6,916              |
-
 

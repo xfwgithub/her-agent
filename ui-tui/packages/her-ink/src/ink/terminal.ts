@@ -19,27 +19,13 @@ export type Progress = {
 /**
  * Checks if the terminal supports OSC 9;4 progress reporting.
  * Supported terminals:
- * - ConEmu (Windows) - all versions
  * - Ghostty 1.2.0+
  * - iTerm2 3.6.6+
- *
- * Note: Windows Terminal interprets OSC 9;4 as notifications, not progress.
  */
 export function isProgressReportingAvailable(): boolean {
   // Only available if we have a TTY (not piped)
   if (!process.stdout.isTTY) {
     return false
-  }
-
-  // Explicitly exclude Windows Terminal, which interprets OSC 9;4 as
-  // notifications rather than progress indicators
-  if (process.env.WT_SESSION) {
-    return false
-  }
-
-  // ConEmu supports OSC 9;4 for progress (all versions)
-  if (process.env.ConEmuANSI || process.env.ConEmuPID || process.env.ConEmuTask) {
-    return true
   }
 
   const version = coerce(process.env.TERM_PROGRAM_VERSION)
@@ -116,11 +102,6 @@ export function isSynchronizedOutputSupported(): boolean {
     return true
   }
 
-  // Windows Terminal
-  if (process.env.WT_SESSION) {
-    return true
-  }
-
   // VTE-based terminals (GNOME Terminal, Tilix, etc.) since VTE 0.68
   const vteVersion = process.env.VTE_VERSION
 
@@ -180,7 +161,7 @@ export function needsAltScreenResizeScrollbackClear(env: NodeJS.ProcessEnv = pro
 // in xterm.js-based terminals like VS Code). tmux is allowlisted because it
 // accepts modifyOtherKeys and doesn't forward the kitty sequence to the outer
 // terminal.
-const EXTENDED_KEYS_TERMINALS = ['iTerm.app', 'kitty', 'WezTerm', 'ghostty', 'tmux', 'windows-terminal', 'vscode']
+const EXTENDED_KEYS_TERMINALS = ['iTerm.app', 'kitty', 'WezTerm', 'ghostty', 'tmux', 'vscode']
 
 /** True if this terminal correctly handles extended key reporting
  *  (Kitty keyboard protocol + xterm modifyOtherKeys). */
@@ -188,14 +169,8 @@ export function supportsExtendedKeys(): boolean {
   return EXTENDED_KEYS_TERMINALS.includes(env.terminal ?? '')
 }
 
-/** True if the terminal scrolls the viewport when it receives cursor-up
- *  sequences that reach above the visible area. On Windows, conhost's
- *  SetConsoleCursorPosition follows the cursor into scrollback
- *  (microsoft/terminal#14774), yanking users to the top of their buffer
- *  mid-stream. WT_SESSION catches WSL-in-Windows-Terminal where platform
- *  is linux but output still routes through conhost. */
 export function hasCursorUpViewportYankBug(): boolean {
-  return process.platform === 'win32' || !!process.env.WT_SESSION
+  return false
 }
 
 // Computed once at module load — terminal capabilities don't change mid-session.

@@ -4,7 +4,7 @@ description: "Pixel art w/ era palettes (NES, Game Boy, PICO-8)."
 version: 2.0.0
 author: dodo-reach
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [creative, pixel-art, arcade, snes, nes, gameboy, retro, image, video]
@@ -100,7 +100,7 @@ Run `pixel_art()` first; if animation was requested, chain into
 | `c64` | Commodore 64 | 16 fixed | 8px | 8-bit home computer |
 | `apple2` | Apple II hi-res | 6 fixed | 10px | Extreme retro, 6 colors |
 | `teletext` | BBC Teletext | 8 pure | 10px | Chunky primary colors |
-| `mspaint` | Windows MS Paint | 24 fixed | 8px | Nostalgic desktop |
+
 | `mono_green` | CRT phosphor | 2 green | 6px | Terminal/CRT aesthetic |
 | `mono_amber` | CRT amber | 2 amber | 6px | Amber monitor look |
 | `neon` | Cyberpunk | 10 neons | 6px | Vaporwave/cyber |

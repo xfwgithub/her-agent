@@ -60,10 +60,6 @@ class TestDefaultVerify:
         monkeypatch.setattr(sys, "platform", "linux")
         assert _default_verify() is True
 
-    def test_returns_true_on_windows(self, monkeypatch):
-        monkeypatch.setattr(sys, "platform", "win32")
-        assert _default_verify() is True
-
     def test_darwin_falls_back_to_true_when_certifi_missing(self, monkeypatch):
         monkeypatch.setattr(sys, "platform", "darwin")
 

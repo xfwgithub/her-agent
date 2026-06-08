@@ -4,7 +4,7 @@ description: Configure and use Honcho memory with her -- cross-session user mode
 version: 2.0.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Honcho, Memory, Profiles, Observation, Dialectic, User-Modeling, Session-Summary]

@@ -18,10 +18,6 @@ class TestReadClaudeCodeCredentialsFromKeychain:
         with patch("agent.anthropic_adapter.platform.system", return_value="Linux"):
             assert _read_claude_code_credentials_from_keychain() is None
 
-    def test_returns_none_on_windows(self):
-        with patch("agent.anthropic_adapter.platform.system", return_value="Windows"):
-            assert _read_claude_code_credentials_from_keychain() is None
-
     def test_returns_none_when_security_command_not_found(self):
         """OSError from missing security binary must be handled gracefully."""
         with patch("agent.anthropic_adapter.platform.system", return_value="Darwin"), \

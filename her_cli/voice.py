@@ -31,14 +31,14 @@ from typing import Any, Callable, Optional
 # ``_MOD_ALIASES`` table — the contract that removes the cross-runtime
 # mismatch Copilot flagged in round-9 on #19835.
 #
-# ``super``/``win``/``windows`` are intentionally absent: prompt_toolkit
-# has no super/meta modifier for the Cmd key, so those spellings are
-# TUI-only. The normalizer below returns the documented default
-# (``c-b``) for them — a silent fallback was preferred to a hard
-# startup crash (Copilot round-11). The CLI binding site
-# (``_register_voice_handler`` in cli.py) logs a warning when that
-# fallback fires so users see why their TUI-only shortcut isn't
-# bound in the classic CLI.
+    # ``super``/``win`` are intentionally absent: prompt_toolkit
+    # has no super/meta modifier for the Cmd key, so those spellings are
+    # TUI-only. The normalizer below returns the documented default
+    # (``c-b``) for them — a silent fallback was preferred to a hard
+    # startup crash (Copilot round-11). The CLI binding site
+    # (``_register_voice_handler`` in cli.py) logs a warning when that
+    # fallback fires so users see why their TUI-only shortcut isn't
+    # bound in the classic CLI.
 _VOICE_MOD_ALIASES = {
     "ctrl": "c-",
     "control": "c-",
@@ -116,7 +116,7 @@ def normalize_voice_record_key_for_prompt_toolkit(raw: Any) -> str:
     * single-char keys: ``ctrl+o`` → ``c-o``
     * named keys: ``ctrl+space`` → ``c-space`` (aliases collapse:
       ``ctrl+return`` → ``c-enter``)
-    * ``super`` / ``win`` / ``windows`` → ``c-b`` (TUI-only modifiers —
+    * ``super`` / ``win`` → ``c-b`` (TUI-only modifiers —
       prompt_toolkit has no super mod; the CLI binding site is
       expected to warn when this fallback fires so users see the
       cross-runtime split, Copilot round-11 on #19835)
@@ -146,13 +146,13 @@ def normalize_voice_record_key_for_prompt_toolkit(raw: Any) -> str:
 
     modifier_token, key_token = parts
 
-    # ``super`` / ``win`` / ``windows`` are TUI-only (prompt_toolkit has
+    # ``super`` / ``win`` are TUI-only (prompt_toolkit has
     # no super modifier, so ``@kb.add(super+b)`` crashes the CLI at
     # startup). Fall back to the documented default here; the CLI
     # binding site is expected to log a warning when the configured
     # value is one of these spellings so users know the TUI+CLI
     # runtimes diverge on that shortcut (Copilot round-11 on #19835).
-    if modifier_token in {"super", "win", "windows"}:
+    if modifier_token in {"super", "win"}:
         return _DEFAULT_PT_KEY
 
     normalized_mod = _VOICE_MOD_ALIASES.get(modifier_token)
@@ -197,7 +197,7 @@ def format_voice_record_key_for_status(raw: Any) -> str:
     elif normalized.startswith("a-"):
         prefix, key = "Alt+", normalized[2:]
     elif "+" in normalized:
-        # ``super+<key>`` / ``win+<key>`` — CLI won't bind them, but
+        # ``super+<key>`` — CLI won't bind them, but
         # render in title case so status output is still readable.
         mod, key = normalized.split("+", 1)
         prefix = mod[0].upper() + mod[1:] + "+"

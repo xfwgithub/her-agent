@@ -20,11 +20,6 @@ const isExecutable = (path: string): boolean => {
 
 /**
  * Resolve the editor invocation argv (without the file argument).
- *
- *   1. $VISUAL / $EDITOR, shell-tokenized so `EDITOR="code --wait"` works
- *   2. on POSIX: first FALLBACKS entry resolvable on $PATH
- *   3. on Windows: `notepad.exe`
- *   4. literal `['vi']` as the last-resort POSIX floor
  */
 export const resolveEditor = (
   env: NodeJS.ProcessEnv = process.env,
@@ -34,10 +29,6 @@ export const resolveEditor = (
 
   if (explicit?.trim()) {
     return explicit.trim().split(/\s+/)
-  }
-
-  if (platform === 'win32') {
-    return ['notepad.exe']
   }
 
   const dirs = (env.PATH ?? '').split(delimiter).filter(Boolean)

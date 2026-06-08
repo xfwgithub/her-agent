@@ -276,7 +276,7 @@ The dashboard embeds the real `her --tui` — **not** a rewrite.  See `her_cli/p
 
 - Browser loads `web/src/pages/ChatPage.tsx`, which mounts xterm.js's `Terminal` with the WebGL renderer, `@xterm/addon-fit` for container-driven resize, and `@xterm/addon-unicode11` for modern wide-character widths.
 - `/api/pty?token=…` upgrades to a WebSocket; auth uses the same ephemeral `_SESSION_TOKEN` as REST, via query param (browsers can't set `Authorization` on WS upgrade).
-- The server spawns whatever `her --tui` would spawn, through `ptyprocess` (POSIX PTY — WSL works, native Windows does not).
+- The server spawns whatever `her --tui` would spawn, through `ptyprocess` (POSIX PTY).
 - Frames: raw PTY bytes each direction; resize via `\x1b[RESIZE:<cols>;<rows>]` intercepted on the server and applied with `TIOCSWINSZ`.
 
 **Do not re-implement the primary chat experience in React.** The main transcript, composer/input flow (including slash-command behavior), and PTY-backed terminal belong to the embedded `her --tui` — anything new you add to Ink shows up in the dashboard automatically. If you find yourself rebuilding the transcript or composer for the dashboard, stop and extend Ink instead.
@@ -1060,7 +1060,7 @@ ContextVars from one test cannot leak into the next — the historic
 Implementation notes:
 
 - The plugin uses `multiprocessing.get_context("spawn")`, which works on
-  Linux, macOS, and Windows alike (POSIX `fork` is not used).
+  Linux and macOS alike (POSIX `fork` is not used).
 - Per-test overhead is ~0.5–1.0s (Python startup + pytest collection). xdist
   parallelism amortizes this across cores; on a 20-core box the full suite
   finishes in roughly the same wall time as before, but flake-free.

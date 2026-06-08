@@ -336,7 +336,7 @@ class TestEnsureInstalled:
 
 
 # ---------------------------------------------------------------------------
-# Unsupported platform (Windows etc.) — silent fast-path everywhere
+# Unsupported platform — silent fast-path everywhere
 # ---------------------------------------------------------------------------
 
 class TestUnsupportedPlatform:
@@ -355,11 +355,6 @@ class TestUnsupportedPlatform:
              patch("tools.tirith_security.platform.machine", return_value="arm64"):
             assert _tirith_mod.is_platform_supported() is True
 
-    def test_is_platform_supported_false_on_windows(self):
-        with patch("tools.tirith_security.platform.system", return_value="Windows"), \
-             patch("tools.tirith_security.platform.machine", return_value="AMD64"):
-            assert _tirith_mod.is_platform_supported() is False
-
     def test_is_platform_supported_false_on_unknown_arch(self):
         with patch("tools.tirith_security.platform.system", return_value="Linux"), \
              patch("tools.tirith_security.platform.machine", return_value="riscv64"):
@@ -367,7 +362,7 @@ class TestUnsupportedPlatform:
 
     @patch("tools.tirith_security._load_security_config")
     def test_ensure_installed_unsupported_returns_none_no_thread(self, mock_cfg):
-        """Windows: don't start a background install thread, don't write a
+        """Don't start a background install thread, don't write a
         failure marker — just cache the verdict and return None."""
         mock_cfg.return_value = {"tirith_enabled": True, "tirith_path": "tirith",
                                  "tirith_timeout": 5, "tirith_fail_open": True}
@@ -386,7 +381,7 @@ class TestUnsupportedPlatform:
 
     @patch("tools.tirith_security._load_security_config")
     def test_check_command_security_unsupported_allows_silently(self, mock_cfg):
-        """Windows: skip the resolver and spawn entirely — return allow with
+        """Skip the resolver and spawn entirely — return allow with
         an empty summary so callers can't accidentally surface 'tirith
         unavailable' messaging to the user."""
         mock_cfg.return_value = {"tirith_enabled": True, "tirith_path": "tirith",
@@ -401,7 +396,7 @@ class TestUnsupportedPlatform:
 
     @patch("tools.tirith_security._load_security_config")
     def test_resolve_path_unsupported_caches_failure_without_probing(self, mock_cfg):
-        """The per-command resolver must also short-circuit on Windows so
+        """The per-command resolver must also short-circuit so
         long-running gateways don't churn through `shutil.which` and disk
         I/O for every scanned command."""
         mock_cfg.return_value = {"tirith_enabled": True, "tirith_path": "tirith",
@@ -1193,7 +1188,7 @@ class TestherHomeIsolation:
 
 
 # ---------------------------------------------------------------------------
-# Warn-once dedupe (issue: tirith spawn failed spamming on Windows)
+        # Warn-once dedupe
 # ---------------------------------------------------------------------------
 
 class TestSpawnWarningDedup:

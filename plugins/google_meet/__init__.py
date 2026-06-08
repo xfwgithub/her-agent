@@ -68,9 +68,6 @@ def register(ctx) -> None:
     Called once by the plugin loader when the plugin is enabled via
     ``plugins.enabled`` in config.yaml.
     """
-    # Windows is not supported in v1 — audio routing for v2 doesn't have a
-    # tested path there and guest-join Chromium is flakier. Refuse to register
-    # rather than half-working.
     system = platform.system().lower()
     if system not in {"linux", "darwin"}:
         logger.info(

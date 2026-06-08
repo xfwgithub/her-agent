@@ -69,26 +69,6 @@ updates:
 
 `--backup` 在早期版本中是始终开启的行为，但在大型 home 目录上会给每次更新增加数分钟时间，因此现已改为按需启用。上述轻量级配对数据快照仍会无条件执行。
 
-### Windows：另一个 `her.exe` 正在运行
-
-在 Windows 上，如果 `her update` 检测到另一个 `her.exe` 进程持有 venv 入口点可执行文件的句柄，它将拒绝运行 — 最常见的情况是 her Desktop 应用启动的后端进程、另一个终端中打开的 `her` REPL，或正在运行的 gateway：
-
-```
-$ her update
-✗ Another her.exe is running:
-    PID 12345  her.exe
-
-  Updating now would fail to overwrite ...\venv\Scripts\her.exe because
-  Windows blocks REPLACE on a running executable.
-
-  Close her Desktop, exit any open `her` REPLs, and
-  stop the gateway (`her gateway stop`) before retrying.
-  Override with `her update --force` if you've already
-  confirmed those processes will not write to the venv.
-```
-
-关闭列出的进程后重试。如果你确定并发进程不会造成干扰（极少见 — 通常仅在杀毒软件 shim 被误判时有用），可传入 `--force` 跳过检查。此时更新程序仍会以指数退避方式重试 `.exe` 重命名操作，对于顽固的文件锁，会通过 `MoveFileEx(MOVEFILE_DELAY_UNTIL_REBOOT)` 将替换操作安排在下次重启时执行，以确保更新能够完成。
-
 预期输出如下：
 
 ```

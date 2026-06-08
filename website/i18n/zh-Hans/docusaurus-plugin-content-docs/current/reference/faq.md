@@ -28,32 +28,6 @@ her Agent 可与任何兼容 OpenAI 的 API 配合使用。支持的提供商包
 
 使用 `her model` 设置提供商，或直接编辑 `~/.her/.env`。所有提供商 key 请参阅[环境变量](./environment-variables.md)参考文档。
 
-### 支持 Windows 吗？
-
-**原生不支持。** her Agent 需要类 Unix 环境。在 Windows 上，请安装 [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) 并在其中运行 her。标准安装命令在 WSL2 中可完美运行：
-
-```bash
-curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
-```
-
-### 我在 WSL2 中运行 her，如何控制 Windows 上的普通 Chrome？
-
-推荐使用 MCP bridge（桥接），而非 `/browser connect`。
-
-推荐方案：
-
-- 在 WSL2 内运行 her
-- 继续使用 Windows 上已登录的普通 Chrome
-- 通过 `cmd.exe` 或 `powershell.exe` 将 `chrome-devtools-mcp` 添加为 MCP 服务器
-- 让 her 使用生成的 MCP 浏览器工具
-
-这比强制 her 核心浏览器传输直接跨越 WSL2/Windows 边界进行附加更为可靠。
-
-参见：
-
-- [在 her 中使用 MCP](../guides/use-mcp-with-her.md#wsl2-bridge-her-in-wsl-to-windows-chrome)
-- [浏览器自动化](../user-guide/features/browser.md#wsl2--windows-chrome-prefer-mcp-over-browser-connect)
-
 ### 支持 Android / Termux 吗？
 
 支持 — her 现已为 Android 手机提供经过测试的 Termux 安装路径。
@@ -445,42 +419,6 @@ lsof -i :8080
 # 验证配置
 her config show
 ```
-
-#### WSL：网关持续断开连接或 `her gateway start` 失败
-
-**原因：** WSL 的 systemd 支持不稳定。许多 WSL2 安装未启用 systemd，即使启用，服务也可能在 WSL 重启或 Windows 空闲关机后无法存活。
-
-**解决方案：** 使用前台模式代替 systemd 服务：
-
-```bash
-# 方案一：直接前台运行（最简单）
-her gateway run
-
-# 方案二：通过 tmux 持久运行（关闭终端后仍存活）
-tmux new -s her 'her gateway run'
-# 稍后重新连接：tmux attach -t her
-
-# 方案三：通过 nohup 后台运行
-nohup her gateway run > ~/.her/logs/gateway.log 2>&1 &
-```
-
-如果仍想尝试 systemd，请确保已启用：
-
-1. 打开 `/etc/wsl.conf`（不存在则创建）
-2. 添加：
-   ```ini
-   [boot]
-   systemd=true
-   ```
-3. 在 PowerShell 中执行：`wsl --shutdown`
-4. 重新打开 WSL 终端
-5. 验证：`systemctl is-system-running` 应显示 "running" 或 "degraded"
-
-:::tip Windows 开机自启
-如需可靠的自启动，使用 Windows 任务计划程序在登录时启动 WSL + 网关：
-1. 创建一个任务，运行 `wsl -d Ubuntu -- bash -lc 'her gateway run'`
-2. 设置在用户登录时触发
-:::
 
 #### macOS：网关找不到 Node.js / ffmpeg / 其他工具
 

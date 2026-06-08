@@ -223,7 +223,6 @@ def _cmd_install(*, realtime: bool, assume_yes: bool) -> int:
               to select BlackHole as the default input device manually)
 
     Prompts before every package-manager invocation unless ``--yes``.
-    Refuses to run on Windows.
     """
     import platform as _p
     import shutil as _shutil

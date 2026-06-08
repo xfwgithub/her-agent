@@ -152,13 +152,12 @@ def _normalize_lock_install_path(install_path: str, skill_name: str) -> str:
 
 
 def _is_path_redirect(path: Path) -> bool:
-    """True when ``path`` is a symlink or (on Windows) a directory junction.
+    """True when ``path`` is a symlink.
 
-    Either form lets an attacker who can write into the ``skills/`` tree
-    redirect a subsequent ``rmtree`` to content outside it. ``is_junction``
-    only exists on Python 3.12+ Windows; gate with ``hasattr``.
+    A symlink lets an attacker who can write into the ``skills/`` tree
+    redirect a subsequent ``rmtree`` to content outside it.
     """
-    return path.is_symlink() or (hasattr(path, "is_junction") and path.is_junction())
+    return path.is_symlink()
 
 
 def _resolve_lock_install_path(install_path: str, skill_name: str) -> Path:

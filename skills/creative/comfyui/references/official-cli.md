@@ -239,7 +239,6 @@ Cache expires after 7 days; max 10 builds.
 |----|------|
 | Linux | `~/.config/comfy-cli/config.ini` |
 | macOS | `~/Library/Application Support/comfy-cli/config.ini` |
-| Windows | `~/AppData/Local/comfy-cli/config.ini` |
 
 Stores: default workspace, recent workspace, background server PID, API
 tokens, manager GUI mode, launch extras.

@@ -1105,80 +1105,79 @@ def run_doctor(args):
     _check_gateway_service_linger(issues)
     _check_s6_supervision(issues)
 
-    if sys.platform != "win32":
-        _section("Command Installation")
-        # Determine the venv entry point location
-        _venv_bin = None
-        for _venv_name in ("venv", ".venv"):
-            _candidate = PROJECT_ROOT / _venv_name / "bin" / "her"
-            if _candidate.exists():
-                _venv_bin = _candidate
-                break
+    _section("Command Installation")
+    # Determine the venv entry point location
+    _venv_bin = None
+    for _venv_name in ("venv", ".venv"):
+        _candidate = PROJECT_ROOT / _venv_name / "bin" / "her"
+        if _candidate.exists():
+            _venv_bin = _candidate
+            break
 
-        # Determine the expected command link directory (mirrors install.sh logic)
-        _prefix = os.environ.get("PREFIX", "")
-        _is_termux_env = bool(os.environ.get("TERMUX_VERSION")) or "com.termux/files/usr" in _prefix
-        if _is_termux_env and _prefix:
-            _cmd_link_dir = Path(_prefix) / "bin"
-            _cmd_link_display = "$PREFIX/bin"
-        else:
-            _cmd_link_dir = Path.home() / ".local" / "bin"
-            _cmd_link_display = "~/.local/bin"
-        _cmd_link = _cmd_link_dir / "her"
+    # Determine the expected command link directory (mirrors install.sh logic)
+    _prefix = os.environ.get("PREFIX", "")
+    _is_termux_env = bool(os.environ.get("TERMUX_VERSION")) or "com.termux/files/usr" in _prefix
+    if _is_termux_env and _prefix:
+        _cmd_link_dir = Path(_prefix) / "bin"
+        _cmd_link_display = "$PREFIX/bin"
+    else:
+        _cmd_link_dir = Path.home() / ".local" / "bin"
+        _cmd_link_display = "~/.local/bin"
+    _cmd_link = _cmd_link_dir / "her"
 
-        if _venv_bin is None:
-            check_warn(
-                "Venv entry point not found",
-                "(her not in venv/bin/ or .venv/bin/ — reinstall with pip install -e '.[all]')"
-            )
-            manual_issues.append(
-                f"Reinstall entry point: cd {PROJECT_ROOT} && source venv/bin/activate && pip install -e '.[all]'"
-            )
-        else:
-            check_ok(f"Venv entry point exists ({_venv_bin.relative_to(PROJECT_ROOT)})")
+    if _venv_bin is None:
+        check_warn(
+            "Venv entry point not found",
+            "(her not in venv/bin/ or .venv/bin/ — reinstall with pip install -e '.[all]')"
+        )
+        manual_issues.append(
+            f"Reinstall entry point: cd {PROJECT_ROOT} && source venv/bin/activate && pip install -e '.[all]'"
+        )
+    else:
+        check_ok(f"Venv entry point exists ({_venv_bin.relative_to(PROJECT_ROOT)})")
 
-            # Check the symlink at the command link location
-            if _cmd_link.is_symlink():
-                _target = _cmd_link.resolve()
-                _expected = _venv_bin.resolve()
-                if _target == _expected:
-                    check_ok(f"{_cmd_link_display}/her → correct target")
-                else:
-                    check_warn(
-                        f"{_cmd_link_display}/her points to wrong target",
-                        f"(→ {_target}, expected → {_expected})"
-                    )
-                    if should_fix:
-                        _cmd_link.unlink()
-                        _cmd_link.symlink_to(_venv_bin)
-                        check_ok(f"Fixed symlink: {_cmd_link_display}/her → {_venv_bin}")
-                        fixed_count += 1
-                    else:
-                        issues.append(f"Broken symlink at {_cmd_link_display}/her — run 'her doctor --fix'")
-            elif _cmd_link.exists():
-                # It's a regular file, not a symlink — possibly a wrapper script
-                check_ok(f"{_cmd_link_display}/her exists (non-symlink)")
+        # Check the symlink at the command link location
+        if _cmd_link.is_symlink():
+            _target = _cmd_link.resolve()
+            _expected = _venv_bin.resolve()
+            if _target == _expected:
+                check_ok(f"{_cmd_link_display}/her → correct target")
             else:
-                check_fail(
-                    f"{_cmd_link_display}/her not found",
-                    "(her command may not work outside the venv)"
+                check_warn(
+                    f"{_cmd_link_display}/her points to wrong target",
+                    f"(→ {_target}, expected → {_expected})"
                 )
                 if should_fix:
-                    _cmd_link_dir.mkdir(parents=True, exist_ok=True)
+                    _cmd_link.unlink()
                     _cmd_link.symlink_to(_venv_bin)
-                    check_ok(f"Created symlink: {_cmd_link_display}/her → {_venv_bin}")
+                    check_ok(f"Fixed symlink: {_cmd_link_display}/her → {_venv_bin}")
                     fixed_count += 1
-
-                    # Check if the link dir is on PATH
-                    _path_dirs = os.environ.get("PATH", "").split(os.pathsep)
-                    if str(_cmd_link_dir) not in _path_dirs:
-                        check_warn(
-                            f"{_cmd_link_display} is not on your PATH",
-                            "(add it to your shell config: export PATH=\"$HOME/.local/bin:$PATH\")"
-                        )
-                        manual_issues.append(f"Add {_cmd_link_display} to your PATH")
                 else:
-                    issues.append(f"Missing {_cmd_link_display}/her symlink — run 'her doctor --fix'")
+                    issues.append(f"Broken symlink at {_cmd_link_display}/her — run 'her doctor --fix'")
+        elif _cmd_link.exists():
+            # It's a regular file, not a symlink — possibly a wrapper script
+            check_ok(f"{_cmd_link_display}/her exists (non-symlink)")
+        else:
+            check_fail(
+                f"{_cmd_link_display}/her not found",
+                "(her command may not work outside the venv)"
+            )
+            if should_fix:
+                _cmd_link_dir.mkdir(parents=True, exist_ok=True)
+                _cmd_link.symlink_to(_venv_bin)
+                check_ok(f"Created symlink: {_cmd_link_display}/her → {_venv_bin}")
+                fixed_count += 1
+
+                # Check if the link dir is on PATH
+                _path_dirs = os.environ.get("PATH", "").split(os.pathsep)
+                if str(_cmd_link_dir) not in _path_dirs:
+                    check_warn(
+                        f"{_cmd_link_display} is not on your PATH",
+                        "(add it to your shell config: export PATH=\"$HOME/.local/bin:$PATH\")"
+                    )
+                    manual_issues.append(f"Add {_cmd_link_display} to your PATH")
+            else:
+                issues.append(f"Missing {_cmd_link_display}/her symlink — run 'her doctor --fix'")
 
     _section("External Tools")
     # Git
@@ -1362,16 +1361,10 @@ def run_doctor(args):
                             "Playwright Chromium not installed",
                             "(browser_* tools will be hidden from the agent)",
                         )
-                        if sys.platform == "win32":
-                            check_info(
-                                f"Install with: cd {PROJECT_ROOT} && "
-                                "npx playwright install chromium"
-                            )
-                        else:
-                            check_info(
-                                f"Install with: cd {PROJECT_ROOT} && "
-                                "npx playwright install --with-deps chromium"
-                            )
+                        check_info(
+                            f"Install with: cd {PROJECT_ROOT} && "
+                            "npx playwright install --with-deps chromium"
+                        )
     elif _is_termux():
         check_info("Node.js not found (browser tools are optional in the tested Termux path)")
         check_info("Install Node.js on Termux with: pkg install nodejs")

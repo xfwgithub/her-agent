@@ -60,7 +60,7 @@ PyPI 发布版本跟踪带标签的版本（主/次版本发布），而非 `mai
 **方式 B — git 安装器（跟踪 main 分支）：**
 
 ```bash
-# Linux / macOS / WSL2 / Android (Termux)
+# Linux / macOS / Android (Termux)
 curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
 ```
 
@@ -68,9 +68,7 @@ curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
 如果你在手机上安装，请参阅专门的 [Termux 指南](./termux.md)，其中包含经过测试的手动安装步骤、支持的扩展功能以及当前 Android 特有的限制。
 :::
 
-:::tip Windows 用户
-请先安装 [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install)，然后在 WSL2 终端中运行上述命令。
-:::
+
 
 安装完成后，重新加载 shell：
 
@@ -257,7 +255,7 @@ her config set terminal.backend ssh       # 远程服务器
 
 ```bash
 # 在 her 安装目录下运行（curl 安装器在 Linux/macOS 上将其放置于
-# ~/.her/her-agent，在 Windows 上为 %LOCALAPPDATA%\her\her-agent）：
+# ~/.her/her-agent）：
 cd ~/.her/her-agent
 uv pip install -e ".[voice]"
 # 包含 faster-whisper，用于免费的本地语音转文字

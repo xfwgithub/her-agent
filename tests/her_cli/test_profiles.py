@@ -600,14 +600,6 @@ class TestAliasCollision:
         assert result is not None
         assert "reserved" in result.lower()
 
-    def test_uses_where_on_windows(self, profile_env, monkeypatch):
-        monkeypatch.setattr("sys.platform", "win32")
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=1, stdout="")
-            check_alias_collision("mybot")
-        call_args = mock_run.call_args[0][0]
-        assert call_args[0] == "where"
-
     def test_uses_which_on_posix(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
         with patch("subprocess.run") as mock_run:
@@ -615,20 +607,6 @@ class TestAliasCollision:
             check_alias_collision("mybot")
         call_args = mock_run.call_args[0][0]
         assert call_args[0] == "which"
-
-    def test_windows_checks_bat_extension(self, profile_env, monkeypatch):
-        monkeypatch.setattr("sys.platform", "win32")
-        wrapper_dir = profile_env / ".local" / "bin"
-        wrapper_dir.mkdir(parents=True, exist_ok=True)
-        bat_path = wrapper_dir / "mybot.bat"
-        bat_path.write_text("@echo off\r\nher -p mybot %*\r\n")
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout=str(bat_path),
-            )
-            result = check_alias_collision("mybot")
-        assert result is None  # our own wrapper, safe to overwrite
-
 
 # ===================================================================
 # TestWrapperScript
@@ -646,27 +624,6 @@ class TestWrapperScript:
         content = wrapper.read_text()
         assert content.startswith("#!/bin/sh")
         assert "her -p mybot" in content
-
-    def test_creates_bat_on_windows(self, profile_env, monkeypatch):
-        monkeypatch.setattr("sys.platform", "win32")
-        from her_cli.profiles import create_wrapper_script
-        wrapper = create_wrapper_script("mybot")
-        assert wrapper is not None
-        assert wrapper.name == "mybot.bat"
-        content = wrapper.read_text()
-        assert "@echo off" in content
-        assert "her -p mybot" in content
-        assert "%*" in content
-
-    def test_remove_finds_bat_on_windows(self, profile_env, monkeypatch):
-        monkeypatch.setattr("sys.platform", "win32")
-        from her_cli.profiles import create_wrapper_script, remove_wrapper_script
-        wrapper = create_wrapper_script("mybot")
-        assert wrapper is not None
-        assert wrapper.exists()
-        removed = remove_wrapper_script("mybot")
-        assert removed is True
-        assert not wrapper.exists()
 
     def test_remove_finds_sh_on_posix(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
@@ -693,21 +650,6 @@ class TestWrapperScript:
         content = wrapper.read_text()
         assert content.startswith("#!/bin/sh")
         assert "her -p redqueen" in content
-
-    def test_custom_alias_target_on_windows(self, profile_env, monkeypatch):
-        # Regression: custom-name aliases must still produce an executable
-        # .bat (not a clobbered #!/bin/sh) on Windows.
-        monkeypatch.setattr("sys.platform", "win32")
-        from her_cli.profiles import create_wrapper_script
-        wrapper = create_wrapper_script("rq", target="redqueen")
-        assert wrapper is not None
-        assert wrapper.name == "rq.bat"
-        content = wrapper.read_text()
-        assert "@echo off" in content
-        assert "her -p redqueen" in content
-        assert "%*" in content
-        assert "#!/bin/sh" not in content
-
 
 # ===================================================================
 # TestFindAliasForProfile — display-side reverse lookup
@@ -743,13 +685,6 @@ class TestFindAliasForProfile:
         wrapper_dir.mkdir(parents=True, exist_ok=True)
         (wrapper_dir / "pip").write_text("#!/bin/sh\nexec python -m pip \"$@\"\n")
         assert find_alias_for_profile("steve") is None
-
-    def test_custom_alias_on_windows(self, profile_env, monkeypatch):
-        monkeypatch.setattr("sys.platform", "win32")
-        from her_cli.profiles import create_wrapper_script, find_alias_for_profile
-        create_wrapper_script("qiaobusi", target="steve")
-        # The .bat extension must be stripped from the returned alias name.
-        assert find_alias_for_profile("steve") == "qiaobusi"
 
     def test_list_profiles_surfaces_custom_alias(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")

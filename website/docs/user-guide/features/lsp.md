@@ -226,7 +226,6 @@ the named tool through your OS package manager:
 ```
 apt install shellcheck      # Debian / Ubuntu
 brew install shellcheck     # macOS
-scoop install shellcheck    # Windows
 ```
 
 The same warning is logged once at server spawn time in

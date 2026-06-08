@@ -4,7 +4,7 @@ description: "GitHub PR lifecycle: branch, commit, open, CI, merge."
 version: 1.1.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [GitHub, Pull-Requests, CI/CD, Git, Automation, Merge]

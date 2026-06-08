@@ -1,25 +1,11 @@
-"""Regression tests for issue #22379 — Ctrl+Enter newline over SSH/WSL.
+"""Regression tests for issue #22379 — Ctrl+Enter newline over SSH/WSL."""
 
-prompt_toolkit treats c-j (LF) as Enter on POSIX so thin PTYs (docker exec,
-some BSD ssh) that send LF for plain Enter still work. But Windows Terminal
-(native, WSL, and SSH-forwarded sessions) sends Ctrl+Enter as bare LF — same
-byte. Without environment-aware gating, binding c-j to submit means
-Ctrl+Enter submits instead of inserting a newline.
-
-These tests pin the gating predicate and the resulting binding behavior.
-"""
 
 from __future__ import annotations
 
 import os
 import sys
 from unittest.mock import patch
-
-
-def test_native_windows_preserves_newline():
-    import cli as cli_mod
-    with patch.object(sys, "platform", "win32"):
-        assert cli_mod._preserve_ctrl_enter_newline() is True
 
 
 def test_ssh_session_preserves_newline_on_linux():
@@ -41,13 +27,6 @@ def test_wsl_distro_name_preserves_newline():
     import cli as cli_mod
     with patch.object(sys, "platform", "linux"):
         with patch.dict(os.environ, {"WSL_DISTRO_NAME": "Ubuntu-Microsoft"}, clear=True):
-            assert cli_mod._preserve_ctrl_enter_newline() is True
-
-
-def test_windows_terminal_session_preserves_newline():
-    import cli as cli_mod
-    with patch.object(sys, "platform", "linux"):
-        with patch.dict(os.environ, {"WT_SESSION": "abc-def"}, clear=True):
             assert cli_mod._preserve_ctrl_enter_newline() is True
 
 

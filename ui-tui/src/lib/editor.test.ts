@@ -68,7 +68,4 @@ describe('resolveEditor', () => {
     expect(resolveEditor({ PATH: [a, b].join(delimiter) })).toEqual([expected])
   })
 
-  it('uses notepad.exe on Windows when no env override', () => {
-    expect(resolveEditor({ PATH: dir }, 'win32')).toEqual(['notepad.exe'])
-  })
 })

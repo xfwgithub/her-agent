@@ -1,18 +1,11 @@
 /**
  * Bidirectional text reordering for terminal rendering.
  *
- * Terminals on Windows do not implement the Unicode Bidi Algorithm,
- * so RTL text (Hebrew, Arabic, etc.) appears reversed. This module
- * applies the bidi algorithm to reorder ClusteredChar arrays from
- * logical order to visual order before Ink's LTR cell placement loop.
- *
- * On macOS terminals (Terminal.app, iTerm2) bidi works natively.
- * Windows Terminal (including WSL) does not implement bidi
- * (https://github.com/microsoft/terminal/issues/538).
- *
- * Detection: Windows Terminal sets WT_SESSION; native Windows cmd/conhost
- * also lacks bidi. We enable bidi reordering when running on Windows or
- * inside Windows Terminal (covers WSL).
+ * Inks bidi reordering for terminals that lack native bidi support.
+ * Most modern terminals implement the Unicode Bidi Algorithm natively
+ * (macOS Terminal.app, iTerm2, Ghostty, kitty, etc.). VS Code's
+ * integrated terminal (xterm.js) and similar terminal emulators do not,
+ * so software bidi is applied when needed.
  */
 import bidiFactory from 'bidi-js'
 
@@ -29,8 +22,6 @@ let needsSoftwareBidi: boolean | undefined
 function needsBidi(): boolean {
   if (needsSoftwareBidi === undefined) {
     needsSoftwareBidi =
-      process.platform === 'win32' ||
-      typeof process.env['WT_SESSION'] === 'string' || // WSL in Windows Terminal
       process.env['TERM_PROGRAM'] === 'vscode' // VS Code integrated terminal (xterm.js)
   }
 
@@ -48,7 +39,7 @@ function getBidi() {
 /**
  * Reorder an array of ClusteredChars from logical order to visual order
  * using the Unicode Bidi Algorithm. Active on terminals that lack native
- * bidi support (Windows Terminal, conhost, WSL).
+ * bidi support (e.g. xterm.js-based terminals).
  *
  * Returns the same array on bidi-capable terminals (no-op).
  */

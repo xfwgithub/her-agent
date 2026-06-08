@@ -280,7 +280,7 @@ Use `{{` and `}}` for literal braces.
 
 | Key                | Default | Meaning                                                                                                    |
 |--------------------|---------|------------------------------------------------------------------------------------------------------------|
-| `timeout`          | `120`   | Seconds; the process tree is killed on expiry (Unix `killpg`, Windows `taskkill /T`).                       |
+| `timeout`          | `120`   | Seconds; the process tree is killed on expiry (Unix `killpg`).                       |
 | `output_format`    | `mp3`   | One of `mp3` / `wav` / `ogg` / `flac`. Auto-inferred from the output extension if her picks a path.      |
 | `voice_compatible` | `false` | When `true`, her converts MP3/WAV output to Opus/OGG via ffmpeg so Telegram renders a voice bubble.      |
 | `max_text_length`  | `5000`  | Input is truncated to this length before rendering the command.                                             |
@@ -517,7 +517,7 @@ For `format: json` / `srt` / `vtt`, her returns the raw file content as the `tra
 
 | Key             | Default | Meaning                                                                                              |
 |-----------------|---------|------------------------------------------------------------------------------------------------------|
-| `timeout`       | `300`   | Seconds; the process tree is killed on expiry (Unix `start_new_session`, Windows `taskkill /T`).     |
+| `timeout`       | `300`   | Seconds; the process tree is killed on expiry (Unix `start_new_session`).     |
 | `format`        | `txt`   | One of `txt` / `json` / `srt` / `vtt`. Sets the extension of `{output_path}`.                       |
 | `language`      | `en`    | Forwarded to `{language}`. Defaults to `stt.language` then `en`.                                     |
 | `model`         | empty   | Forwarded to `{model}`. The `model=` argument to `transcribe_audio()` overrides this.                |

@@ -69,7 +69,7 @@ export function looksLikeDroppedPath(text: string): boolean {
     return false
   }
 
-  // file:// URIs, relative, home-relative, quoted, and Windows drive paths
+  // file:// URIs, relative, home-relative, and quoted paths
   if (
     trimmed.startsWith('file://') ||
     trimmed.startsWith('~/') ||
@@ -78,9 +78,7 @@ export function looksLikeDroppedPath(text: string): boolean {
     trimmed.startsWith('"/') ||
     trimmed.startsWith("'/") ||
     trimmed.startsWith('"~') ||
-    trimmed.startsWith("'~") ||
-    /^[A-Za-z]:[/\\]/.test(trimmed) ||
-    /^["'][A-Za-z]:[/\\]/.test(trimmed)
+    trimmed.startsWith("'~")
   ) {
     return true
   }

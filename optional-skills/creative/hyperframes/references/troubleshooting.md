@@ -62,7 +62,6 @@ Install FFmpeg via your system package manager:
 | Fedora / RHEL   | `sudo dnf install -y ffmpeg`        |
 | Arch            | `sudo pacman -S ffmpeg`             |
 | macOS           | `brew install ffmpeg`               |
-| Windows         | `winget install Gyan.FFmpeg`        |
 
 Verify: `ffmpeg -version`.
 

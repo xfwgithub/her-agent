@@ -9,7 +9,7 @@ Thank you for contributing to her Agent! This guide covers everything you need: 
 We value contributions in this order:
 
 1. **Bug fixes** — crashes, incorrect behavior, data loss. Always top priority.
-2. **Cross-platform compatibility** — macOS, different Linux distros, and WSL2 on Windows. We want her to work everywhere.
+2. **Cross-platform compatibility** — macOS and different Linux distros. We want her to work everywhere.
 3. **Security hardening** — shell injection, prompt injection, path traversal, privilege escalation. See [Security](#security-considerations).
 4. **Performance and robustness** — retry logic, error handling, graceful degradation.
 5. **New skills** — but only broadly useful ones. See [Should it be a Skill or a Tool?](#should-it-be-a-skill-or-a-tool)
@@ -188,7 +188,6 @@ her-agent/
 │
 ├── scripts/                  # Installer and bridge scripts
 │   ├── install.sh                # Linux/macOS installer
-│   ├── install.ps1               # Windows PowerShell installer
 │   └── whatsapp-bridge/          # Node.js WhatsApp bridge (Baileys)
 │
 ├── skills/                   # Bundled skills (copied to ~/.her/skills/ on install)
@@ -349,7 +348,7 @@ version: 1.0.0
 author: Your Name
 license: MIT
 platforms: [macos, linux]          # Optional — restrict to specific OS platforms
-                                   #   Valid: macos, linux, windows
+                                   #   Valid: macos, linux
                                    #   Omit to load on all platforms (default)
 required_environment_variables:    # Optional — secure setup-on-load metadata
   - name: MY_API_KEY
@@ -394,7 +393,7 @@ Skills can declare which OS platforms they support via the `platforms` frontmatt
 ```yaml
 platforms: [macos]            # macOS only (e.g., iMessage, Apple Reminders)
 platforms: [macos, linux]     # macOS and Linux
-platforms: [windows]          # Windows only
+platforms: [linux]            # Linux only
 ```
 
 If the field is omitted or empty, the skill loads on all platforms (backward compatible). See `skills/apple/` for examples of macOS-only skills.
@@ -588,189 +587,38 @@ See `her_cli/skin_engine.py` for the full schema and existing skins as examples.
 
 ## Cross-Platform Compatibility
 
-her runs on Linux, macOS, and native Windows (plus WSL2). When writing code
-that touches the OS, assume *any* platform can hit your code path.
+her runs on Linux and macOS. When writing code
+that touches the OS, be aware of differences between the two platforms.
 
-> **Before you PR:** run `scripts/check-windows-footguns.py` to catch the
-> common Windows-unsafe patterns in your diff. It's grep-based and cheap;
-> CI runs it on every PR too.
+### Process management
 
-### Critical rules
+Use `psutil` for process management — it works on every platform:
 
-1. **Never call `os.kill(pid, 0)` for liveness checks.** `os.kill(pid, 0)`
-   is a standard POSIX idiom to check "is this PID alive" — the signal 0
-   is a no-op permission check. **On Windows it is NOT a no-op.** Python's
-   Windows `os.kill` maps `sig=0` to `CTRL_C_EVENT` (they collide at the
-   integer value 0) and routes it through `GenerateConsoleCtrlEvent(0, pid)`,
-   which broadcasts Ctrl+C to the **entire console process group** containing
-   the target PID. "Probe if alive" silently becomes "kill the target and
-   often unrelated processes sharing its console." See [bpo-14484](https://bugs.python.org/issue14484)
-   (open since 2012 — will never be fixed for compat reasons).
+```python
+import psutil
+try:
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        child.kill()
+    parent.kill()
+except psutil.NoSuchProcess:
+    pass
+```
 
-   **Preferred:** use `psutil` (a core dependency — always available):
+### Path separators
 
-   ```python
-   import psutil
-   if psutil.pid_exists(pid):
-       # process is alive — safe on every platform
-       ...
-   ```
+Use `pathlib.Path` instead of string concatenation with `/`.
 
-   If you specifically need the her wrapper (it has a stdlib fallback
-   for scaffold-phase imports before pip install finishes), use
-   `gateway.status._pid_exists(pid)`. It calls `psutil.pid_exists` first
-   and falls back to a hand-rolled `OpenProcess + WaitForSingleObject`
-   dance on Windows only when psutil is somehow missing.
+### Shell shebangs
 
-   Audit grep for new callsites: `rg "os\.kill\([^,]+,\s*0\s*\)"`. Any hit
-   in non-test code is presumptively a Windows silent-kill bug.
-
-2. **Use `shutil.which()` before shelling out — don't assume Windows has
-   tools Linux has.** `wmic` was removed in Windows 10 21H1 and later. `ps`,
-   `kill`, `grep`, `awk`, `fuser`, `lsof`, `pgrep`, and most POSIX CLI tools
-   simply don't exist on Windows. Test availability with
-   `shutil.which("tool")` and fall back to a Windows-native equivalent —
-   usually PowerShell via `subprocess.run(["powershell", "-NoProfile",
-   "-Command", ...])`.
-
-   For process enumeration: PowerShell's `Get-CimInstance Win32_Process` is
-   the modern replacement for `wmic process`. See
-   `her_cli/gateway.py::_scan_gateway_pids` for the pattern.
-
-3. **`termios` and `fcntl` are Unix-only.** Always catch both `ImportError`
-   and `NotImplementedError`:
-   ```python
-   try:
-       from simple_term_menu import TerminalMenu
-       menu = TerminalMenu(options)
-       idx = menu.show()
-   except (ImportError, NotImplementedError):
-       # Fallback: numbered menu for Windows
-       for i, opt in enumerate(options):
-           print(f"  {i+1}. {opt}")
-       idx = int(input("Choice: ")) - 1
-   ```
-
-4. **File encoding.** Windows may save `.env` files in `cp1252`. Always
-   handle encoding errors:
-   ```python
-   try:
-       load_dotenv(env_path)
-   except UnicodeDecodeError:
-       load_dotenv(env_path, encoding="latin-1")
-   ```
-   Config files (`config.yaml`) may be saved with a UTF-8 BOM by Notepad and
-   similar editors — use `encoding="utf-8-sig"` when reading files that
-   could have been touched by a Windows GUI editor.
-
-5. **Process management.** `os.setsid()`, `os.killpg()`, `os.fork()`,
-   `os.getuid()`, and POSIX signal handling differ on Windows. Guard with
-   `platform.system()`, `sys.platform`, or `hasattr(os, "setsid")`:
-   ```python
-   if platform.system() != "Windows":
-       kwargs["preexec_fn"] = os.setsid
-   else:
-       kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
-   ```
-
-   **Preferred:** for killing a process AND its children (what `os.killpg`
-   does on POSIX), use `psutil` — it works on every platform:
-   ```python
-   import psutil
-   try:
-       parent = psutil.Process(pid)
-       # Kill children first (leaf-up), then the parent.
-       for child in parent.children(recursive=True):
-           child.kill()
-       parent.kill()
-   except psutil.NoSuchProcess:
-       pass
-   ```
-
-6. **Signals that don't exist on Windows: `SIGALRM`, `SIGCHLD`, `SIGHUP`,
-   `SIGUSR1`, `SIGUSR2`, `SIGPIPE`, `SIGQUIT`, `SIGKILL`.** Python's
-   `signal` module raises `AttributeError` at import time if you reference
-   them on Windows. Use `getattr(signal, "SIGKILL", signal.SIGTERM)` or
-   gate the whole block behind a platform check. `loop.add_signal_handler`
-   raises `NotImplementedError` on Windows — always catch it.
-
-7. **Path separators.** Use `pathlib.Path` instead of string concatenation
-   with `/`. Forward slashes work almost everywhere on Windows, but
-   `subprocess.run(["cmd.exe", "/c", ...])` and other shell contexts can
-   require backslashes — convert with `str(path)` at the subprocess boundary,
-   not inside Python logic.
-
-8. **Symlinks need elevated privileges on Windows** (unless Developer Mode is
-   on). Tests that create symlinks need `@pytest.mark.skipif(sys.platform ==
-   "win32", reason="Symlinks require elevated privileges on Windows")`.
-
-9. **POSIX file modes (0o600, 0o644, etc.) are NOT enforced on NTFS** by
-   default. Tests that assert on `stat().st_mode & 0o777` must skip on
-   Windows — the concept doesn't translate. Use ACLs (`icacls`, `pywin32`)
-   for Windows secret-file protection if needed.
-
-10. **Detached background daemons on Windows need `pythonw.exe`, NOT
-    `python.exe`.** `python.exe` always allocates or attaches to a console,
-    which makes it vulnerable to `CTRL_C_EVENT` broadcasts from any sibling
-    process. `pythonw.exe` is the no-console variant. Combine with
-    `CREATE_NO_WINDOW | DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP |
-    CREATE_BREAKAWAY_FROM_JOB` in `subprocess.Popen(creationflags=...)`.
-    See `her_cli/gateway_windows.py::_spawn_detached` for the reference
-    implementation.
-
-11. **`subprocess.Popen` with `.cmd` or `.bat` shims needs `shutil.which`
-    to resolve.** Passing `"agent-browser"` to `Popen` on Windows finds
-    the extensionless POSIX shebang shim in `node_modules/.bin/`, which
-    `CreateProcessW` can't execute — you'll get `WinError 193 "not a valid
-    Win32 application"`. Use `shutil.which("agent-browser", path=local_bin)`
-    which honors PATHEXT and picks the `.CMD` variant on Windows.
-
-12. **Don't use shell shebangs as a way to run Python.** `#!/usr/bin/env
-    python` only works when the file is executed through a Unix shell.
-    `subprocess.run(["./myscript.py"])` on Windows fails even if the file
-    has a shebang line. Always invoke Python explicitly:
-    `[sys.executable, "myscript.py"]`.
-
-13. **Shell commands in installers.** If you change `scripts/install.sh`,
-    make the equivalent change in `scripts/install.ps1`. The two scripts
-    are the canonical example of "works on Linux does not mean works on
-    Windows" and have drifted multiple times — keep them in lockstep.
-
-14. **Known paths that are OneDrive-redirected on Windows:** Desktop,
-    Documents, Pictures, Videos. The "real" path when OneDrive Backup is
-    enabled is `%USERPROFILE%\OneDrive\Desktop` (etc.), NOT
-    `%USERPROFILE%\Desktop` (which exists as an empty husk). Resolve the
-    real location via `ctypes` + `SHGetKnownFolderPath` or by reading the
-    `Shell Folders` registry key — never assume `~/Desktop`.
-
-15. **CRLF vs LF in generated scripts.** Windows `cmd.exe` and `schtasks`
-    parse line-by-line; mixed or LF-only line endings can break multi-line
-    `.cmd` / `.bat` files. Use `open(path, "w", encoding="utf-8",
-    newline="\r\n")` — or `open(path, "wb")` + explicit bytes — when
-    generating scripts Windows will execute.
-
-16. **Two different quoting schemes in one command line.** `subprocess.run
-    (["schtasks", "/TR", some_cmd])` → schtasks itself parses `/TR`, AND
-    the `some_cmd` string is re-parsed by `cmd.exe` when the task fires.
-    Different parsers, different escape rules. Use two separate quoting
-    helpers and never cross them. See `her_cli/gateway_windows.py::
-    _quote_cmd_script_arg` and `_quote_schtasks_arg` for the reference
-    pair.
+Don't use shell shebangs as a way to run Python. `subprocess.run(["./myscript.py"])` may not work reliably — always invoke Python explicitly: `[sys.executable, "myscript.py"]`.
 
 ### Testing cross-platform
 
-Tests that use POSIX-only syscalls need a skip marker. Common ones:
+Tests that use POSIX-only syscalls need a skip marker:
 - Symlinks → `@pytest.mark.skipif(sys.platform == "win32", ...)`
-- `0o600` file modes → `@pytest.mark.skipif(sys.platform.startswith("win"), ...)`
 - `signal.SIGALRM` → Unix-only (see `tests/conftest.py::_enforce_test_timeout`)
 - `os.setsid` / `os.fork` → Unix-only
-- Live Winsock / Windows-specific regression tests →
-  `@pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific regression")`
-
-If you monkeypatch `sys.platform` for cross-platform tests, also patch
-`platform.system()` / `platform.release()` / `platform.mac_ver()` — each
-re-reads the real OS independently, so half-patched tests still route
-through the wrong branch on a Windows runner.
 
 ---
 
@@ -859,7 +707,7 @@ refactor/description   # Code restructuring
 
 1. **Run tests**: `scripts/run_tests.sh` (recommended; same as CI) or `pytest tests/ -v` with the project venv activated
 2. **Test manually**: Run `her` and exercise the code path you changed
-3. **Check cross-platform impact**: If you touch file I/O, process management, or terminal handling, consider macOS, Linux, and WSL2
+3. **Check cross-platform impact**: If you touch file I/O, process management, or terminal handling, consider macOS and Linux
 4. **Keep PRs focused**: One logical change per PR. Don't mix a bug fix with a refactor with a new feature.
 
 ### PR description

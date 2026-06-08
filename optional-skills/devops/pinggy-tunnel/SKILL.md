@@ -4,7 +4,7 @@ description: Zero-install localhost tunnels over SSH via Pinggy.
 version: 0.1.0
 author: Teknium (teknium1), her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Pinggy, Tunnel, Networking, SSH, Webhook, Localhost]
@@ -28,7 +28,7 @@ If the host already has `cloudflared` configured, prefer the `cloudflared-quick-
 
 ## Prerequisites
 
-- `ssh` on PATH (`ssh -V`). Default on Linux, macOS, and Windows 10+. No other install.
+- `ssh` on PATH (`ssh -V`). Default on Linux and macOS. No other install.
 - A local service listening on `127.0.0.1:<port>` before the tunnel starts. Pinggy will return URLs but they'll 502 until the local origin is up.
 
 Optional:

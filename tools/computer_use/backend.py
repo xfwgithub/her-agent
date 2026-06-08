@@ -1,6 +1,6 @@
 """Abstract backend interface for computer use.
 
-Any implementation (cua-driver over MCP, pyautogui, noop, future Linux/Windows)
+Any implementation (cua-driver over MCP, pyautogui, noop)
 must return the shape described below. All methods synchronous; async is
 handled inside the backend implementation if needed.
 """

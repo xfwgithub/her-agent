@@ -684,11 +684,6 @@ class TestSkillMatchesPlatform:
             mock_sys.platform = "darwin"
             assert skill_matches_platform({"platforms": ["linux"]}) is False
 
-    def test_windows_on_win32(self):
-        with patch("agent.skill_utils.sys") as mock_sys:
-            mock_sys.platform = "win32"
-            assert skill_matches_platform({"platforms": ["windows"]}) is True
-
     def test_windows_on_linux(self):
         with patch("agent.skill_utils.sys") as mock_sys:
             mock_sys.platform = "linux"
@@ -701,8 +696,7 @@ class TestSkillMatchesPlatform:
             assert skill_matches_platform({"platforms": ["macos", "linux"]}) is True
             mock_sys.platform = "linux"
             assert skill_matches_platform({"platforms": ["macos", "linux"]}) is True
-            mock_sys.platform = "win32"
-            assert skill_matches_platform({"platforms": ["macos", "linux"]}) is False
+            assert skill_matches_platform({"platforms": ["macos", "freebsd"]}) is False
 
     def test_string_instead_of_list(self):
         """A single string value should be treated as a one-element list."""
@@ -762,7 +756,6 @@ class TestFindAllSkillsPlatformFiltering:
             patch("tools.skills_tool.SKILLS_DIR", tmp_path),
             patch("agent.skill_utils.sys") as mock_sys,
         ):
-            mock_sys.platform = "win32"
             _make_skill(tmp_path, "generic-skill")
             skills = _find_all_skills()
         assert len(skills) == 1
@@ -780,11 +773,8 @@ class TestFindAllSkillsPlatformFiltering:
             skills_darwin = _find_all_skills()
             mock_sys.platform = "linux"
             skills_linux = _find_all_skills()
-            mock_sys.platform = "win32"
-            skills_win = _find_all_skills()
         assert len(skills_darwin) == 1
         assert len(skills_linux) == 1
-        assert len(skills_win) == 0
 
 
 # ---------------------------------------------------------------------------

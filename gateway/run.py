@@ -13,15 +13,12 @@ Usage:
     python cli.py --gateway
 """
 
-# IMPORTANT: her_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See her_bootstrap.py for full rationale.
 try:
     import her_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     # Graceful fallback when her_bootstrap isn't registered in the venv
     # yet — happens during partial ``her update`` where git-reset landed
-    # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
-    # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
+    # new code but ``uv pip install -e .`` didn't finish.
     pass
 
 import asyncio
@@ -4011,73 +4008,6 @@ class GatewayRunner:
             return
 
         current_pid = os.getpid()
-
-        # On Windows there's no bash/setsid chain — spawn a tiny Python
-        # watcher directly via sys.executable instead.  The watcher polls
-        # current_pid, waits for our exit, then runs `her gateway
-        # restart` with detach flags so the respawn survives the CLI
-        # that triggered the /restart command closing its console.
-        if sys.platform == "win32":
-            import textwrap
-            from her_cli._subprocess_compat import windows_detach_popen_kwargs
-
-            cmd_argv = [*her_cmd, "gateway", "restart"]
-            watcher = textwrap.dedent(
-                """
-                import os, subprocess, sys, time
-                pid = int(sys.argv[1])
-                cmd = sys.argv[2:]
-                deadline = time.monotonic() + 120
-
-                def _alive(p):
-                    # On Windows, os.kill(pid, 0) is NOT a no-op — it maps to
-                    # GenerateConsoleCtrlEvent(0, pid) (bpo-14484). Use the
-                    # Win32 handle-based existence check instead.
-                    if os.name == 'nt':
-                        import ctypes
-                        k32 = ctypes.windll.kernel32
-                        k32.OpenProcess.restype = ctypes.c_void_p
-                        k32.WaitForSingleObject.restype = ctypes.c_uint
-                        k32.GetLastError.restype = ctypes.c_uint
-                        h = k32.OpenProcess(0x1000 | 0x100000, False, int(p))
-                        if not h:
-                            return k32.GetLastError() != 87
-                        try:
-                            return k32.WaitForSingleObject(h, 0) == 0x102
-                        finally:
-                            k32.CloseHandle(h)
-                    try:
-                        os.kill(int(p), 0)
-                        return True
-                    except ProcessLookupError:
-                        return False
-                    except PermissionError:
-                        return True
-                    except OSError:
-                        return False
-
-                while time.monotonic() < deadline:
-                    if not _alive(pid):
-                        break
-                    time.sleep(0.2)
-                _CREATE_NEW_PROCESS_GROUP = 0x00000200
-                _DETACHED_PROCESS = 0x00000008
-                _CREATE_NO_WINDOW = 0x08000000
-                subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    creationflags=_CREATE_NEW_PROCESS_GROUP | _DETACHED_PROCESS | _CREATE_NO_WINDOW,
-                )
-                """
-            ).strip()
-            subprocess.Popen(
-                [sys.executable, "-c", watcher, str(current_pid), *cmd_argv],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                **windows_detach_popen_kwargs(),
-            )
-            return
 
         cmd = " ".join(shlex.quote(part) for part in her_cmd)
         shell_cmd = (
@@ -14948,90 +14878,28 @@ class GatewayRunner:
         _tmp_pending.replace(pending_path)
         exit_code_path.unlink(missing_ok=True)
 
-        # Spawn `her update --gateway` detached so it survives gateway restart.
-        # --gateway enables file-based IPC for interactive prompts (stash
-        # restore, config migration) so the gateway can forward them to the
-        # user instead of silently skipping them.
-        # Use setsid for portable session detach (works under system services
-        # where systemd-run --user fails due to missing D-Bus session).
-        # PYTHONUNBUFFERED ensures output is flushed line-by-line so the
-        # gateway can stream it to the messenger in near-real-time.
-        # Spawn `her update --gateway` detached so it survives gateway restart.
-        # --gateway enables file-based IPC for interactive prompts (stash
-        # restore, config migration) so the gateway can forward them to the
-        # user instead of silently skipping them.
-        # Use setsid for portable session detach (works under system services
-        # where systemd-run --user fails due to missing D-Bus session).
-        # PYTHONUNBUFFERED ensures output is flushed line-by-line so the
-        # gateway can stream it to the messenger in near-real-time.
-        #
-        # Windows: no bash/setsid chain.  Run `her update --gateway`
-        # directly via sys.executable; redirect stdout/stderr to the same
-        # output files via Popen file handles; write the exit code in a
-        # follow-up write.  A tiny Python watcher would be cleaner but
-        # we're already inside gateway/run.py's update path which is async,
-        # so the simplest correct thing is: launch an inline Python helper
-        # that runs the command and writes both outputs.
         try:
-            if sys.platform == "win32":
-                import textwrap
-                from her_cli._subprocess_compat import windows_detach_popen_kwargs
-
-                # her_cmd is a list of argv parts we can pass directly
-                # (no shell-quoting needed).
-                helper = textwrap.dedent(
-                    """
-                    import os, subprocess, sys
-                    output_path = sys.argv[1]
-                    exit_code_path = sys.argv[2]
-                    cmd = sys.argv[3:]
-                    env = dict(os.environ)
-                    env["PYTHONUNBUFFERED"] = "1"
-                    with open(output_path, "wb") as f:
-                        proc = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, env=env)
-                        rc = proc.wait()
-                    with open(exit_code_path, "w") as f:
-                        f.write(str(rc))
-                    """
-                ).strip()
+            her_cmd_str = " ".join(shlex.quote(part) for part in her_cmd)
+            update_cmd = (
+                f"PYTHONUNBUFFERED=1 {her_cmd_str} update --gateway"
+                f" > {shlex.quote(str(output_path))} 2>&1; "
+                f"rc=$?; printf '%s' \"$rc\" > {shlex.quote(str(exit_code_path))}"
+            )
+            setsid_bin = shutil.which("setsid")
+            if setsid_bin:
                 subprocess.Popen(
-                    [
-                        sys.executable, "-c", helper,
-                        str(output_path), str(exit_code_path),
-                        *her_cmd, "update", "--gateway",
-                    ],
+                    [setsid_bin, "bash", "-c", update_cmd],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    **windows_detach_popen_kwargs(),
+                    start_new_session=True,
                 )
             else:
-                her_cmd_str = " ".join(shlex.quote(part) for part in her_cmd)
-                update_cmd = (
-                    f"PYTHONUNBUFFERED=1 {her_cmd_str} update --gateway"
-                    f" > {shlex.quote(str(output_path))} 2>&1; "
-                    # Avoid `status=$?`: `status` is a read-only special parameter
-                    # in zsh, and this command string is copied/reused in macOS/zsh
-                    # operator wrappers. Keep the template zsh-safe even though this
-                    # specific subprocess currently runs under bash.
-                    f"rc=$?; printf '%s' \"$rc\" > {shlex.quote(str(exit_code_path))}"
+                subprocess.Popen(
+                    ["bash", "-c", update_cmd],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
                 )
-                setsid_bin = shutil.which("setsid")
-                if setsid_bin:
-                    # Preferred: setsid creates a new session, fully detached
-                    subprocess.Popen(
-                        [setsid_bin, "bash", "-c", update_cmd],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        start_new_session=True,
-                    )
-                else:
-                    # Fallback: start_new_session=True calls os.setsid() in child
-                    subprocess.Popen(
-                        ["bash", "-c", update_cmd],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        start_new_session=True,
-                    )
         except Exception as e:
             pending_path.unlink(missing_ok=True)
             exit_code_path.unlink(missing_ok=True)
@@ -19262,26 +19130,16 @@ def _run_planned_stop_watcher(
 ) -> None:
     """Poll for the planned-stop marker and trigger graceful shutdown.
 
-    On Windows, ``asyncio.add_signal_handler`` raises NotImplementedError
-    for SIGTERM/SIGINT, so the standard signal-driven shutdown path
-    never runs when ``her gateway stop`` signals the gateway. The
-    consequence is that the drain loop is skipped — in-flight agent
-    sessions are killed mid-turn and ``resume_pending`` is never set,
-    so the next gateway boot has no idea those sessions need to be
-    auto-resumed (issue #33778, v0.13.0 session-resume feature broken
-    on native Windows).
+    ``asyncio.add_signal_handler`` raises ``NotImplementedError``
+    for SIGTERM/SIGINT in environments where signals aren't available
+    (e.g. sandboxed CI runners), so the signal-driven shutdown path
+    would never run. This watcher bridges that gap by translating
+    a filesystem marker into the same shutdown-handler invocation
+    a real SIGTERM would have produced.
 
-    This watcher runs on every platform (cheap, defensive) and bridges
-    the gap on Windows by translating a filesystem marker into the
-    same shutdown-handler invocation a real SIGTERM would have produced
-    on POSIX. The CLI's ``her_cli.gateway_windows.stop()`` writes
-    the marker via ``write_planned_stop_marker(pid)`` and then waits
-    for the gateway PID to exit; this watcher is what makes that
-    exit happen cleanly.
-
-    On POSIX this is a no-op safety net — the signal handler always
-    races us to consuming the marker file because it fires synchronously
-    from the kernel's signal delivery.
+    Runs on every platform (cheap, defensive) as a no-op safety net —
+    the signal handler always races us to consuming the marker file
+    because it fires synchronously from the kernel's signal delivery.
 
     Args:
         stop_event: cleared by start_gateway() during normal shutdown
@@ -19499,8 +19357,8 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
                     pass
                 return False
             # Wait up to 10 seconds for the old process to exit.
-            # ``os.kill(pid, 0)`` on Windows is NOT a no-op — use the
-            # handle-based existence check instead.
+            # Use the handle-based existence check to avoid races with
+            # pid reuse.
             from gateway.status import _pid_exists
             for _ in range(20):
                 if not _pid_exists(existing_pid):
@@ -19708,29 +19566,22 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     if threading.current_thread() is threading.main_thread():
         for sig in (signal.SIGINT, signal.SIGTERM):
             try:
-                loop.add_signal_handler(sig, shutdown_signal_handler, sig)  # windows-footgun: ok — wrapped in try/except NotImplementedError for Windows
+                loop.add_signal_handler(sig, shutdown_signal_handler, sig)
             except NotImplementedError:
                 pass
         if hasattr(signal, "SIGUSR1"):
             try:
-                loop.add_signal_handler(signal.SIGUSR1, restart_signal_handler)  # windows-footgun: ok — POSIX signal, guarded by hasattr above + try/except NotImplementedError
+                loop.add_signal_handler(signal.SIGUSR1, restart_signal_handler)
             except NotImplementedError:
                 pass
     else:
         logger.info("Skipping signal handlers (not running in main thread).")
 
-    # Windows fallback: asyncio.add_signal_handler raises NotImplementedError
-    # on Windows, so `her gateway stop`'s SIGTERM (which Python maps to
-    # TerminateProcess on Windows) never invokes shutdown_signal_handler.
-    # That means the drain loop never runs, mark_resume_pending never fires,
-    # and sessions are silently lost across restarts (issue #33778).
-    #
-    # The fix is a marker-polling thread: `her gateway stop` writes the
-    # planned-stop marker BEFORE killing, and this thread notices it and
-    # drives the same shutdown path the signal handler would have.  Runs
-    # on every platform (cheap, defensive) so non-signal-bearing
-    # environments (Windows native, sandboxed CI runners that mask
-    # SIGTERM) still get a clean drain.
+    # Marker-polling thread: ``her gateway stop`` writes the planned-stop
+    # marker BEFORE signalling, and this thread notices it and drives the
+    # same shutdown path the signal handler would have.  Runs on every
+    # platform (cheap, defensive) so non-signal-bearing environments
+    # (sandboxed CI runners that mask SIGTERM) still get a clean drain.
     _planned_stop_watcher_stop = threading.Event()
     _planned_stop_watcher_thread = threading.Thread(
         target=_run_planned_stop_watcher,
@@ -19860,14 +19711,6 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
 
 def main():
     """CLI entry point for the gateway."""
-    # Force UTF-8 stdio on Windows — gateway logs and startup banner would
-    # otherwise UnicodeEncodeError on cp1252 consoles.  No-op on POSIX.
-    try:
-        from her_cli.stdio import configure_windows_stdio
-        configure_windows_stdio()
-    except Exception:
-        pass
-
     import argparse
     
     parser = argparse.ArgumentParser(description="her Gateway - Multi-platform messaging")

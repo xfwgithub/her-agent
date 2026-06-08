@@ -93,7 +93,6 @@ class TestScanSkillCommands:
             patch("tools.skills_tool.SKILLS_DIR", tmp_path),
             patch("agent.skill_utils.sys") as mock_sys,
         ):
-            mock_sys.platform = "win32"
             _make_skill(tmp_path, "generic-tool")
             result = scan_skill_commands()
         assert "/generic-tool" in result

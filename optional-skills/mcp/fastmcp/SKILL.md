@@ -4,7 +4,7 @@ description: Build, test, inspect, install, and deploy MCP servers with FastMCP 
 version: 1.0.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [MCP, FastMCP, Python, Tools, Resources, Prompts, Deployment]

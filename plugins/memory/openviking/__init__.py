@@ -371,15 +371,6 @@ def _zip_directory(dir_path: Path) -> Path:
     return zip_path
 
 
-def _is_windows_absolute_path(value: str) -> bool:
-    return (
-        len(value) >= 3
-        and value[0].isalpha()
-        and value[1] == ":"
-        and value[2] in {"/", "\\"}
-    )
-
-
 def _is_remote_resource_source(value: str) -> bool:
     return value.startswith(_REMOTE_RESOURCE_PREFIXES)
 
@@ -389,12 +380,9 @@ def _is_local_path_reference(value: str) -> bool:
         return False
     if _is_remote_resource_source(value):
         return False
-    if _is_windows_absolute_path(value):
-        return True
     return (
-        value.startswith(("/", "./", "../", "~/", ".\\", "..\\", "~\\"))
+        value.startswith(("/", "./", "../", "~/"))
         or "/" in value
-        or "\\" in value
     )
 
 
@@ -930,7 +918,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
             source_path = _path_from_file_uri(url)
             if isinstance(source_path, str):
                 return tool_error(source_path)
-        elif parsed_url.scheme and not _is_windows_absolute_path(url):
+        elif parsed_url.scheme:
             source_path = None
         else:
             source_path = Path(url).expanduser()

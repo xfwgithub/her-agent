@@ -69,8 +69,7 @@ def _mock_handle_function_call(function_name, function_args, task_id=None, user_
 
 class TestSandboxRequirements(unittest.TestCase):
     def test_available_on_posix(self):
-        if sys.platform != "win32":
-            self.assertTrue(check_sandbox_requirements())
+        self.assertTrue(check_sandbox_requirements())
 
     def test_schema_is_valid(self):
         self.assertEqual(EXECUTE_CODE_SCHEMA["name"], "execute_code")
@@ -174,7 +173,6 @@ class TestExecuteCodeRemoteTempDir(unittest.TestCase):
         self.assertNotIn("mkdir -p /tmp/her_exec_", mkdir_cmd)
 
 
-@unittest.skipIf(sys.platform == "win32", "UDS not available on Windows")
 class TestExecuteCode(unittest.TestCase):
     """Integration tests using the mock dispatcher."""
 
@@ -667,7 +665,6 @@ class TestBuildExecuteCodeSchema(unittest.TestCase):
 # Environment variable filtering (security critical)
 # ---------------------------------------------------------------------------
 
-@unittest.skipIf(sys.platform == "win32", "UDS not available on Windows")
 class TestEnvVarFiltering(unittest.TestCase):
     """Verify that execute_code filters environment variables correctly.
 
@@ -772,14 +769,10 @@ class TestEnvVarFiltering(unittest.TestCase):
 
 class TestExecuteCodeEdgeCases(unittest.TestCase):
 
-    def test_windows_returns_error(self):
-        """When SANDBOX_AVAILABLE is False (e.g. when the backend deems
-        the sandbox unusable for this environment), execute_code returns
+    def test_sandbox_unavailable_returns_error(self):
+        """When SANDBOX_AVAILABLE is False, execute_code returns
         an error JSON with a readable message pointing the caller at
-        regular tool calls.  Previously this was a Windows-only gate;
-        execute_code now works on Windows via loopback TCP, so the
-        error is only emitted when SANDBOX_AVAILABLE is explicitly
-        flipped off (e.g. for future platform-specific disables)."""
+        regular tool calls."""
         with patch("tools.code_execution_tool.SANDBOX_AVAILABLE", False):
             result = json.loads(execute_code("print('hi')", task_id="test"))
             self.assertIn("error", result)
@@ -790,7 +783,6 @@ class TestExecuteCodeEdgeCases(unittest.TestCase):
         self.assertIn("error", result)
         self.assertIn("No code", result["error"])
 
-    @unittest.skipIf(sys.platform == "win32", "UDS not available on Windows")
     def test_none_enabled_tools_uses_all(self):
         """When enabled_tools is None, all sandbox tools should be available."""
         code = (
@@ -804,7 +796,6 @@ class TestExecuteCodeEdgeCases(unittest.TestCase):
         self.assertEqual(result["status"], "success")
         self.assertIn("all imports ok", result["output"])
 
-    @unittest.skipIf(sys.platform == "win32", "UDS not available on Windows")
     def test_empty_enabled_tools_uses_all(self):
         """When enabled_tools is [] (empty), all sandbox tools should be available."""
         code = (
@@ -818,7 +809,6 @@ class TestExecuteCodeEdgeCases(unittest.TestCase):
         self.assertEqual(result["status"], "success")
         self.assertIn("imports ok", result["output"])
 
-    @unittest.skipIf(sys.platform == "win32", "UDS not available on Windows")
     def test_nonoverlapping_tools_fallback(self):
         """When enabled_tools has no overlap with SANDBOX_ALLOWED_TOOLS,
         should fall back to all allowed tools."""
@@ -868,7 +858,6 @@ class TestLoadConfig(unittest.TestCase):
 # Interrupt event
 # ---------------------------------------------------------------------------
 
-@unittest.skipIf(sys.platform == "win32", "UDS not available on Windows")
 class TestInterruptHandling(unittest.TestCase):
     def test_interrupt_event_stops_execution(self):
         """When interrupt is set for the execution thread, execute_code should stop."""

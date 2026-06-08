@@ -4,7 +4,7 @@ description: Author/validate/export Google's DESIGN.md token spec files.
 version: 1.0.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [design, design-system, tokens, ui, accessibility, wcag, tailwind, dtcg, google]

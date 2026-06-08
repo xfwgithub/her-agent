@@ -101,7 +101,7 @@ VALID_STATUSES = {"triage", "todo", "scheduled", "ready", "running", "blocked", 
 VALID_INITIAL_STATUSES = {"running", "blocked"}
 VALID_WORKSPACE_KINDS = {"scratch", "worktree", "dir"}
 KNOWN_TOOLSET_NAMES = frozenset(name.casefold() for name in get_toolset_names())
-_IS_WINDOWS = sys.platform == "win32"
+
 
 # A running task's claim is valid for 15 minutes by default; after that the
 # next dispatcher tick reclaims it. Workers that outlive this window should
@@ -1196,36 +1196,15 @@ def _cross_process_init_lock(path: Path):
     lock_path = path.with_name(path.name + ".init.lock")
     handle = lock_path.open("a+b")
     try:
-        if _IS_WINDOWS:
-            import msvcrt
+        import fcntl
 
-            # Lock a single byte in the sidecar file. ``msvcrt.locking`` starts
-            # at the current file position, so seek explicitly before both
-            # lock and unlock.  The file is opened in append/read binary mode so
-            # it always exists but the byte-range lock is the synchronization
-            # primitive; no payload needs to be written.
-            handle.seek(0)
-            locking = getattr(msvcrt, "locking")
-            lock_mode = getattr(msvcrt, "LK_LOCK")
-            locking(handle.fileno(), lock_mode, 1)
-        else:
-            import fcntl
-
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
         yield
     finally:
         try:
-            if _IS_WINDOWS:
-                import msvcrt
+            import fcntl
 
-                handle.seek(0)
-                locking = getattr(msvcrt, "locking")
-                unlock_mode = getattr(msvcrt, "LK_UNLCK")
-                locking(handle.fileno(), unlock_mode, 1)
-            else:
-                import fcntl
-
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
         finally:
             handle.close()
 
@@ -6455,14 +6434,9 @@ def _looks_like_path(value: str) -> bool:
     )
 
 
-def _is_windows_batch_shim(path: str) -> bool:
-    """Return true for Windows shell/batch shims that should not be argv[0]."""
-    return path.lower().endswith((".cmd", ".bat"))
-
-
 def _path_search_names(command: str) -> list[str]:
     """Return executable names to try for an unqualified command."""
-    if not _IS_WINDOWS or os.path.splitext(command)[1]:
+    if os.path.splitext(command)[1]:
         return [command]
     raw = os.environ.get("PATHEXT") or ".COM;.EXE;.BAT;.CMD"
     exts = [ext for ext in raw.split(";") if ext]
@@ -6486,7 +6460,7 @@ def _safe_which_no_cwd(command: str) -> Optional[str]:
             candidate = os.path.join(directory, name)
             if not os.path.isfile(candidate):
                 continue
-            if _IS_WINDOWS or os.access(candidate, os.X_OK):
+            if os.access(candidate, os.X_OK):
                 return candidate
     return None
 
@@ -6499,8 +6473,6 @@ def _her_path_argv(path: str) -> list[str]:
     values. Prefer the interpreter-bound module form whenever the resolved
     executable is only a shell shim.
     """
-    if _IS_WINDOWS and _is_windows_batch_shim(path):
-        return _module_her_argv()
     return [_absolute_her_path(path)]
 
 
@@ -6539,7 +6511,7 @@ def _resolve_her_argv() -> list[str]:
             return _her_path_argv(resolved_env_bin)
         return _module_her_argv()
 
-    her_bin = _safe_which_no_cwd("her") if _IS_WINDOWS else shutil.which("her")
+    her_bin = shutil.which("her")
     if her_bin:
         return _her_path_argv(her_bin)
     return _module_her_argv()
@@ -6768,7 +6740,6 @@ def _default_spawn(
             stderr=subprocess.STDOUT,
             env=env,
             start_new_session=True,
-            creationflags=subprocess.CREATE_NO_WINDOW if _IS_WINDOWS else 0,
         )
     except FileNotFoundError:
         log_f.close()

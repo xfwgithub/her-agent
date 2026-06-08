@@ -136,7 +136,7 @@ def _warn_config_parse_failure(config_path: Path, exc: Exception) -> None:
     except Exception:
         pass
 
-_IS_WINDOWS = platform.system() == "Windows"
+
 _ENV_VAR_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 # Env var names that influence how the next subprocess executes —
@@ -604,22 +604,7 @@ def get_project_root() -> Path:
     return Path(__file__).parent.parent.resolve()
 
 def _resolve_her_uid_gid() -> tuple[Optional[int], Optional[int]]:
-    """Read the HER_UID / HER_GID env vars set by Docker deployments.
-
-    Docker containers running her commonly set these to map the in-container
-    user to a host user so volume-mounted state files end up with the right
-    ownership. The entrypoint chowns the top-level HER_HOME once, but
-    subdirectories created at runtime by ``ensure_her_home()`` (especially
-    for profile namespaces under ``profiles/<name>/``) need the same chown
-    or they land as ``root:root`` and block subsequent uid-mapped workers
-    with ``PermissionError [Errno 13]``. See #34107.
-
-    Returns ``(uid, gid)`` parsed from the env vars, or ``(None, None)``
-    when either is missing/invalid. Returns ``(None, None)`` on Windows
-    too (where chown is a no-op anyway).
-    """
-    if sys.platform == "win32":
-        return None, None
+    """Read the HER_UID / HER_GID env vars set by Docker deployments."""
     uid_str = os.environ.get("HER_UID", "").strip()
     gid_str = os.environ.get("HER_GID", "").strip()
     try:
@@ -634,17 +619,7 @@ def _resolve_her_uid_gid() -> tuple[Optional[int], Optional[int]]:
 
 
 def _chown_to_her_uid(path) -> None:
-    """Chown ``path`` to ``HER_UID:HER_GID`` if those env vars are set.
-
-    No-op when:
-      - Either env var is unset/invalid
-      - The current process isn't root (chown will EPERM — silently ignored)
-      - On Windows (chown semantics don't apply)
-
-    Used by :func:`_secure_dir` to keep ownership consistent across all
-    directories created by :func:`ensure_her_home` on Docker deployments.
-    See #34107.
-    """
+    """Chown ``path`` to ``HER_UID:HER_GID`` if those env vars are set."""
     uid, gid = _resolve_her_uid_gid()
     if uid is None and gid is None:
         return
@@ -663,7 +638,7 @@ def _chown_to_her_uid(path) -> None:
 
 
 def _secure_dir(path):
-    """Set directory to owner-only access (0700 by default). No-op on Windows.
+    """Set directory to owner-only access (0700 by default).
 
     Skipped in managed mode — the NixOS module sets group-readable
     permissions (0750) so interactive users in the her group can
@@ -720,7 +695,7 @@ def _is_container() -> bool:
 
 
 def _secure_file(path):
-    """Set file to owner-only read/write (0600). No-op on Windows.
+    """Set file to owner-only read/write (0600).
 
     Skipped in managed mode — the NixOS activation script sets
     group-readable permissions (0640) on config files.
@@ -5938,16 +5913,9 @@ def edit_config():
     editor = os.getenv('EDITOR') or os.getenv('VISUAL')
 
     if not editor:
-        # Try common editors — order is platform-aware so Windows users
-        # land on a working editor (notepad) even without Git Bash or nano
-        # installed.  On POSIX, prefer nano/vim over code/notepad because
-        # it's more likely to be present on headless / server systems.
         import shutil
         import sys as _sys
-        if _sys.platform == "win32":
-            candidates = ['notepad', 'code', 'vim', 'vi', 'nano']
-        else:
-            candidates = ['nano', 'vim', 'vi', 'code', 'notepad']
+        candidates = ['nano', 'vim', 'vi', 'code']
         for cmd in candidates:
             if shutil.which(cmd):
                 editor = cmd

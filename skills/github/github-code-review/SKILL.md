@@ -4,7 +4,7 @@ description: "Review PRs: diffs, inline comments via gh or REST."
 version: 1.1.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [GitHub, Code-Review, Pull-Requests, Git, Quality]

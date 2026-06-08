@@ -89,8 +89,8 @@ def _log_signal(signum: int, frame) -> None:
     thread, and fall back to ``os._exit(0)`` so a wedged write/flush
     can never strand the process.
     """
-    # SIGPIPE and SIGHUP don't exist on Windows — build the lookup
-    # dict from attributes that actually exist on the current platform.
+    # Build the lookup dict from attributes that actually exist
+    # on the current platform.
     _signal_names: dict[int, str] = {}
     for _attr in ("SIGPIPE", "SIGTERM", "SIGHUP", "SIGINT", "SIGBREAK"):
         _sig = getattr(signal, _attr, None)
@@ -152,20 +152,14 @@ def _log_signal(signum: int, frame) -> None:
 # the main command pipe is still readable.  Terminal signals still
 # route through _log_signal so kills and hangups are diagnosable.
 #
-# SIGPIPE and SIGHUP don't exist on Windows; guard each installation
-# with hasattr so ``python -m tui_gateway.entry`` (spawned by
-# ``her --tui``) imports cleanly there.  SIGBREAK (Windows' Ctrl+Break)
-# is installed when available as a weaker equivalent of SIGHUP.
+# Guard each installation with hasattr so ``python -m tui_gateway.entry``
+# (spawned by ``her --tui``) imports cleanly on all platforms.
 if hasattr(signal, "SIGPIPE"):
     signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 if hasattr(signal, "SIGTERM"):
     signal.signal(signal.SIGTERM, _log_signal)
 if hasattr(signal, "SIGHUP"):
     signal.signal(signal.SIGHUP, _log_signal)
-elif hasattr(signal, "SIGBREAK"):
-    # Windows-only: Ctrl+Break in a console window delivers SIGBREAK.
-    # Route it through the same handler so kills are diagnosable.
-    signal.signal(signal.SIGBREAK, _log_signal)
 if hasattr(signal, "SIGINT"):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 

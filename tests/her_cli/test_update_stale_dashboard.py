@@ -2,12 +2,11 @@
 
 ``her update`` detects ``her dashboard`` processes left over from the
 previous version and kills them (SIGTERM + SIGKILL grace, or ``taskkill /F``
-on Windows).  Without this, the running backend silently serves stale Python
+Without this, the running backend silently serves stale Python
 against a freshly-updated JS bundle, producing 401s / empty data.
 
 History:
 - #16872 introduced the warn-only helper (``_warn_stale_dashboard_processes``).
-- #17049 fixed a Windows wmic UnicodeDecodeError crash on non-UTF-8 locales.
 - This file now also covers the kill semantics that replaced the warning.
 """
 
@@ -67,7 +66,7 @@ def _ps_line(pid: int, cmd: str) -> str:
 def _ps_runner(stdout: str):
     """Build a subprocess.run side_effect that only stubs ps -A calls.
 
-    Any other subprocess.run invocation (e.g. taskkill on Windows) is
+    Any other subprocess.run invocation is
     handed back as a successful no-op.  This lets tests exercise the real
     scan path without having to re-stub every unrelated subprocess call
     made later in ``_kill_stale_dashboard_processes``.
@@ -228,7 +227,6 @@ class TestFindStaleDashboardPids:
         assert pids == []
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="POSIX kill semantics")
 class TestKillStaleDashboardPosix:
     """Kill path on Linux / macOS: SIGTERM then SIGKILL any survivors."""
 
@@ -333,51 +331,6 @@ class TestKillStaleDashboardPosix:
         assert "failed to stop" not in out
 
 
-class TestKillStaleDashboardWindows:
-    """Kill path on Windows: taskkill /F."""
-
-    def test_taskkill_invoked_for_each_pid(self, monkeypatch, capsys):
-        monkeypatch.setattr(sys, "platform", "win32")
-
-        def fake_run(args, *a, **kw):
-            # taskkill returns 0 on success
-            return MagicMock(returncode=0, stdout="", stderr="")
-
-        with patch("her_cli.main._find_stale_dashboard_pids",
-                   return_value=[12345, 12346]), \
-             patch("subprocess.run", side_effect=fake_run) as mock_run:
-            _kill_stale_dashboard_processes()
-
-        # Each PID triggered a taskkill /PID <n> /F invocation.
-        taskkill_calls = [
-            c for c in mock_run.call_args_list
-            if c.args and isinstance(c.args[0], list) and c.args[0][:1] == ["taskkill"]
-        ]
-        assert len(taskkill_calls) == 2
-        assert ["taskkill", "/PID", "12345", "/F"] in [c.args[0] for c in taskkill_calls]
-        assert ["taskkill", "/PID", "12346", "/F"] in [c.args[0] for c in taskkill_calls]
-
-        out = capsys.readouterr().out
-        assert "✓ stopped PID 12345" in out
-        assert "✓ stopped PID 12346" in out
-
-    def test_taskkill_failure_is_reported(self, monkeypatch, capsys):
-        monkeypatch.setattr(sys, "platform", "win32")
-
-        def fake_run(args, *a, **kw):
-            return MagicMock(returncode=128, stdout="",
-                             stderr="ERROR: Access is denied.")
-
-        with patch("her_cli.main._find_stale_dashboard_pids",
-                   return_value=[12345]), \
-             patch("subprocess.run", side_effect=fake_run):
-            _kill_stale_dashboard_processes()  # must not raise
-
-        out = capsys.readouterr().out
-        assert "✗ failed to stop PID 12345" in out
-        assert "Access is denied" in out
-
-
 class TestBackCompatAlias:
     """``_warn_stale_dashboard_processes`` is kept as an alias for the
     new kill function so old imports don't break."""
@@ -386,51 +339,4 @@ class TestBackCompatAlias:
         assert _warn_stale_dashboard_processes is _kill_stale_dashboard_processes
 
 
-class TestWindowsWmicEncoding:
-    """Regression tests for #17049 — the Windows wmic branch must not crash
-    `her update` on non-UTF-8 system locales (e.g. cp936 on zh-CN).
-    """
 
-    def test_wmic_invoked_with_utf8_ignore_errors(self, monkeypatch):
-        """The wmic subprocess.run call must pass encoding='utf-8' and
-        errors='ignore' so the subprocess reader thread cannot raise
-        UnicodeDecodeError on non-UTF-8 wmic output."""
-        monkeypatch.setattr(sys, "platform", "win32")
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0,
-                stdout=(
-                    "CommandLine=python -m her_cli.main dashboard\n"
-                    "ProcessId=12345\n"
-                ),
-                stderr="",
-            )
-            _find_stale_dashboard_pids()
-
-        # The wmic call is the first subprocess.run invocation.
-        assert mock_run.called, "subprocess.run was not invoked"
-        wmic_call = mock_run.call_args_list[0]
-        kwargs = wmic_call.kwargs
-        assert kwargs.get("encoding") == "utf-8", (
-            "encoding kwarg must be 'utf-8' so wmic output is decoded "
-            "deterministically rather than via the implicit reader-thread "
-            "default that crashes on non-UTF-8 locales (#17049)."
-        )
-        assert kwargs.get("errors") == "ignore", (
-            "errors kwarg must be 'ignore' so undecodable bytes don't take "
-            "down the reader thread (#17049)."
-        )
-
-    def test_wmic_returns_none_stdout_does_not_crash(self, monkeypatch):
-        """If subprocess.run returns successfully but stdout is None — which
-        is what Python 3.11 leaves behind when the reader thread silently
-        crashed on UnicodeDecodeError before this fix landed — detection
-        must short-circuit instead of raising AttributeError on
-        ``None.split('\\n')`` and aborting `her update` (#17049)."""
-        monkeypatch.setattr(sys, "platform", "win32")
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout=None, stderr=""
-            )
-            # Must not raise.
-            assert _find_stale_dashboard_pids() == []

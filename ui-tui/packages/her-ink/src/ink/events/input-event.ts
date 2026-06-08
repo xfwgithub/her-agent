@@ -76,7 +76,6 @@ function parseKey(keypress: ParsedKey): [Key, string] {
 
   // Suppress unrecognized escape sequences that were parsed as function keys
   // (matched by FN_KEY_RE) but have no name in the keyName map.
-  // Examples: ESC[25~ (F13/Right Alt on Windows), ESC[26~ (F14), etc.
   // Without this, the ESC prefix is stripped below and the remainder (e.g.,
   // "[25~") leaks into the input as literal text.
   if (keypress.code && !keypress.name) {

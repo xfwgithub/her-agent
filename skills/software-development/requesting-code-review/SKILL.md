@@ -4,7 +4,7 @@ description: "Pre-commit review: security scan, quality gates, auto-fix."
 version: 2.0.0
 author: her Agent (adapted from obra/superpowers + MorAlekss)
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [code-review, security, verification, quality, pre-commit, auto-fix]

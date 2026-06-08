@@ -4,7 +4,7 @@ description: Migrate a user's OpenClaw customization footprint into her Agent. I
 version: 1.0.0
 author: her Agent (Nous Research)
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Migration, OpenClaw, her, Memory, Persona, Import]

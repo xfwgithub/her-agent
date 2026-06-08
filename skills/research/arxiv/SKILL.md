@@ -4,7 +4,7 @@ description: "Search arXiv papers by keyword, author, category, or ID."
 version: 1.0.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Research, Arxiv, Papers, Academic, Science, API]

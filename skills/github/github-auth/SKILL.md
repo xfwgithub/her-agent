@@ -4,7 +4,7 @@ description: "GitHub auth setup: HTTPS tokens, SSH keys, gh CLI login."
 version: 1.1.0
 author: her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [GitHub, Authentication, Git, gh-cli, SSH, Setup]

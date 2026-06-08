@@ -7,8 +7,8 @@ Source pages reviewed:
 
 ## Install
 - macOS/Linux: `curl -fsSL https://antigravity.google/cli/install.sh | bash`
-- Windows PowerShell: `irm https://antigravity.google/cli/install.ps1 | iex`
-- Windows CMD: `curl -fsSL https://antigravity.google/cli/install.cmd -o install.cmd && install.cmd && del install.cmd`
+
+
 
 ## Authentication
 - Tries secure keyring first.

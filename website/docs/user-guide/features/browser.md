@@ -363,22 +363,6 @@ Then launch the her CLI and run `/browser connect`.
 
 When connected via CDP, all browser tools (`browser_navigate`, `browser_click`, etc.) operate on your live browser instance instead of spinning up a cloud session.
 
-### WSL2 + Windows Chrome: prefer MCP over `/browser connect`
-
-If her runs inside WSL2 but the Chrome window you want to control runs on the Windows host, `/browser connect` is often not the best path.
-
-Why:
-
-- `/browser connect` expects her itself to reach a usable CDP endpoint
-- modern Chrome live-debugging sessions often expose a host-local endpoint that is not directly reachable from WSL the same way a classic `9222` port is
-- even when Windows Chrome is debuggable, the cleanest integration is often to let a Windows-side browser MCP server attach to Chrome and let her talk to that MCP server
-
-For that setup, prefer `chrome-devtools-mcp` through her MCP support.
-
-See the MCP guide for the practical setup:
-
-- [Use MCP with her](../../guides/use-mcp-with-her.md#wsl2-bridge-her-in-wsl-to-windows-chrome)
-
 ### Local browser mode
 
 If you do **not** set any cloud credentials and don't use `/browser connect`, her can still use the browser tools through a local Chromium install driven by `agent-browser`.

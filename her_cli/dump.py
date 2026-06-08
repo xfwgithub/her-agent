@@ -82,7 +82,7 @@ def _gateway_status() -> str:
             return f"stopped ({snapshot.manager})"
         return f"stopped ({snapshot.manager})"
     except Exception:
-        return "unknown" if sys.platform.startswith(("linux", "darwin")) else "N/A"
+        return "unknown"
 
 
 def _count_skills(her_home: Path) -> int:

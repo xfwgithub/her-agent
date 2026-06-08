@@ -8,13 +8,7 @@ keystrokes can be fed back in.  The only caller today is the
 Design constraints:
 
 * **POSIX-only.**  This module depends on ``fcntl``, ``termios``, and
-  ``ptyprocess``, none of which exist on native Windows Python.  Native
-  Windows ConPTY is a different API (Windows 10 build 17763+) and would
-  need a separate Windows implementation (``pywinpty``) — that's tracked
-  as a future enhancement.  On native Windows, importing this module
-  raises :class:`ImportError` and the dashboard's ``/chat`` tab shows a
-  WSL-recommended banner instead of crashing.  Every other feature in the
-  dashboard (sessions, jobs, metrics, config editor) works natively.
+  ``ptyprocess``.
 * **Zero Node dependency on the server side.**  We use :mod:`ptyprocess`,
   which is a pure-Python wrapper around the OS calls.  The browser talks
   to the same ``her --tui`` binary it would launch from the CLI, so
@@ -41,7 +35,7 @@ from typing import Optional, Sequence
 
 try:
     import ptyprocess  # type: ignore
-    _PTY_AVAILABLE = not sys.platform.startswith("win")
+    _PTY_AVAILABLE = True
 except ImportError:  # pragma: no cover - dev env without ptyprocess
     ptyprocess = None  # type: ignore
     _PTY_AVAILABLE = False
@@ -80,9 +74,8 @@ def _clamp_dimension(value: int, maximum: int) -> int:
 class PtyUnavailableError(RuntimeError):
     """Raised when a PTY cannot be created on this platform.
 
-    Today this means native Windows (no ConPTY bindings) or a dev
-    environment missing the ``ptyprocess`` dependency.  The dashboard
-    surfaces the message to the user as a chat-tab banner.
+    Usually a dev environment missing the ``ptyprocess`` dependency.
+    The dashboard surfaces the message to the user as a chat-tab banner.
     """
 
 
@@ -126,11 +119,6 @@ class PtyBridge:
         ordinary exec failures (missing binary, bad cwd, etc.).
         """
         if not _PTY_AVAILABLE:
-            if sys.platform.startswith("win"):
-                raise PtyUnavailableError(
-                    "Pseudo-terminals are unavailable on this platform. "
-                    "her Agent supports Windows only via WSL."
-                )
             if ptyprocess is None:
                 raise PtyUnavailableError(
                     "The `ptyprocess` package is missing. "
@@ -252,7 +240,7 @@ class PtyBridge:
 
         # SIGHUP is the conventional "your terminal went away" signal.
         # We escalate if the child ignores it.
-        for sig in (signal.SIGHUP, signal.SIGTERM, signal.SIGKILL):  # windows-footgun: ok — POSIX-only module (imports fcntl/termios/ptyprocess at top)
+        for sig in (signal.SIGHUP, signal.SIGTERM, signal.SIGKILL):
             if not self._proc.isalive():
                 break
             try:

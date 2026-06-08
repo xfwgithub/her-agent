@@ -501,9 +501,6 @@ def show_status(args):
         elif sys.platform == 'darwin':
             print(f"  Status:       {color('unknown', Colors.DIM)}")
             print("  Manager:      launchd")
-        else:
-            print(f"  Status:       {color('N/A', Colors.DIM)}")
-            print("  Manager:      (not supported on this platform)")
 
     # =========================================================================
     # Cron Jobs

@@ -57,7 +57,6 @@ class TestSnapshotShutdownContext:
         assert before <= ctx["ts"] <= after
         assert isinstance(ctx["ts_monotonic"], float)
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Linux /proc not present")
     def test_includes_parent_summary_on_linux(self):
         ctx = sf.snapshot_shutdown_context(signal.SIGTERM)
         assert "parent" in ctx
@@ -151,7 +150,6 @@ class TestFormatters:
 # ---------------------------------------------------------------------------
 
 class TestSpawnAsyncDiagnostic:
-    @pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only diagnostic")
     def test_spawns_subprocess_and_writes_output(self, tmp_path):
         log_path = tmp_path / "diag.log"
         pid = sf.spawn_async_diagnostic(log_path, "SIGTERM", timeout_seconds=3.0)
@@ -177,21 +175,12 @@ class TestSpawnAsyncDiagnostic:
         assert "shutdown diagnostic" in contents
         assert "SIGTERM" in contents
 
-    def test_returns_none_on_windows(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(sf, "sys", type("M", (), {"platform": "win32"})())
-        result = sf.spawn_async_diagnostic(
-            tmp_path / "diag.log", "SIGTERM", timeout_seconds=1.0
-        )
-        assert result is None
-
-    @pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only diagnostic")
     def test_handles_unwritable_log_path_gracefully(self, tmp_path):
         # Point at a nonexistent parent that we can't create
         log_path = Path("/proc/cant-write-here/diag.log")
         result = sf.spawn_async_diagnostic(log_path, "SIGTERM", timeout_seconds=1.0)
         assert result is None
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="POSIX-only diagnostic")
     def test_does_not_block_caller(self, tmp_path):
         """The spawn must return immediately even if ``ps`` takes seconds."""
         log_path = tmp_path / "diag.log"

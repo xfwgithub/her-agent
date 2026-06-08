@@ -55,7 +55,6 @@ class TestherTokenStorage:
         data = json.loads(token_path.read_text())
         assert data["access_token"] == "abc123"
 
-    @pytest.mark.skipif(sys.platform.startswith("win"), reason="POSIX mode bits not enforced on Windows")
     def test_token_file_created_with_0o600(self, tmp_path, monkeypatch):
         """Tokens must land on disk at 0o600 with no umask-default exposure window.
 
@@ -231,7 +230,7 @@ class TestUtilities:
         monkeypatch.delenv("SSH_TTY", raising=False)
         monkeypatch.delenv("DISPLAY", raising=False)
         monkeypatch.delenv("WAYLAND_DISPLAY", raising=False)
-        # Mock os.name and uname for non-macOS, non-Windows
+        # Mock os.name and uname for non-macOS
         monkeypatch.setattr(os, "name", "posix")
         monkeypatch.setattr(os, "uname", lambda: type("", (), {"sysname": "Linux"})())
         assert _can_open_browser() is False

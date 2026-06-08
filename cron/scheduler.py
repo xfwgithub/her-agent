@@ -21,15 +21,7 @@ import sys
 import threading
 from contextlib import contextmanager
 
-# fcntl is Unix-only; on Windows use msvcrt for file locking
-try:
-    import fcntl
-except ImportError:
-    fcntl = None
-    try:
-        import msvcrt
-    except ImportError:
-        msvcrt = None
+import fcntl
 from pathlib import Path
 from typing import List, Optional
 
@@ -39,7 +31,6 @@ from typing import List, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from her_constants import get_her_home
-from her_cli._subprocess_compat import windows_hide_flags
 from her_cli.config import load_config, _expand_env_vars
 from her_time import now as _her_now
 
@@ -1014,19 +1005,15 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
     # choice explicit here keeps the allowed surface small and auditable.
     suffix = path.suffix.lower()
     if suffix in {".sh", ".bash"}:
-        # Resolve bash dynamically so Windows (Git Bash) and Linux/macOS
-        # all work.  On native Windows without Git for Windows installed
-        # shutil.which returns None — fall back to a clear error rather
-        # than a FileNotFoundError with a confusing "[WinError 2]"
-        # traceback.
+        # Resolve bash dynamically.  If shutil.which returns None,
+        # fall back to a clear error rather than a cryptic traceback.
         _bash = shutil.which("bash") or (
             "/bin/bash" if os.path.isfile("/bin/bash") else None
         )
         if _bash is None:
             return False, (
                 f"Cannot run .sh/.bash script {path.name!r}: bash not found on PATH. "
-                "On Windows, install Git for Windows (which ships Git Bash) "
-                "or rewrite the script as Python (.py)."
+                "Install bash or rewrite the script as Python (.py)."
             )
         argv = [_bash, str(path)]
     else:
@@ -1044,7 +1031,6 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
         pass
 
     try:
-        popen_kwargs = {"creationflags": windows_hide_flags()} if sys.platform == "win32" else {}
         result = subprocess.run(
             argv,
             capture_output=True,
@@ -2031,14 +2017,10 @@ def tick(verbose: bool = True, adapters=None, loop=None, sync: bool = True) -> i
     lock_dir, lock_file = _get_lock_paths()
     lock_dir.mkdir(parents=True, exist_ok=True)
 
-    # Cross-platform file locking: fcntl on Unix, msvcrt on Windows
     lock_fd = None
     try:
         lock_fd = open(lock_file, "w", encoding="utf-8")
-        if fcntl:
-            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        elif msvcrt:
-            msvcrt.locking(lock_fd.fileno(), msvcrt.LK_NBLCK, 1)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except (OSError, IOError):
         logger.debug("Tick skipped — another instance holds the lock")
         if lock_fd is not None:
@@ -2251,16 +2233,10 @@ def tick(verbose: bool = True, adapters=None, loop=None, sync: bool = True) -> i
 
         return sum(_results)
     finally:
-        if fcntl:
-            try:
-                fcntl.flock(lock_fd, fcntl.LOCK_UN)
-            except (OSError, IOError):
-                pass
-        elif msvcrt:
-            try:
-                msvcrt.locking(lock_fd.fileno(), msvcrt.LK_UNLCK, 1)
-            except (OSError, IOError):
-                pass
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        except (OSError, IOError):
+            pass
         lock_fd.close()
 
 

@@ -106,7 +106,6 @@ class TestHonchoClientConfigAutoEnable:
         assert cfg.enabled is True  # from_env() sets enabled=True
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits not enforced on Windows")
 def test_save_config_sets_owner_only_permissions(tmp_path, monkeypatch):
     """honcho.json is created atomically with 0o600, not chmod-after-write."""
     import utils

@@ -30,29 +30,13 @@ Use any model you want — [Nous Portal](https://portal.nousresearch.com), [Open
 
 ## Quick Install
 
-### Linux, macOS, WSL2, Termux
+### Linux, macOS, Termux
 
 ```bash
 curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
 ```
 
-### Windows (native, PowerShell)
-
-> **Heads up:** Native Windows runs her without WSL — CLI, gateway, TUI, and tools all work natively. If you'd rather use WSL2, the Linux/macOS one-liner above works there too. Found a bug? Please [file issues](https://github.com/NousResearch/her-agent/issues).
-
-Run this in PowerShell:
-
-```powershell
-iex (irm https://her-agent.nousresearch.com/install.ps1)
-```
-
-The installer handles everything: uv, Python 3.11, Node.js, ripgrep, ffmpeg, **and a portable Git Bash** (MinGit, unpacked to `%LOCALAPPDATA%\her\git` — no admin required, completely isolated from any system Git install). her uses this bundled Git Bash to run shell commands.
-
-If you already have Git installed, the installer detects it and uses that instead. Otherwise a ~45MB MinGit download is all you need — it won't touch or interfere with any system Git.
-
 > **Android / Termux:** The tested manual path is documented in the [Termux guide](https://her-agent.nousresearch.com/docs/getting-started/termux). On Termux, her installs a curated `.[termux]` extra because the full `.[all]` extra currently pulls Android-incompatible voice dependencies.
->
-> **Windows:** Native Windows is fully supported — the PowerShell one-liner above installs everything. If you'd rather use WSL2, the Linux command works there too. Native Windows install lives under `%LOCALAPPDATA%\her`; WSL2 installs under `~/.her` as on Linux. The only her feature that currently needs WSL2 specifically is the browser-based dashboard chat pane (it uses a POSIX PTY — classic CLI and gateway both run natively).
 
 After installation:
 

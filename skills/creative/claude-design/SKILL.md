@@ -4,7 +4,7 @@ description: Design one-off HTML artifacts (landing, deck, prototype).
 version: 1.0.0
 author: BadTechBandit
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [design, html, prototype, ux, ui, creative, artifact, deck, motion, design-system]

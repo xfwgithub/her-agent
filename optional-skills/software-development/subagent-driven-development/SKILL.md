@@ -4,7 +4,7 @@ description: "Execute plans via delegate_task subagents (2-stage review)."
 version: 1.1.0
 author: her Agent (adapted from obra/superpowers)
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [delegation, subagent, implementation, workflow, parallel]

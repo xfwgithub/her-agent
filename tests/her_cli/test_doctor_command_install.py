@@ -69,7 +69,6 @@ def _run_doctor(fix=False):
 class TestDoctorCommandInstallation:
     """Tests for the ◆ Command Installation section."""
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
     def test_correct_symlink_shows_ok(self, monkeypatch, tmp_path):
         home, project, her_bin = _setup_doctor_env(monkeypatch, tmp_path)
 
@@ -86,8 +85,7 @@ class TestDoctorCommandInstallation:
         assert "Venv entry point exists" in out
         assert "correct target" in out
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
-    def test_missing_symlink_shows_fail(self, monkeypatch, tmp_path):
+        def test_missing_symlink_shows_fail(self, monkeypatch, tmp_path):
         home, project, her_bin = _setup_doctor_env(monkeypatch, tmp_path)
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -99,7 +97,6 @@ class TestDoctorCommandInstallation:
         assert "not found" in out
         assert "her doctor --fix" in out
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
     def test_fix_creates_missing_symlink(self, monkeypatch, tmp_path):
         home, project, her_bin = _setup_doctor_env(monkeypatch, tmp_path)
 
@@ -114,7 +111,7 @@ class TestDoctorCommandInstallation:
         assert cmd_link.is_symlink()
         assert cmd_link.resolve() == her_bin.resolve()
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
+    
     def test_wrong_target_symlink_shows_warn(self, monkeypatch, tmp_path):
         home, project, her_bin = _setup_doctor_env(monkeypatch, tmp_path)
 
@@ -132,7 +129,7 @@ class TestDoctorCommandInstallation:
         assert "Command Installation" in out
         assert "wrong target" in out
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
+    
     def test_fix_repairs_wrong_symlink(self, monkeypatch, tmp_path):
         home, project, her_bin = _setup_doctor_env(monkeypatch, tmp_path)
 
@@ -153,7 +150,7 @@ class TestDoctorCommandInstallation:
         assert cmd_link.is_symlink()
         assert cmd_link.resolve() == her_bin.resolve()
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
+    
     def test_missing_venv_entry_point_shows_warn(self, monkeypatch, tmp_path):
         home = tmp_path / ".her"
         home.mkdir(parents=True, exist_ok=True)
@@ -189,7 +186,7 @@ class TestDoctorCommandInstallation:
         assert "Command Installation" in out
         assert "Venv entry point not found" in out
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
+    
     def test_dot_venv_dir_is_found(self, monkeypatch, tmp_path):
         """The check finds entry points in .venv/ as well as venv/."""
         home, project, _ = _setup_doctor_env(monkeypatch, tmp_path, venv_name=".venv")
@@ -207,7 +204,7 @@ class TestDoctorCommandInstallation:
         assert "Venv entry point exists" in out
         assert ".venv/bin/her" in out
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
+    
     def test_non_symlink_regular_file_shows_ok(self, monkeypatch, tmp_path):
         """If ~/.local/bin/her is a regular file (not symlink), accept it."""
         home, project, her_bin = _setup_doctor_env(monkeypatch, tmp_path)
@@ -222,7 +219,7 @@ class TestDoctorCommandInstallation:
         out = _run_doctor(fix=False)
         assert "non-symlink" in out
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
+    
     def test_termux_uses_prefix_bin(self, monkeypatch, tmp_path):
         """On Termux, the command link dir is $PREFIX/bin."""
         prefix_dir = tmp_path / "termux_prefix"
@@ -239,36 +236,4 @@ class TestDoctorCommandInstallation:
         assert "Command Installation" in out
         assert "$PREFIX/bin" in out
 
-    def test_windows_skips_check(self, monkeypatch, tmp_path):
-        """On Windows, the Command Installation section is skipped."""
-        home = tmp_path / ".her"
-        home.mkdir(parents=True, exist_ok=True)
-        (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
 
-        project = tmp_path / "project"
-        project.mkdir(exist_ok=True)
-
-        monkeypatch.setattr(doctor_mod, "HER_HOME", home)
-        monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
-        monkeypatch.setattr(doctor_mod, "_DHH", str(home))
-        monkeypatch.setattr(sys, "platform", "win32")
-
-        fake_model_tools = types.SimpleNamespace(
-            check_tool_availability=lambda *a, **kw: ([], []),
-            TOOLSET_REQUIREMENTS={},
-        )
-        monkeypatch.setitem(sys.modules, "model_tools", fake_model_tools)
-        try:
-            from her_cli import auth as _auth_mod
-            monkeypatch.setattr(_auth_mod, "get_nous_auth_status", lambda: {})
-            monkeypatch.setattr(_auth_mod, "get_codex_auth_status", lambda: {})
-        except Exception:
-            pass
-        try:
-            import httpx
-            monkeypatch.setattr(httpx, "get", lambda *a, **kw: types.SimpleNamespace(status_code=200))
-        except Exception:
-            pass
-
-        out = _run_doctor(fix=False)
-        assert "Command Installation" not in out

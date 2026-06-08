@@ -19,16 +19,10 @@ The `nvidia/nemotron-3-ultra:free` tier is available from **June 4th to June 18t
 
 ### 1. Install her Agent
 
-On macOS/Linux/WSL2/Android, run
+On macOS/Linux/Android, run
 
 ```bash
 curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
-```
-
-On Windows, run
-
-```powershell
-iex (irm https://her-agent.nousresearch.com/install.ps1)
 ```
 
 Prefer to review first? Download [`install.sh`](https://her-agent.nousresearch.com/install.sh), inspect it, then run it.

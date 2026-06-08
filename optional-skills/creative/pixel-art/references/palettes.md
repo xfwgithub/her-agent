@@ -27,7 +27,6 @@ pixel_art("in.png", "out.png", preset="custom", palette="PICO_8", block=6)
 | `TELETEXT` | 8 | BBC Teletext |
 | `CGA_MODE4_PAL1` | 4 | IBM CGA |
 | `MSX` | 15 | MSX |
-| `MICROSOFT_WINDOWS_16` | 16 | Windows 3.x default |
 | `MICROSOFT_WINDOWS_PAINT` | 24 | MS Paint classic |
 | `MONO_BW` | 2 | Black and white |
 | `MONO_AMBER` | 2 | Amber monochrome |

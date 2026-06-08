@@ -28,32 +28,6 @@ her Agent works with any OpenAI-compatible API. Supported providers include:
 
 Set your provider with `her model` or by editing `~/.her/.env`. See the [Environment Variables](./environment-variables.md) reference for all provider keys.
 
-### Does it work on Windows?
-
-**Not natively.** her Agent requires a Unix-like environment. On Windows, install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and run her from inside it. The standard install command works perfectly in WSL2:
-
-```bash
-curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
-```
-
-### I run her in WSL2. What's the best way to control my normal Windows Chrome?
-
-Prefer an MCP bridge over `/browser connect`.
-
-Recommended pattern:
-
-- run her inside WSL2
-- keep using your normal signed-in Chrome on Windows
-- add `chrome-devtools-mcp` as an MCP server through `cmd.exe` or `powershell.exe`
-- let her use the resulting MCP browser tools
-
-This is more reliable than trying to force her core browser transport to attach directly across the WSL2/Windows boundary.
-
-See:
-
-- [Use MCP with her](../guides/use-mcp-with-her.md#wsl2-bridge-her-in-wsl-to-windows-chrome)
-- [Browser Automation](../user-guide/features/browser.md#wsl2--windows-chrome-prefer-mcp-over-browser-connect)
-
 ### Does it work on Android / Termux?
 
 Yes — her now has a tested Termux install path for Android phones.
@@ -445,42 +419,6 @@ lsof -i :8080
 # Verify configuration
 her config show
 ```
-
-#### WSL: Gateway keeps disconnecting or `her gateway start` fails
-
-**Cause:** WSL's systemd support is unreliable. Many WSL2 installations don't have systemd enabled, and even when enabled, services may not survive WSL restarts or Windows idle shutdowns.
-
-**Solution:** Use foreground mode instead of the systemd service:
-
-```bash
-# Option 1: Direct foreground (simplest)
-her gateway run
-
-# Option 2: Persistent via tmux (survives terminal close)
-tmux new -s her 'her gateway run'
-# Reattach later: tmux attach -t her
-
-# Option 3: Background via nohup
-nohup her gateway run > ~/.her/logs/gateway.log 2>&1 &
-```
-
-If you want to try systemd anyway, make sure it's enabled:
-
-1. Open `/etc/wsl.conf` (create it if it doesn't exist)
-2. Add:
-   ```ini
-   [boot]
-   systemd=true
-   ```
-3. From PowerShell: `wsl --shutdown`
-4. Reopen your WSL terminal
-5. Verify: `systemctl is-system-running` should say "running" or "degraded"
-
-:::tip Auto-start on Windows boot
-For reliable auto-start, use Windows Task Scheduler to launch WSL + the gateway on login:
-1. Create a task that runs `wsl -d Ubuntu -- bash -lc 'her gateway run'`
-2. Set it to trigger on user logon
-:::
 
 #### macOS: Node.js / ffmpeg / other tools not found by gateway
 

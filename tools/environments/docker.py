@@ -410,7 +410,7 @@ def _image_uses_init_entrypoint(docker_exe: str, image: str) -> bool:
 
 def _resolve_host_user_spec() -> Optional[str]:
     """Return ``<uid>:<gid>`` for the current host user, or ``None`` on platforms
-    where this is not meaningful (e.g. Windows without posix ids).
+    where this is not meaningful.
 
     We intentionally read ``os.getuid()``/``os.getgid()`` directly rather than
     going through ``getpass``/``pwd`` so this stays cheap and never raises on
@@ -719,8 +719,7 @@ class DockerEnvironment(BaseEnvironment):
 
         # Optional: run the container as the host user so files written into
         # bind-mounted dirs (/workspace, /root, docker_volumes entries) are
-        # owned by that user on the host instead of by root. Skip cleanly on
-        # platforms without POSIX uid/gid (e.g. native Windows Docker).
+        # owned by that user on the host instead of by root.
         user_args: list[str] = []
         if run_as_host_user:
             user_spec = _resolve_host_user_spec()

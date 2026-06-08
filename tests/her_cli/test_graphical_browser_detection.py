@@ -90,7 +90,7 @@ def test_webbrowser_get_raises_refuses(monkeypatch):
 
 
 def test_non_linux_with_gui_allows(monkeypatch):
-    """macOS / Windows always have a usable default GUI browser."""
+    """macOS always has a usable default GUI browser."""
     monkeypatch.setattr("her_cli.auth.sys.platform", "darwin")
     _force_resolved_browser(monkeypatch, "MacOSX")
     assert _can_open_graphical_browser() is True

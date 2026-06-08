@@ -12,7 +12,6 @@
 - [Updating](/get-started/install-and-update/updating.md): To update or use an old version of Unsloth, follow the steps below:
 - [Pip Install](/get-started/install-and-update/pip-install.md): To install Unsloth locally via Pip, follow the steps below:
 - [Docker](/get-started/install-and-update/docker.md): Install Unsloth using our official Docker container
-- [Windows Installation](/get-started/install-and-update/windows-installation.md): See how to install Unsloth on Windows with or without WSL.
 - [AMD](/get-started/install-and-update/amd.md): Fine-tune with Unsloth on AMD GPUs.
 - [Conda Install](/get-started/install-and-update/conda-install.md): To install Unsloth locally on Conda, follow the steps below:
 - [Google Colab](/get-started/install-and-update/google-colab.md): To install and run Unsloth on Google Colab, follow the steps below:

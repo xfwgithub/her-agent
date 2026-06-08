@@ -4,7 +4,7 @@ description: Canvas LMS integration — fetch enrolled courses and assignments u
 version: 1.0.0
 author: community
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 prerequisites:
   env_vars: [CANVAS_API_TOKEN, CANVAS_BASE_URL]
 metadata:

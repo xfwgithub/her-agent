@@ -73,12 +73,9 @@ dependencies = [
   "Markdown==3.10.2",
   # Skills Hub (GitHub App JWT auth — optional, only needed for bot identity)
   "PyJWT[crypto]==2.12.1",  # CVE-2026-32597
-  # Windows has no IANA tzdata shipped with the OS, so Python's ``zoneinfo``
-  # (PEP 615) raises ``ZoneInfoNotFoundError`` for every non-UTC timezone
-  # out of the box.  ``tzdata`` ships the Olson database as a data package
-  # Python resolves automatically.  No-op on Linux/macOS (which have
-  # /usr/share/zoneinfo).  Credits: PR #13182 (@sprmn24).
-  "tzdata==2025.3; sys_platform == 'win32'",
+  # tzdata ships the Olson database — now unconditional since Windows support
+  # has been removed; the marker is kept as a no-op for back-compat installs.
+  # Credits: PR #13182 (@sprmn24).
   # Cross-platform process / PID management.  `psutil` is the canonical
   # answer for "is this PID alive" and process-tree walking across Linux,
   # macOS and Windows.  It replaces POSIX-only idioms like `os.kill(pid, 0)`
@@ -89,8 +86,7 @@ dependencies = [
   "pathspec==1.1.1",
   "fastapi>=0.104.0,<1",
   "uvicorn[standard]>=0.24.0,<1",
-  "ptyprocess>=0.7.0,<1; sys_platform != 'win32'",
-  "pywinpty>=2.0.0,<3; sys_platform == 'win32'",
+  "ptyprocess>=0.7.0,<1",
   # Image resize recovery for the vision tools. Pillow shrinks oversized images
   # (>5 MB or >8000px) at embed time; without it the byte AND pixel-dimension
   # shrink paths no-op, so an oversized image bakes into immutable history and
@@ -131,10 +127,9 @@ voice = [
   "numpy==2.4.3",
 ]
 pty = [
-  # Kept as a no-op back-compat alias — `ptyprocess` and `pywinpty` are now
-  # in the main `dependencies` list (with the same platform markers), so
-  # any existing `pip install her-agent[pty]` invocations resolve cleanly
-  # without pulling in extra packages.
+  # Kept as a no-op back-compat alias — `ptyprocess` is now in the main
+  # `dependencies` list, so any existing `pip install her-agent[pty]`
+  # invocations resolve cleanly without pulling in extra packages.
 ]
 honcho = ["honcho-ai==2.0.1"]
 # Image resize recovery for the vision tools. Pillow is now a CORE dependency
@@ -315,10 +310,8 @@ preview = true  # required for PLW1514 (unspecified-encoding) — preview rule
 # All other lints are intentionally disabled (see comment history on this
 # file) while we wrangle typechecks — but PLW1514 is too load-bearing to
 # keep off.  Bare open()/read_text()/write_text() in text mode defaults to
-# the system locale encoding on Windows (cp1252 on US-locale installs),
-# which silently corrupts any non-ASCII file content.  We had three
-# separate Windows sandbox regressions in one debug session before
-# adding the explicit encoding.  This rule keeps new code honest.
+# the system locale encoding, which silently corrupts any non-ASCII file
+# content.  This rule keeps new code honest.
 select = ["PLW1514"]
 
 [tool.ruff.lint.per-file-ignores]

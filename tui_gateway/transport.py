@@ -34,13 +34,11 @@ from typing import Any, Callable, Optional, Protocol, runtime_checkable
 # real I/O problem".  Anything outside this set re-raises so it surfaces
 # in the crash log instead of looking like a clean disconnect.
 _PEER_GONE_ERRNOS = frozenset({
-    errno.EPIPE,        # write to closed pipe (POSIX)
+    errno.EPIPE,        # write to closed pipe
     errno.ECONNRESET,   # peer reset the connection
     errno.EBADF,        # fd closed under us
     errno.ESHUTDOWN,    # transport endpoint shut down
-    getattr(errno, "WSAECONNRESET", -1),  # win32 mapping (no-op on POSIX)
-    getattr(errno, "WSAESHUTDOWN", -1),
-} - {-1})
+})
 
 logger = logging.getLogger(__name__)
 
@@ -126,9 +124,9 @@ class StdioTransport:
           * ``BrokenPipeError``
           * ``ValueError("...closed file...")``
           * ``OSError`` whose errno is in :data:`_PEER_GONE_ERRNOS`
-            (EPIPE / ECONNRESET / EBADF / ESHUTDOWN; plus WSA mappings
-            on Windows).  Other OSError errnos (ENOSPC, EACCES, ...) are
-            real host problems and re-raise.
+            (EPIPE / ECONNRESET / EBADF / ESHUTDOWN).  Other OSError
+            errnos (ENOSPC, EACCES, ...) are real host problems and
+            re-raise.
         """
         # Serialization is OUTSIDE the lock so a large payload can't
         # block other threads emitting their own frames.  A non-JSON-safe

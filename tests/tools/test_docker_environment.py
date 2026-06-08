@@ -537,36 +537,6 @@ def test_run_as_host_user_default_off(monkeypatch):
     )
 
 
-def test_run_as_host_user_warns_and_skips_when_no_posix_ids(monkeypatch, caplog):
-    """On platforms without POSIX getuid/getgid, log a warning and leave the
-    container at its image default user (no --user flag, full cap set)."""
-    monkeypatch.setattr(docker_env, "find_docker", lambda: "/usr/bin/docker")
-    # Simulate a platform where os.getuid is absent (e.g. Windows host).
-    monkeypatch.delattr(docker_env.os, "getuid", raising=False)
-    monkeypatch.delattr(docker_env.os, "getgid", raising=False)
-    calls = _mock_subprocess_run(monkeypatch)
-
-    with caplog.at_level(logging.WARNING):
-        _make_dummy_env(run_as_host_user=True)
-
-    run_calls = [c for c in calls if isinstance(c[0], list) and len(c[0]) >= 2 and c[0][1] == "run"]
-    run_args = run_calls[0][0]
-
-    assert "--user" not in run_args
-    # Fall back to the full cap set since the container still starts as root.
-    added = {
-        run_args[i + 1]
-        for i, flag in enumerate(run_args[:-1])
-        if flag == "--cap-add"
-    }
-    assert "SETUID" in added
-    assert "SETGID" in added
-    assert any(
-        "does not expose POSIX uid/gid" in rec.getMessage()
-        for rec in caplog.records
-    ), "expected a warning when POSIX ids are unavailable"
-
-
 # ── Docker labels (issue #20561) ──────────────────────────────────
 
 

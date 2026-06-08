@@ -42,7 +42,6 @@ Deletion rules (same as the original PR):
 ## Safety
 
 - `is_safe_path()` rejects anything outside `HER_HOME` or `/tmp/her-*`
-- Windows mounts (`/mnt/c` etc.) are rejected
 - The state directory `$HER_HOME/disk-cleanup/` is itself excluded
 - `$HER_HOME/logs/`, `memories/`, `sessions/`, `skills/`, `plugins/`,
   and config files are never tracked

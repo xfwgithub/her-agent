@@ -4,7 +4,7 @@ description: Hyperliquid market data, account history, trade review.
 version: 0.1.0
 author: Hugo Sequier (Hugo-SEQUIER), her Agent
 license: MIT
-platforms: [linux, macos, windows]
+platforms: [linux, macos]
 metadata:
   her:
     tags: [Hyperliquid, Blockchain, Crypto, Trading, Perpetuals, Spot, DeFi]
