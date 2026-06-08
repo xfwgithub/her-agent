@@ -3,7 +3,7 @@
 # her Agent Installer
 # ============================================================================
 # Installation script for Linux, macOS, and Android/Termux.
-# Uses uv for desktop/server installs and Python's stdlib venv + pip on Termux.
+# Uses uv for the venv on Linux/macOS and Python's stdlib venv + pip on Termux.
 #
 # Usage:
 #   curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
@@ -75,11 +75,7 @@ BRANCH="main"
 INSTALL_COMMIT=""
 ENSURE_DEPS=""
 POSTINSTALL_MODE=false
-MANIFEST_MODE=false
-STAGE_NAME=""
-JSON_OUTPUT=false
 NON_INTERACTIVE=false
-INCLUDE_DESKTOP=false
 
 # Detect non-interactive mode (e.g. curl | bash)
 # When stdin is not a terminal, read -p will fail with EOF,
@@ -117,24 +113,8 @@ while [[ $# -gt 0 ]]; do
             INSTALL_COMMIT="$2"
             shift 2
             ;;
-        --manifest|-Manifest)
-            MANIFEST_MODE=true
-            shift
-            ;;
-        --stage|-Stage)
-            STAGE_NAME="$2"
-            shift 2
-            ;;
-        --json|-Json)
-            JSON_OUTPUT=true
-            shift
-            ;;
         --non-interactive|-NonInteractive)
             NON_INTERACTIVE=true
-            shift
-            ;;
-        --include-desktop|-IncludeDesktop)
-            INCLUDE_DESKTOP=true
             shift
             ;;
         --dir)
@@ -168,11 +148,6 @@ while [[ $# -gt 0 ]]; do
             echo "                   'her update' runs never inject bundled skills either"
             echo "  --branch NAME  Git branch to install (default: main)"
             echo "  --commit SHA   Pin checkout to a specific commit after clone/update"
-            echo "  --manifest     Print desktop bootstrap stage manifest as JSON"
-            echo "  --stage NAME   Run one desktop bootstrap stage"
-            echo "  --json         Print a JSON result frame for --stage"
-            echo "  --non-interactive  Skip stages that require user input"
-            echo "  --include-desktop  Also build the desktop app (apps/desktop -> her.app)"
             echo "  --dir PATH     Installation directory"
             echo "                   default (non-root):  ~/.her/her-agent"
             echo "                   default (root, Linux): /usr/local/lib/her-agent"
@@ -259,16 +234,7 @@ restore_dirty_lockfiles() {
 }
 
 emit_manifest() {
-    # Stage-Desktop is included only with --include-desktop, mirroring
-    # install.ps1: the signed bootstrap installer (her-Setup) passes it so
-    # a GUI install ends up with a launchable app; the Electron app's own
-    # first-launch bootstrap and the CLI one-liner omit it (building the
-    # desktop from inside the already-running app would clobber it).
-    local desktop_stage=""
-    if [ "$INCLUDE_DESKTOP" = true ]; then
-        desktop_stage='{"name":"desktop","title":"Build desktop app","category":"runtime","needs_user_input":false},'
-    fi
-    printf '%s' '{"protocol_version":1,"stages":[{"name":"prerequisites","title":"System prerequisites","category":"runtime","needs_user_input":false},{"name":"repository","title":"Download her Agent","category":"runtime","needs_user_input":false},{"name":"venv","title":"Create Python virtual environment","category":"runtime","needs_user_input":false},{"name":"python-deps","title":"Install Python dependencies","category":"runtime","needs_user_input":false},{"name":"node-deps","title":"Install browser-tool dependencies","category":"runtime","needs_user_input":false},{"name":"path","title":"Install her command","category":"runtime","needs_user_input":false},{"name":"config","title":"Prepare config and skills","category":"configuration","needs_user_input":false},{"name":"setup","title":"Configure API keys and settings","category":"configuration","needs_user_input":true},{"name":"gateway","title":"Configure gateway service","category":"configuration","needs_user_input":true},'"$desktop_stage"'{"name":"complete","title":"Finish install","category":"runtime","needs_user_input":false}]}'
+    printf '%s' '{"protocol_version":1,"stages":[{"name":"prerequisites","title":"System prerequisites","category":"runtime","needs_user_input":false},{"name":"repository","title":"Download her Agent","category":"runtime","needs_user_input":false},{"name":"venv","title":"Create Python virtual environment","category":"runtime","needs_user_input":false},{"name":"python-deps","title":"Install Python dependencies","category":"runtime","needs_user_input":false},{"name":"node-deps","title":"Install browser-tool dependencies","category":"runtime","needs_user_input":false},{"name":"path","title":"Install her command","category":"runtime","needs_user_input":false},{"name":"config","title":"Prepare config and skills","category":"configuration","needs_user_input":false},{"name":"setup","title":"Configure API keys and settings","category":"configuration","needs_user_input":true},{"name":"gateway","title":"Configure gateway service","category":"configuration","needs_user_input":true},{"name":"complete","title":"Finish install","category":"runtime","needs_user_input":false}]}'
     printf '\n'
 }
 
@@ -702,12 +668,11 @@ check_git() {
     exit 1
 }
 
-# The desktop build runs Vite ^8, which refuses to start on Node outside
-# `^20.19 || >=22.12` — older Node lacks `node:util.styleText`, so `vite build`
-# crashes with a SyntaxError that surfaces only as the opaque "Build desktop
-# app … exit code 1" install failure. Returns 0 when the given `node --version`
-# string clears that floor; anything below it is replaced with the her-
-# managed Node $NODE_VERSION LTS.
+# Vite ^8 refuses to start on Node outside `^20.19 || >=22.12` — older Node
+# lacks `node:util.styleText`, so `vite build` crashes with a SyntaxError
+# that surfaces as the opaque "Vite build … exit code 1" install failure.
+# Returns 0 when the given `node --version` string clears that floor;
+# anything below it is replaced with the her-managed Node $NODE_VERSION LTS.
 node_satisfies_build() {
     local ver="${1#v}"
     local major="${ver%%.*}"
@@ -737,7 +702,7 @@ check_node() {
     fi
 
     if command -v node &> /dev/null; then
-        log_warn "Node.js $(node --version) is too old for the desktop build (need ^20.19 or >=22.12) — installing her-managed Node $NODE_VERSION LTS..."
+        log_warn "Node.js $(node --version) is too old for the Vite build (need ^20.19 or >=22.12) — installing her-managed Node $NODE_VERSION LTS..."
     elif [ "$DISTRO" = "termux" ]; then
         log_info "Node.js not found — installing Node.js via pkg..."
     else
@@ -2264,277 +2229,6 @@ postinstall_mode() {
     fi
 }
 
-# Build apps/desktop into a launchable native app. Mirrors install.ps1's
-# Install-Desktop: a root-level npm install so the apps/* workspace resolves
-# the desktop's own deps (Electron ~150MB), then `npm run pack`
-# (electron-builder --dir) which emits an unpacked app for the current OS. Only invoked
-# via the 'desktop' stage / --include-desktop, which the Electron app's own
-# first-launch bootstrap never requests (it must not rebuild itself).
-install_desktop() {
-    local desktop_dir="$INSTALL_DIR/apps/desktop"
-
-    # The desktop stage only runs when a build is explicitly requested
-    # (--include-desktop / 'desktop' stage), so a missing toolchain is a hard
-    # failure, not a silent skip — a silent skip yields a "complete" install
-    # with no app and a confusing "couldn't find a built desktop" at launch.
-    # Always re-resolve Node here. Stages run in separate processes, so we can't
-    # trust an earlier check; more importantly check_node now enforces the build
-    # floor (^20.19 || >=22.12) and prepends the her-managed Node to PATH, so
-    # the build never runs on a too-old system Node — the cause of the opaque
-    # "Build desktop app … exit code 1" failure (Vite crashes on old Node).
-    check_node
-    if ! command -v npm >/dev/null 2>&1; then
-        log_error "Cannot build desktop app: Node.js / npm unavailable"
-        log_info "Install Node.js and retry: cd $desktop_dir && npm run pack"
-        return 1
-    fi
-    if [ ! -f "$desktop_dir/package.json" ]; then
-        log_warn "Skipping desktop build (apps/desktop not present in checkout)"
-        return 0
-    fi
-
-    # 1. Root workspace install so apps/desktop's deps (Electron, Vite,
-    #    node-pty prebuilds) resolve. The browser-tools install runs in the
-    #    repo-root package workspace, which does not pull apps/* deps.
-    #
-    #    Prefer `npm ci`: it deletes node_modules and reinstalls from the
-    #    lockfile, so it always produces a complete tree. Bare `npm install`
-    #    can report "up to date" against a stale node_modules/.package-lock.json
-    #    marker while node_modules is actually empty (Windows workspace-hoisting
-    #    flake) — leaving tsc/typescript unresolved and `npm run pack`'s
-    #    `tsc -b` failing with no obvious cause. Fall back to `npm install`
-    #    only if `npm ci` is unavailable or the lockfile is out of sync.
-    log_info "Installing desktop workspace dependencies (includes Electron ~150MB, 1-3min)..."
-    ( cd "$INSTALL_DIR" && npm ci ) || ( cd "$INSTALL_DIR" && npm install ) || {
-        log_error "Desktop workspace npm install failed"
-        return 1
-    }
-    log_success "Desktop workspace dependencies installed"
-
-    # 2. Build. `npm run pack` = tsc + vite build + electron-builder --dir,
-    #    producing an unpacked app for the current OS. We disable signing
-    #    auto-discovery so electron-builder falls back to an ad-hoc signature
-    #    instead of grabbing an unrelated Developer ID from the keychain; a
-    #    real signed/notarized .dmg needs Apple credentials and is a separate
-    #    release concern.
-    log_info "Building desktop app (this takes 1-3 minutes)..."
-    ( cd "$desktop_dir" && CSC_IDENTITY_AUTO_DISCOVERY=false npm run pack ) || {
-        log_error "Desktop app build failed"
-        log_info "Run manually: cd $desktop_dir && npm run pack"
-        return 1
-    }
-
-    local app=""
-    if [ "$OS" = "linux" ]; then
-        if [ -x "$desktop_dir/release/linux-unpacked/her" ]; then
-            app="$desktop_dir/release/linux-unpacked/her"
-        elif [ -x "$desktop_dir/release/linux-unpacked/her" ]; then
-            app="$desktop_dir/release/linux-unpacked/her"
-        fi
-    else
-        local cand
-        for cand in \
-            "$desktop_dir/release/mac-arm64/her.app" \
-            "$desktop_dir/release/mac/her.app"; do
-            if [ -d "$cand" ]; then
-                app="$cand"
-                break
-            fi
-        done
-    fi
-    if [ -z "$app" ]; then
-        log_error "Desktop build completed but no app was found under $desktop_dir/release/"
-        return 1
-    fi
-    log_success "Desktop app built: $app"
-
-    # Linux: Electron's chrome-sandbox helper needs root:root 4755 or the
-    # sandboxed renderer will abort on startup.  Check the file is a regular
-    # file (not a symlink) before chown/chmod so we don't follow an
-    # attacker-controlled link to an arbitrary path.
-    if [ "$OS" = "linux" ]; then
-        local sandbox="$desktop_dir/release/linux-unpacked/chrome-sandbox"
-        if [ -f "$sandbox" ] && [ ! -L "$sandbox" ]; then
-            if [ "$(id -u)" -eq 0 ]; then
-                chown root:root "$sandbox" && chmod 4755 "$sandbox" || {
-                    log_error "Cannot configure Electron sandbox helper: $sandbox"
-                    return 1
-                }
-            elif command -v sudo >/dev/null 2>&1; then
-                sudo chown root:root "$sandbox" && sudo chmod 4755 "$sandbox" || {
-                    log_error "Cannot configure Electron sandbox helper (sudo failed): $sandbox"
-                    return 1
-                }
-            else
-                log_error "Cannot configure Electron sandbox helper without sudo: $sandbox"
-                return 1
-            fi
-        fi
-    fi
-
-    # macOS: make the locally-built (ad-hoc) app relaunchable after an in-place
-    # self-update. An ad-hoc bundle has no stable Designated Requirement, so a
-    # later in-place rebuild (new cdhash) plus the inherited quarantine flag
-    # trips Gatekeeper's tamper check ("her is damaged and can't be opened").
-    # Strip quarantine + re-apply a clean deep ad-hoc signature (no
-    # hardened-runtime flag, which an ad-hoc build can't satisfy). Skipped when a
-    # real signing identity is configured so a signed build isn't clobbered.
-    if [ "$OS" = "macos" ] && [ -z "${CSC_LINK:-}" ] && [ -z "${APPLE_SIGNING_IDENTITY:-}" ] && command -v codesign >/dev/null 2>&1; then
-        xattr -cr "$app" 2>/dev/null || true
-        codesign --force --deep --sign - "$app" >/dev/null 2>&1 || true
-    fi
-
-    # `npm install` + `npm run pack` rewrite lockfiles; restore them so the
-    # checkout stays clean for the next `her update`.
-    restore_dirty_lockfiles "$INSTALL_DIR"
-}
-
-# Each --stage runs in its own process, so (unlike the monolithic main() where
-# clone_repo cd's once and later steps inherit it) a stage that operates on the
-# checkout must cd into it explicitly. Without this, install_deps/setup_path run
-# from the desktop app's cwd and resolve `.` / the venv against the wrong tree.
-require_install_dir() {
-    if [ -z "$INSTALL_DIR" ] || [ ! -d "$INSTALL_DIR" ]; then
-        log_error "Install directory not found: ${INSTALL_DIR:-<unset>}"
-        log_info "The 'repository' stage must run before this one."
-        return 1
-    fi
-    cd "$INSTALL_DIR"
-}
-
-# Desktop bootstrap stage protocol. Mirrors the Windows install.ps1 surface
-# closely enough for the Electron bootstrap runner to show structured progress.
-run_stage_body() {
-    local stage="$1"
-
-    case "$stage" in
-        prerequisites)
-            print_banner
-            detect_os
-            resolve_install_layout
-            install_uv
-            check_python
-            check_git
-            check_node
-            check_network_prerequisites
-            install_system_packages
-            ;;
-        repository)
-            detect_os
-            resolve_install_layout
-            check_git
-            clone_repo
-            ;;
-        venv)
-            detect_os
-            resolve_install_layout
-            require_install_dir
-            install_uv
-            check_python
-            setup_venv
-            ;;
-        python-deps)
-            detect_os
-            resolve_install_layout
-            require_install_dir
-            install_uv
-            check_python
-            install_deps
-            ;;
-        node-deps)
-            detect_os
-            resolve_install_layout
-            require_install_dir
-            check_node
-            install_node_deps
-            ;;
-        path)
-            detect_os
-            resolve_install_layout
-            require_install_dir
-            setup_path
-            ;;
-        config)
-            detect_os
-            resolve_install_layout
-            require_install_dir
-            copy_config_templates
-            ;;
-        setup)
-            detect_os
-            resolve_install_layout
-            require_install_dir
-            run_setup_wizard
-            ;;
-        gateway)
-            detect_os
-            resolve_install_layout
-            require_install_dir
-            maybe_start_gateway
-            ;;
-        desktop)
-            detect_os
-            resolve_install_layout
-            require_install_dir
-            # Each stage runs in its own process, so the her-managed Node
-            # provisioned during prerequisites/node-deps (at $HER_HOME/node/bin)
-            # isn't on PATH here. check_node re-adds it (or installs if missing)
-            # so install_desktop can find npm instead of silently skipping.
-            check_node
-            install_desktop
-            ;;
-        complete)
-            detect_os
-            resolve_install_layout
-            print_success
-            echo "git" > "$HER_HOME/.install_method"
-            ;;
-        *)
-            log_error "Unknown stage: $stage"
-            return 2
-            ;;
-    esac
-}
-
-run_stage_protocol() {
-    local stage="$1"
-    if [ -z "$stage" ]; then
-        log_error "--stage requires a stage name"
-        if [ "$JSON_OUTPUT" = true ]; then
-            emit_stage_json "" false false "missing stage name"
-        fi
-        return 2
-    fi
-
-    if [ "$NON_INTERACTIVE" = true ] && stage_needs_user_input "$stage"; then
-        log_info "Skipping $stage (non-interactive bootstrap)"
-        if [ "$JSON_OUTPUT" = true ]; then
-            emit_stage_json "$stage" true true
-        fi
-        return 0
-    fi
-
-    # Run the stage body in a subshell so a stage helper that calls `exit 1`
-    # on failure (clone_repo, install_deps, etc. were written for the monolithic
-    # flow) only exits the subshell — the parent still reaches the JSON result
-    # frame below. Without this, a failed --stage would terminate the process
-    # before emitting the frame and the Rust/Electron parser would see "no
-    # result frame" instead of a clean {ok:false} contract response.
-    set +e
-    ( run_stage_body "$stage" )
-    local code=$?
-    set -e
-
-    if [ "$JSON_OUTPUT" = true ]; then
-        if [ "$code" -eq 0 ]; then
-            emit_stage_json "$stage" true false
-        else
-            emit_stage_json "$stage" false false "exit code $code"
-        fi
-    fi
-    return "$code"
-}
-
 # ============================================================================
 # Main
 # ============================================================================
@@ -2560,20 +2254,12 @@ main() {
     run_setup_wizard
     maybe_start_gateway
 
-    if [ "$INCLUDE_DESKTOP" = true ]; then
-        install_desktop
-    fi
-
     print_success
 
     echo "git" > "$HER_HOME/.install_method"
 }
 
-if [ "$MANIFEST_MODE" = true ]; then
-    emit_manifest
-elif [ -n "$STAGE_NAME" ]; then
-    run_stage_protocol "$STAGE_NAME"
-elif [ -n "$ENSURE_DEPS" ]; then
+if [ -n "$ENSURE_DEPS" ]; then
     ensure_mode
 elif [ "$POSTINSTALL_MODE" = true ]; then
     postinstall_mode

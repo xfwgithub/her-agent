@@ -397,7 +397,7 @@ def test_no_stray_lockfiles_in_workspace_subdirs(main_mod) -> None:
 def test_tui_launch_install_uses_workspace_scope(
     tmp_path: Path, main_mod, monkeypatch
 ) -> None:
-    """TUI launch npm install must pass --workspace ui-tui to avoid pulling apps/desktop."""
+    """TUI launch npm install must pass --workspace ui-tui to avoid pulling the web workspace."""
     tui_dir = tmp_path / "ui-tui"
     tui_dir.mkdir()
     (tui_dir / "package.json").write_text("{}")

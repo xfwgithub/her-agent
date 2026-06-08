@@ -1462,7 +1462,7 @@ AUTHOR_MAP = {
     "2663402852@qq.com": "x1am1",  # PR #35098 (chown root-owned top-level HER_HOME state files)
     "nicsequenzy@gmail.com": "polnikale",  # PR #35717 (discover Playwright headless_shell browser)
     "wasdhkzk@gmail.com": "whyhkzk",  # PR #32407 (sandbox-mirror inner-container guard; commits authored as whyhkzk + zhukun)
-    "leonard@sellem.me": "leonardsellem",  # PR #37405 (desktop WS origin guard on remote/Tailscale binds)
+    "leonard@sellem.me": "leonardsellem",  # PR #37405 (WebSocket origin guard on remote/Tailscale binds)
     "42903577+ohMyJason@users.noreply.github.com": "ohMyJason",  # PR #29810 (discover_models in custom_providers section 4)
 }
 
@@ -1564,21 +1564,6 @@ def update_version_files(semver: str, calver_date: str):
         flags=re.MULTILINE,
     )
     PYPROJECT_FILE.write_text(pyproject)
-
-    # Keep the desktop Electron app's package.json version in lockstep with the
-    # Python package version. The desktop About panel reads the live her
-    # version at runtime, but app.getVersion()/packaging metadata still come
-    # from this field, so it must track pyproject to avoid drift.
-    desktop_pkg = REPO_ROOT / "apps" / "desktop" / "package.json"
-    if desktop_pkg.exists():
-        pkg_text = desktop_pkg.read_text(encoding="utf-8")
-        pkg_text = re.sub(
-            r'("version"\s*:\s*)"[^"]+"',
-            rf'\g<1>"{semver}"',
-            pkg_text,
-            count=1,
-        )
-        desktop_pkg.write_text(pkg_text, encoding="utf-8")
 
     # Update ACP Registry manifest + npm launcher (must stay version-locked
     # with pyproject — enforced by tests/acp/test_registry_manifest.py).

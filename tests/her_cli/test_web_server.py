@@ -596,12 +596,13 @@ class TestWebServerEndpoints:
         assert "base64" in resp.json()["detail"]
 
     def test_desktop_audio_routes_registered(self):
-        """All three desktop voice endpoints must exist.
+        """All three voice endpoints must exist.
 
-        The renderer (apps/desktop) calls /api/audio/transcribe, /speak, and
-        /elevenlabs/voices. /speak + /voices were silently dropped in a merge
-        once; this guards the contract so a future merge can't lose them
-        without failing CI.
+        External frontends (the browser dashboard's voice tab and any
+        future embedders) call /api/audio/transcribe, /speak, and
+        /elevenlabs/voices. /speak + /voices were silently dropped in a
+        merge once; this guards the contract so a future merge can't lose
+        them without failing CI.
         """
         from her_cli.web_server import app
 
@@ -4265,37 +4266,3 @@ class TestValidateProviderCredential:
         data = self._post("OPENAI_API_KEY", "   ").json()
         assert data["ok"] is False
 
-
-class TestDesktopCronTicker:
-    """The dashboard backend fires cron jobs itself only when desktop-spawned."""
-
-    def _client(self):
-        try:
-            from starlette.testclient import TestClient
-        except ImportError:
-            pytest.skip("fastapi/starlette not installed")
-        from her_cli.web_server import app
-
-        return TestClient(app)
-
-    def test_ticker_runs_when_desktop(self, monkeypatch, _isolate_her_home):
-        import threading
-        import cron.scheduler as sched
-
-        called = threading.Event()
-        monkeypatch.setattr(sched, "tick", lambda *a, **k: called.set())
-        monkeypatch.setenv("HER_DESKTOP", "1")
-
-        with self._client():
-            assert called.wait(3.0), "expected cron tick under HER_DESKTOP=1"
-
-    def test_ticker_skipped_without_desktop(self, monkeypatch, _isolate_her_home):
-        import threading
-        import cron.scheduler as sched
-
-        called = threading.Event()
-        monkeypatch.setattr(sched, "tick", lambda *a, **k: called.set())
-        monkeypatch.delenv("HER_DESKTOP", raising=False)
-
-        with self._client():
-            assert not called.wait(0.5), "ticker must not run outside the desktop app"

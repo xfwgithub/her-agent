@@ -492,78 +492,6 @@ def _uninstall_profile(profile) -> None:
         log_warn(f"  Could not remove {profile_home}: {e}")
 
 
-def run_gui_uninstall(args):
-    """GUI-only uninstall: remove the Chat GUI, leave the agent + data intact.
-
-    Mirrors ``her uninstall --gui``. Removes the desktop app's built
-    artifacts, the packaged app bundle (best-effort), and the Electron
-    userData dir — nothing under ``$HER_HOME`` config/sessions/.env, and
-    never the Python agent or its venv.
-    """
-    from her_cli.gui_uninstall import (
-        agent_is_installed,
-        gui_install_summary,
-        uninstall_gui,
-    )
-
-    her_home = get_her_home()
-    summary = gui_install_summary(her_home)
-    skip_confirm = bool(getattr(args, "yes", False))
-
-    print()
-    print(color("┌─────────────────────────────────────────────────────────┐", Colors.MAGENTA, Colors.BOLD))
-    print(color("│         ⚕ her Chat GUI Uninstaller                  │", Colors.MAGENTA, Colors.BOLD))
-    print(color("└─────────────────────────────────────────────────────────┘", Colors.MAGENTA, Colors.BOLD))
-    print()
-
-    if not summary["gui_installed"]:
-        print("No her Chat GUI installation was found.")
-        print(f"  Checked: {her_home}, and the standard app locations for this OS.")
-        return
-
-    print(color("This removes the Chat GUI only. The her agent stays installed.", Colors.CYAN))
-    print()
-    print(color("Will remove:", Colors.YELLOW, Colors.BOLD))
-    for p in summary["source_built_artifacts"]:
-        print(f"  • {p}")
-    for p in summary["packaged_app_paths"]:
-        print(f"  • {p}")
-    if summary["userdata_exists"]:
-        print(f"  • {summary['userdata_dir']}  (desktop app data)")
-    print()
-    if agent_is_installed(her_home):
-        print(color("Kept intact:", Colors.GREEN, Colors.BOLD))
-        print(f"  • The her agent at {her_home / 'her-agent'}")
-        print(f"  • Your config, sessions, and secrets under {her_home}")
-        print()
-
-    if not skip_confirm:
-        try:
-            confirm = input(f"Type '{color('yes', Colors.YELLOW)}' to remove the Chat GUI: ").strip().lower()
-        except (KeyboardInterrupt, EOFError):
-            print()
-            print("Cancelled.")
-            return
-        if confirm != "yes":
-            print()
-            print("Uninstall cancelled.")
-            return
-
-    print()
-    print(color("Uninstalling Chat GUI...", Colors.CYAN, Colors.BOLD))
-    print()
-    uninstall_gui(her_home)
-
-    print()
-    print(color("┌─────────────────────────────────────────────────────────┐", Colors.GREEN, Colors.BOLD))
-    print(color("│            ✓ Chat GUI Uninstalled!                      │", Colors.GREEN, Colors.BOLD))
-    print(color("└─────────────────────────────────────────────────────────┘", Colors.GREEN, Colors.BOLD))
-    print()
-    print("The her agent is still installed. Run 'her' to use the CLI,")
-    print("or 'her uninstall' to remove the agent too.")
-    print()
-
-
 def run_uninstall(args):
     """
     Run the uninstall process.
@@ -585,7 +513,7 @@ def run_uninstall(args):
     # full wipe (code + ~/.her data); otherwise keep-data. Named profiles
     # are NOT auto-removed here — that's a destructive, surprising default for
     # an unattended run, so it stays opt-in to the interactive flow. This is
-    # the path the desktop app's detached cleanup script uses for its
+    # the path the ``--yes`` non-interactive uninstall uses for its
     # lite/full modes.
     skip_confirm = bool(getattr(args, "yes", False))
     if skip_confirm:
@@ -716,9 +644,9 @@ def _perform_uninstall(
     paths so the destructive sequence lives in exactly one place.
 
     Steps: stop gateway → strip PATH (rc files + Windows registry) → remove the
-    ``her`` wrapper + node symlinks → remove the desktop Chat GUI artifacts →
-    delete the code checkout → (Windows) remove PortableGit/Node → optionally
-    wipe ``$HER_HOME`` data and named profiles on full uninstall.
+    ``her`` wrapper + node symlinks → delete the code checkout → (Windows)
+    remove PortableGit/Node → optionally wipe ``$HER_HOME`` data and named
+    profiles on full uninstall.
     """
     print()
     print(color("Uninstalling...", Colors.CYAN, Colors.BOLD))
@@ -779,24 +707,6 @@ def _perform_uninstall(
             log_success(f"Removed {link}")
     else:
         log_info("No her-managed node/npm/npx symlinks found")
-
-    # 3c. Remove the desktop Chat GUI's artifacts too (built renderer/release,
-    #     node_modules, the packaged app bundle, and the Electron userData
-    #     dir). Both the "keep data" and "full" CLI flows remove the agent
-    #     code, so the GUI — which is just another consumer of the same
-    #     checkout — should go with it. uninstall_gui() never touches config /
-    #     sessions / .env, so it's safe in keep-data mode; on full uninstall the
-    #     step-5 rmtree(her_home) would sweep the in-tree artifacts anyway,
-    #     but the packaged app + Electron userData live OUTSIDE HER_HOME and
-    #     must be cleaned explicitly here.
-    log_info("Removing desktop Chat GUI artifacts...")
-    try:
-        from her_cli.gui_uninstall import uninstall_gui
-        gui_removed = uninstall_gui(her_home)
-        if not gui_removed:
-            log_info("No desktop GUI artifacts found")
-    except Exception as e:
-        log_warn(f"Could not remove desktop GUI artifacts: {e}")
 
     # 4. Remove installation directory (code)
     log_info("Removing installation directory...")
@@ -887,42 +797,37 @@ class _UninstallArgs:
     """Lightweight args namespace for the module entrypoint below."""
 
     def __init__(self, *, mode: str):
-        self.gui = mode == "gui"
-        self.gui_summary = False
         self.full = mode == "full"
         self.yes = True  # the module entrypoint is always non-interactive
 
 
 def main(argv=None) -> int:
-    """Module entrypoint: ``python -m her_cli.uninstall --mode <gui|lite|full>``.
+    """Module entrypoint: ``python -m her_cli.uninstall --mode <lite|full>``.
 
-    Exists so the desktop app can run the uninstall under a Python interpreter
-    OUTSIDE the venv being deleted. On Windows, ``lite``/``full`` rmtree the
-    venv that contains the running ``python.exe`` — and a running .exe is
+    Exists so the uninstall can run under a Python interpreter OUTSIDE the
+    venv being deleted. On Windows, ``lite``/``full`` rmtree the venv that
+    contains the running ``python.exe`` — and a running .exe is
     mandatory-locked, so doing that from the venv's own interpreter half-fails.
-    The desktop launches this with the system Python + ``PYTHONPATH=<agentRoot>``
-    so ``import her_cli`` resolves from source while the venv is torn down.
+    A system-Python invocation + ``PYTHONPATH=<agentRoot>`` lets ``import
+    her_cli`` resolve from source while the venv is torn down.
 
-    This module imports only stdlib + ``her_constants`` + ``her_cli.colors``
-    (and lazily ``her_cli.gui_uninstall``), so it runs fine under a bare
-    system Python with no site-packages from the venv.
+    This module imports only stdlib + ``her_constants`` + ``her_cli.colors``,
+    so it runs fine under a bare system Python with no site-packages from
+    the venv.
     """
     import argparse
 
     parser = argparse.ArgumentParser(prog="python -m her_cli.uninstall")
     parser.add_argument(
         "--mode",
-        choices=["gui", "lite", "full"],
+        choices=["lite", "full"],
         required=True,
-        help="gui = Chat GUI only; lite = GUI + agent, keep data; full = everything",
+        help="lite = agent only, keep data; full = everything",
     )
     ns = parser.parse_args(argv)
     args = _UninstallArgs(mode=ns.mode)
 
-    if args.gui:
-        run_gui_uninstall(args)
-    else:
-        run_uninstall(args)
+    run_uninstall(args)
     return 0
 
 

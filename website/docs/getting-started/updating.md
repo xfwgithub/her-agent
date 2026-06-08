@@ -63,7 +63,7 @@ If your local checkout is on a different branch, her auto-stashes any uncommitte
 
 When you run `her update` in a terminal, her stashes any uncommitted source-tree changes, pulls, then **asks** whether to restore them — exactly as it always has. Nothing changes for interactive updates.
 
-When the update runs **without a terminal** — from the desktop/chat app's "Update" button or a gateway-triggered update — there's no prompt to answer. The `updates.non_interactive_local_changes` setting decides what happens to your stashed changes:
+When the update runs **without a terminal** — from a gateway-triggered update or any automated path — there's no prompt to answer. The `updates.non_interactive_local_changes` setting decides what happens to your stashed changes:
 
 ```yaml
 # ~/.her/config.yaml
@@ -74,8 +74,6 @@ updates:
 
 - `stash` (default) — auto-stash, pull, then auto-restore your changes on top of the updated code. Nothing is lost; if a restore hits conflicts they're preserved in a git stash for manual recovery.
 - `discard` — auto-stash and drop the stash after the pull, so the update always lands on a clean tree. Use this only on machines where you never intend to keep local edits to the her source. It stash-drops (not `git reset --hard` + `git clean -fd`), so ignored paths like `node_modules`, `venv`, and build outputs are never touched.
-
-In the desktop app this is **Settings → Advanced → In-App Update Local Changes**.
 
 ### Preview-only: `her update --check`
 
@@ -101,7 +99,7 @@ updates:
 
 ### Windows: another `her.exe` is running
 
-On Windows, `her update` will refuse to run if it detects another `her.exe` process holding the venv's entry-point executable open — most commonly the her Desktop app's spawned backend, an open `her` REPL in another terminal, or a running gateway:
+On Windows, `her update` will refuse to run if it detects another `her.exe` process holding the venv's entry-point executable open — most commonly an open `her` REPL in another terminal, a running gateway, or a managed backend child:
 
 ```
 $ her update
@@ -111,7 +109,7 @@ $ her update
   Updating now would fail to overwrite ...\venv\Scripts\her.exe because
   Windows blocks REPLACE on a running executable.
 
-  Close her Desktop, exit any open `her` REPLs, and
+  Close any open `her` REPLs / dashboard / chat tabs, and
   stop the gateway (`her gateway stop`) before retrying.
   Override with `her update --force` if you've already
   confirmed those processes will not write to the venv.

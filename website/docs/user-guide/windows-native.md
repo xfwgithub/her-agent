@@ -17,9 +17,7 @@ If you prefer a real POSIX environment (for the dashboard's embedded terminal, `
 
 ## Quick install
 
-[Download the her Desktop installer](https://her-agent.nousresearch.com/desktop) from our website and run it.
-
-Or, for a command-line only install, open **PowerShell** (or Windows Terminal) and run:
+Open **PowerShell** (or Windows Terminal) and run:
 
 ```powershell
 iex (irm https://her-agent.nousresearch.com/install.ps1)
@@ -57,7 +55,7 @@ On first launch (and on demand when a missing tool is detected), her runs a smal
 | **ripgrep**      | Fast file search — falls back to `grep` if unavailable.                                                                      |
 | **npm packages** | `agent-browser`, Playwright Chromium, and any per-toolset Node deps are installed once at first browser-tool use.            |
 
-Each dep has a `shutil.which(...)`-style check; if a binary is missing and the run is interactive, `dep_ensure` offers to install it (deferring to `scripts\install.ps1 -ensure <dep>` for the actual install logic). Non-interactive runs (gateway, cron, headless desktop launches) skip the prompt and surface a clear `this feature needs <dep>` error instead.
+Each dep has a `shutil.which(...)`-style check; if a binary is missing and the run is interactive, `dep_ensure` offers to install it (deferring to `scripts\install.ps1 -ensure <dep>` for the actual install logic). Non-interactive runs (gateway, cron) skip the prompt and surface a clear `this feature needs <dep>` error instead.
 
 ## What the installer actually does
 

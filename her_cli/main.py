@@ -444,7 +444,7 @@ try:
         mode=(
             "gui"
             if next((arg for arg in sys.argv[1:] if not arg.startswith("-")), "")
-            in {"dashboard", "gui", "desktop"}
+            in {"dashboard", "gui"}
             else "cli"
         )
     )
@@ -1550,9 +1550,8 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
 
     # 2. Normal flow: npm install if needed, always esbuild, then node dist/entry.js.
     #    --dev flow: npm install if needed, then tsx src/entry.tsx.
-    #    Existing desktop behaviour runs npm from the workspace root.  Termux
-    #    scopes the install to ui-tui so launch does not pull desktop/web
-    #    dependencies into the hot path.
+    #    Termux scopes the install to ui-tui so launch does not pull
+    #    web's deps into the hot path.
     did_install = False
     termux_startup = _is_termux_startup_environment()
     termux_need_rebuild = False
@@ -1570,7 +1569,8 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
         if not os.environ.get("HER_QUIET"):
             print("Installing TUI dependencies…")
         npm_cwd = _workspace_root(tui_dir)
-        # --workspace ui-tui avoids resolving apps/desktop (Electron + node-pty).
+        # --workspace ui-tui keeps the npm install focused on TUI deps
+        # (and avoids resolving other workspace packages at the repo root).
         # See #38772.
         npm_workspace_args: tuple[str, ...] = ("--workspace", "ui-tui")
         if termux_startup:
@@ -1630,7 +1630,7 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
             return [str(tsx), "src/entry.tsx"], tui_dir
         return [npm, "start"], tui_dir
 
-    # Desktop/dev launches retain the historical "always rebuild" behaviour.
+    # Default launches retain the historical "always rebuild" behaviour.
     # Termux cold starts use the freshness check because esbuild startup is
     # expensive on old mobile CPUs.
     should_build = True
@@ -1937,9 +1937,9 @@ def _sync_bundled_skills_quietly() -> None:
     """Seed ``~/.her/skills/`` with the bundled skill library on first launch.
 
     Called from any CLI entrypoint that the user might use as their first
-    interaction with her — chat, dashboard (the desktop GUI's backend),
-    and gateway. The skills_sync module is manifest-based and idempotent:
-    skipped skills cost ~milliseconds, so calling this repeatedly is fine.
+    interaction with her — chat, dashboard, and gateway. The skills_sync
+    module is manifest-based and idempotent: skipped skills cost
+    ~milliseconds, so calling this repeatedly is fine.
 
     Failures are swallowed because skills are an enhancement, not a hard
     dependency. her still functions without them; the user just sees an
@@ -6023,27 +6023,8 @@ def cmd_version(args):
 
 def cmd_uninstall(args):
     """Uninstall her Agent (or just the Chat GUI with --gui)."""
-    # Machine-readable install snapshot for the desktop app's uninstall UI.
-    # Must run before any TTY gate — it's called from a non-interactive child.
-    if getattr(args, "gui_summary", False):
-        from her_cli.gui_uninstall import gui_install_summary
-
-        print(json.dumps(gui_install_summary()))
-        return
-
-    # GUI-only uninstall. The desktop app shells out to this non-interactively
-    # with --yes, so only gate on a TTY when we actually need to prompt.
-    if getattr(args, "gui", False):
-        if not getattr(args, "yes", False):
-            _require_tty("uninstall --gui")
-        from her_cli.uninstall import run_gui_uninstall
-
-        run_gui_uninstall(args)
-        return
-
-    # Full/keep-data uninstall. ``--yes`` runs non-interactively (the desktop
-    # app's lite/full modes drive this from a detached cleanup script), so only
-    # gate on a TTY when we actually need to prompt for the option + confirm.
+    # Full/keep-data uninstall. ``--yes`` runs non-interactively; only gate
+    # on a TTY when we actually need to prompt for the option + confirm.
     if not getattr(args, "yes", False):
         _require_tty("uninstall")
     from her_cli.uninstall import run_uninstall
@@ -6439,10 +6420,11 @@ def _build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
                 _say(text)
 
     npm_cwd = _workspace_root(web_dir)
-    # Scope the install to the web workspace only so that the full workspace
-    # graph (including apps/desktop with its Electron + node-pty deps) is never
-    # resolved here.  Without --workspace the root package.json's apps/* glob
-    # would pull in desktop on every web build. See #38772.
+    # Scope the install to the web workspace only so the full workspace graph
+    # never has to be resolved here.  Without --workspace the root
+    # package.json's apps/* glob would otherwise try to resolve every
+    # workspace package, which is slow and prone to npm warnings when
+    # optional deps are missing on a fresh machine. See #38772.
     npm_workspace_args: tuple[str, ...] = ("--workspace", "web")
     if _is_termux_startup_environment():
         npm_cwd, npm_workspace_args = _termux_workspace_install_context(web_dir)
@@ -6506,501 +6488,6 @@ def _build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
     return True
 
 
-def _desktop_dist_exists(desktop_dir: Path) -> bool:
-    """Return True when a local desktop renderer build is present."""
-    return (desktop_dir / "dist" / "index.html").exists()
-
-
-# ---------------------------------------------------------------------------
-# Desktop build stamp — content-hash based skip logic
-# ---------------------------------------------------------------------------
-# The desktop Electron build is expensive.
-# Unlike the web UI (which uses mtime comparison), the desktop uses a
-# SHA-256 content hash of the source tree so that:
-#   - ``git checkout`` / ``git pull`` that touch mtimes but not content
-#     don't trigger a rebuild
-#   - ``her update`` can unconditionally call ``her desktop --build-only``
-#     and it will skip if nothing actually changed
-#   - ``her desktop`` (interactive launch) skips the build when the
-#     stamp matches, making repeated launches fast
-#
-# Stamp file: $HER_HOME/desktop-build-stamp.json
-# Schema:
-#   {
-#     "contentHash": "<sha256 hex of source files>",
-#     "sourceMode": true | false,
-#     "builtAt": "<ISO 8601>"
-#   }
-
-def _compute_desktop_content_hash(project_root: Path) -> str:
-    """Return a SHA-256 hex digest of all source files that feed the desktop build.
-
-    Covers ``apps/desktop/`` (excluding anything matched by .gitignore)
-    plus the root ``package.json`` / ``package-lock.json`` (workspace config
-    that determines dependency resolution for the desktop workspace).
-
-    Parses the repo-root ``.gitignore`` via *pathspec* so we automatically
-    skip ``node_modules/``, ``dist/``, ``*.pyc``, etc. without maintaining
-    a hardcoded skip-list.
-    """
-    h = hashlib.sha256()
-
-    def _hash_file(path: Path) -> None:
-        rel = str(path.relative_to(project_root))
-        h.update(rel.encode())
-        h.update(b"\0")
-        try:
-            with open(path, "rb") as f:
-                for chunk in iter(lambda: f.read(65536), b""):
-                    h.update(chunk)
-        except (OSError, IOError):
-            pass
-        h.update(b"\0")
-
-
-    from pathspec import PathSpec
-
-    gitignore = project_root / ".gitignore"
-    lines: list[str] = []
-    if gitignore.is_file():
-        lines = gitignore.read_text(encoding="utf-8").splitlines()
-    spec = PathSpec.from_lines("gitignore", lines)
-
-    # Root workspace config
-    for name in ("package.json", "package-lock.json"):
-        p = project_root / name
-        if p.is_file():
-            rel = str(p.relative_to(project_root))
-            if not spec.match_file(rel):
-                _hash_file(p)
-
-    # Walk apps/desktop/ — prune ignored directories in-place
-    desktop_dir = project_root / "apps" / "desktop"
-    for dirpath, dirnames, filenames in os.walk(desktop_dir, topdown=True):
-        # Prune ignored directories so we never descend into them
-        dirnames[:] = [
-            d for d in dirnames
-            if not spec.match_file(str((Path(dirpath) / d).relative_to(project_root)))
-        ]
-
-        for fn in sorted(filenames):
-            fp = Path(dirpath) / fn
-            rel = str(fp.relative_to(project_root))
-            if not spec.match_file(rel):
-                _hash_file(fp)
-
-    return h.hexdigest()
-
-
-def _desktop_stamp_path() -> Path:
-    """Return the path to the desktop build stamp file under $HER_HOME."""
-    from her_constants import get_her_home
-    return get_her_home() / "desktop-build-stamp.json"
-
-
-def _desktop_build_needed(desktop_dir: Path, project_root: Path, *, source_mode: bool) -> bool:
-    """Return True when the desktop build output is stale or missing.
-
-    Compares the current content hash against the saved stamp. Also returns
-    True if the expected build artifact doesn't exist (e.g. first run after
-    ``her update`` that pulled new source but hasn't built yet).
-    """
-    # If there's no build output at all, we definitely need to build
-    if source_mode:
-        if not _desktop_dist_exists(desktop_dir):
-            return True
-    else:
-        if _desktop_packaged_executable(desktop_dir) is None:
-            return True
-
-    stamp_file = _desktop_stamp_path()
-    if not stamp_file.is_file():
-        return True
-
-    try:
-        stamp_data = json.loads(stamp_file.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError, KeyError):
-        return True
-
-    # If the mode changed (source vs packaged), force a rebuild
-    if stamp_data.get("sourceMode") != source_mode:
-        return True
-
-    saved_hash = stamp_data.get("contentHash")
-    if not saved_hash:
-        return True
-
-    current_hash = _compute_desktop_content_hash(project_root)
-    return current_hash != saved_hash
-
-
-def _write_desktop_build_stamp(project_root: Path, *, source_mode: bool) -> None:
-    """Write the desktop build stamp after a successful build."""
-    stamp_file = _desktop_stamp_path()
-    try:
-        stamp_file.parent.mkdir(parents=True, exist_ok=True)
-        content_hash = _compute_desktop_content_hash(project_root)
-        from datetime import datetime, timezone
-        stamp_data = {
-            "contentHash": content_hash,
-            "sourceMode": source_mode,
-            "builtAt": datetime.now(timezone.utc).isoformat(),
-        }
-        stamp_file.write_text(json.dumps(stamp_data, indent=2) + "\n", encoding="utf-8")
-    except Exception as exc:
-        # Never let stamp-writing block or fail a build
-        logger.debug("Failed to write desktop build stamp: %s", exc)
-
-
-def _desktop_packaged_executable(desktop_dir: Path) -> Optional[Path]:
-    """Return the current platform's unpacked Electron app executable."""
-    release_dir = desktop_dir / "release"
-    if sys.platform == "darwin":
-        candidates = list(release_dir.glob("mac*/her.app/Contents/MacOS/her"))
-    elif sys.platform == "win32":
-        candidates = [
-            release_dir / "win-unpacked" / "her.exe",
-            release_dir / "win-ia32-unpacked" / "her.exe",
-            release_dir / "win-arm64-unpacked" / "her.exe",
-        ]
-    else:
-        candidates = [
-            release_dir / "linux-unpacked" / "her",
-            release_dir / "linux-unpacked" / "her",
-            release_dir / "linux-arm64-unpacked" / "her",
-            release_dir / "linux-arm64-unpacked" / "her",
-        ]
-
-    existing = [p for p in candidates if p.exists()]
-    if not existing:
-        return None
-    return max(existing, key=lambda p: p.stat().st_mtime)
-
-
-def _electron_download_cache_dirs() -> list[Path]:
-    """Return the per-user Electron download cache directories for this OS.
-
-    electron-builder's ``app-builder unpack-electron`` extracts the Electron
-    distribution from a zip stored in this cache (NOT from node_modules), so a
-    corrupt zip here — not a bad workspace install — is what poisons the build.
-    Honors the ``electron_config_cache`` / ``ELECTRON_CACHE`` overrides that
-    ``@electron/get`` respects, then falls back to the platform defaults.
-    """
-    home = Path.home()
-    candidates: list[Path] = []
-    override = os.environ.get("electron_config_cache") or os.environ.get("ELECTRON_CACHE")
-    if override:
-        candidates.append(Path(override))
-    if sys.platform == "darwin":
-        candidates.append(home / "Library" / "Caches" / "electron")
-    elif sys.platform == "win32":
-        local = os.environ.get("LOCALAPPDATA")
-        if local:
-            candidates.append(Path(local) / "electron" / "Cache")
-        candidates.append(home / "AppData" / "Local" / "electron" / "Cache")
-    else:
-        xdg = os.environ.get("XDG_CACHE_HOME")
-        if xdg:
-            candidates.append(Path(xdg) / "electron")
-        candidates.append(home / ".cache" / "electron")
-
-    seen: set[Path] = set()
-    out: list[Path] = []
-    for c in candidates:
-        rc = c.expanduser()
-        if rc not in seen:
-            seen.add(rc)
-            out.append(rc)
-    return out
-
-
-def _purge_electron_build_cache(desktop_dir: Path) -> list[Path]:
-    """Clear the cached Electron download + half-written unpacked dir so the
-    next ``pack`` re-downloads and re-stages from scratch.
-
-    Root cause of the ``ENOENT … rename '…/linux-unpacked/electron' ->
-    '…/linux-unpacked/her'`` desktop build failure: a corrupt zip in the
-    per-user Electron download cache (a partial download resumed into the same
-    file leaves prepended/concatenated junk, or an interrupted write truncates
-    it). electron-builder's ``app-builder unpack-electron`` extracts the
-    distribution from that cached zip (NOT from node_modules); a bad zip yields
-    a partial tree MISSING the 193 MB ``electron`` binary, so the final rename
-    dies. Re-running repeats the same broken extraction forever.
-
-    We deliberately do NOT try to detect corruption ourselves. stdlib
-    ``zipfile`` silently tolerates the prepended/concatenated junk that is the
-    most common corruption here — it reads from the end-of-central-directory
-    backward, so ``testzip()`` returns clean on exactly the zips ``unzip -t``
-    and ``@electron/get`` reject. Gating the purge on a self-rolled validator
-    would therefore skip the real-world case and never self-heal. Instead, on a
-    packaged-build failure we unconditionally remove the version's cached zips
-    and the stale unpacked dir, then let the caller retry once: ``@electron/get``
-    re-downloads with its own SHASUM verification (the real source of truth),
-    and ``before-pack.cjs`` re-wipes the unpacked dir. If the failure was
-    unrelated, a clean re-download is harmless and the retry fails the same way.
-
-    Best-effort: never raises. Returns the paths removed so the caller can log
-    them and decide whether a retry is worthwhile (empty list ⇒ nothing to
-    clear, so no point retrying).
-    """
-    removed: list[Path] = []
-
-    for cache_dir in _electron_download_cache_dirs():
-        if not cache_dir.is_dir():
-            continue
-        for zip_path in sorted(cache_dir.rglob("electron-*.zip")):
-            try:
-                zip_path.unlink()
-                removed.append(zip_path)
-            except OSError:
-                # Locked/permission-denied entry is out of our hands; let the
-                # build report its own error rather than masking it.
-                pass
-
-    # Drop the half-written unpacked dir too: an interrupted prior pack leaves
-    # a partial tree that poisons the rename even after the zip is fixed.
-    # (before-pack.cjs also handles this, but clearing it here makes the retry
-    # robust even if the hook is somehow skipped.)
-    release_dir = desktop_dir / "release"
-    if release_dir.is_dir():
-        for unpacked in release_dir.glob("*-unpacked"):
-            try:
-                shutil.rmtree(unpacked, ignore_errors=True)
-                removed.append(unpacked)
-            except OSError:
-                pass
-
-    return removed
-
-
-def _desktop_macos_relaunchable_fixup(desktop_dir: Path) -> None:
-    """Make a locally-built (unsigned) macOS desktop app survive in-place self-update.
-
-    An ad-hoc-signed .app has no stable Designated Requirement (no Team ID), so
-    when the self-updater rebuilds the bundle in place with a fresh build (a new,
-    different cdhash) Gatekeeper/LaunchServices treats the changed code as
-    tampering and macOS reports "her is damaged and can't be opened." The
-    bundle also inherits the com.apple.quarantine flag from the downloaded
-    installer process chain. Both make the relaunch fail.
-
-    Clearing the quarantine xattrs and re-applying a clean deep ad-hoc signature
-    (omitting the hardened-runtime flag, which is meaningless without a real
-    Developer ID) lets the rebuilt app relaunch. No-op when a real signing
-    identity is configured (CSC_LINK / APPLE_SIGNING_IDENTITY) so a properly
-    signed/notarized build is never clobbered. Best-effort: never raises.
-    """
-    if sys.platform != "darwin":
-        return
-    if os.environ.get("CSC_LINK") or os.environ.get("APPLE_SIGNING_IDENTITY"):
-        return
-    exe = _desktop_packaged_executable(desktop_dir)
-    if exe is None:
-        return
-    # exe = .../her.app/Contents/MacOS/her  ->  app bundle = .../her.app
-    app = exe.parents[2]
-    if not str(app).endswith(".app") or not app.is_dir():
-        return
-    codesign = shutil.which("codesign")
-    if not codesign:
-        return
-    try:
-        subprocess.run(["xattr", "-cr", str(app)], check=False)
-        subprocess.run([codesign, "--force", "--deep", "--sign", "-", str(app)], check=False)
-    except Exception as exc:
-        print(f"  (warning: macOS relaunch fixup skipped: {exc})")
-
-
-def _desktop_linux_sandbox_fixup(packaged_executable: Path) -> bool:
-    """Configure Electron's Linux SUID sandbox helper when required."""
-    if sys.platform != "linux":
-        return True
-
-    sandbox = packaged_executable.parent / "chrome-sandbox"
-    if not sandbox.exists():
-        print(f"✗ her Desktop is missing Electron's Linux sandbox helper: {sandbox}")
-        return False
-
-    # Reject symlinks — chown/chmod must not follow an attacker-controlled
-    # link to an arbitrary path.  Use lstat() so we inspect the link itself
-    # rather than the target, and require a regular file.
-    try:
-        sandbox_lstat = sandbox.lstat()
-    except OSError:
-        print(f"✗ Cannot stat Electron's Linux sandbox helper: {sandbox}")
-        return False
-    if not stat.S_ISREG(sandbox_lstat.st_mode):
-        print(f"✗ Electron's Linux sandbox helper is not a regular file: {sandbox}")
-        return False
-
-    if sandbox_lstat.st_uid == 0 and stat.S_IMODE(sandbox_lstat.st_mode) == 0o4755:
-        return True
-
-    sudo = shutil.which("sudo")
-    if not sudo:
-        print("✗ her Desktop requires sudo to configure Electron's Linux sandbox helper.")
-        return False
-
-    print("→ Configuring Electron Linux sandbox helper (sudo required)...")
-    for command in ([sudo, "chown", "root:root", str(sandbox)], [sudo, "chmod", "4755", str(sandbox)]):
-        if subprocess.run(command, check=False).returncode != 0:
-            print(f"✗ Failed to configure Electron's Linux sandbox helper: {sandbox}")
-            return False
-    return True
-
-
-def cmd_gui(args: argparse.Namespace):
-    """Build and launch the native Electron desktop GUI."""
-    desktop_dir = PROJECT_ROOT / "apps" / "desktop"
-    if not (desktop_dir / "package.json").exists():
-        print(f"Desktop GUI source not found at: {desktop_dir}")
-        sys.exit(1)
-
-    try:
-        from her_logging import setup_logging as _setup_logging_gui
-        _setup_logging_gui(mode="gui")
-    except Exception:
-        pass
-
-    env = os.environ.copy()
-    if getattr(args, "fake_boot", False):
-        env["HER_DESKTOP_BOOT_FAKE"] = "1"
-    if getattr(args, "ignore_existing", False):
-        env["HER_DESKTOP_IGNORE_EXISTING"] = "1"
-    if getattr(args, "her_root", None):
-        env["HER_DESKTOP_HER_ROOT"] = str(Path(args.her_root).expanduser().resolve())
-    if getattr(args, "cwd", None):
-        env["HER_DESKTOP_CWD"] = str(Path(args.cwd).expanduser().resolve())
-
-    source_mode = getattr(args, "source", False)
-    skip_build = getattr(args, "skip_build", False)
-    force_build = getattr(args, "force_build", False)
-
-    packaged_executable = _desktop_packaged_executable(desktop_dir)
-
-    if source_mode or not skip_build:
-        npm = shutil.which("npm")
-        if not npm:
-            print("Desktop GUI requires Node.js/npm, but npm was not found on PATH.")
-            print("Install Node.js, then run:  her gui")
-            sys.exit(1)
-    else:
-        npm = None
-
-    if skip_build:
-        if source_mode:
-            if not _desktop_dist_exists(desktop_dir):
-                print(f"✗ --skip-build --source was passed but no desktop dist found at: {desktop_dir / 'dist'}")
-                print("  Pre-build first:  cd apps/desktop && npm run build")
-                print("  Or drop --skip-build to install dependencies and build automatically.")
-                sys.exit(1)
-            if not (PROJECT_ROOT / "node_modules" / "electron" / "package.json").exists():
-                print("✗ --skip-build --source requires existing workspace dependencies.")
-                print(f"  Install first:  cd {PROJECT_ROOT} && npm ci")
-                print("  Or drop --skip-build to install dependencies and build automatically.")
-                sys.exit(1)
-            print(f"→ Skipping desktop source build (--skip-build --source); using dist at {desktop_dir / 'dist'}")
-        elif packaged_executable is None:
-            print(f"✗ --skip-build was passed but no packaged desktop app was found at: {desktop_dir / 'release'}")
-            print("  Pre-build first:  cd apps/desktop && npm run pack")
-            print("  Or drop --skip-build to package automatically.")
-            sys.exit(1)
-        else:
-            print(f"→ Skipping desktop package build (--skip-build); using {packaged_executable}")
-    else:
-        # Check the content-hash stamp before doing any build work.
-        # If the source tree hasn't changed since the last successful build,
-        # skip the npm install + build entirely (saves a ton of useless work).
-        # --force-build overrides the stamp and always rebuilds.
-        build_needed = force_build or _desktop_build_needed(
-            desktop_dir, PROJECT_ROOT, source_mode=source_mode
-        )
-        if not build_needed:
-            build_label = "source build" if source_mode else "packaged app"
-            print(f"✓ Desktop {build_label} is up to date (content stamp matches)")
-        else:
-            print("→ Installing desktop workspace dependencies...")
-            install_result = _run_npm_install_deterministic(npm, PROJECT_ROOT, capture_output=False)
-            if install_result.returncode != 0:
-                print("✗ Desktop dependency install failed")
-                print(f"  Run manually:  cd {PROJECT_ROOT} && npm ci")
-                sys.exit(install_result.returncode or 1)
-
-            build_label = "source build" if source_mode else "packaged app"
-            print(f"→ Building desktop {build_label}...")
-            build_script = "build" if source_mode else "pack"
-            build_result = subprocess.run([npm, "run", build_script], cwd=desktop_dir, env=env, check=False)
-            if build_result.returncode != 0 and not source_mode:
-                # A corrupt cached Electron zip makes `pack` fail with an ENOENT
-                # on the final `electron` -> `her` rename: unpack-electron
-                # extracted a partial tree (missing the 193 MB binary) from the
-                # bad zip. We do NOT try to prove the zip is corrupt ourselves —
-                # stdlib zipfile silently tolerates the prepended/concatenated
-                # junk that is the most common corruption (a partial download
-                # resumed into the same file), so a `testzip()` gate would pass
-                # and never self-heal. Instead, on any packaged-build failure we
-                # purge the version's cached zip + the half-written unpacked dir
-                # and retry once: @electron/get re-downloads with its own SHASUM
-                # verification, which is the real source of truth. If the
-                # failure was something else, the clean re-download is harmless
-                # and the retry fails the same way.
-                purged = _purge_electron_build_cache(desktop_dir)
-                if purged:
-                    print("  ⚠ Desktop build failed; cleared cached Electron download and retrying once...")
-                    for p in purged:
-                        print(f"    - {p}")
-                    build_result = subprocess.run([npm, "run", build_script], cwd=desktop_dir, env=env, check=False)
-            if build_result.returncode != 0:
-                print("✗ Desktop GUI build failed")
-                print(f"  Run manually:  cd apps/desktop && npm run {build_script}")
-                sys.exit(build_result.returncode or 1)
-            packaged_executable = _desktop_packaged_executable(desktop_dir)
-            if not source_mode:
-                # Locally-built apps are ad-hoc signed; make them relaunchable after
-                # an in-place self-update (otherwise macOS reports "her is
-                # damaged"). No-op on non-macOS and on real-identity builds.
-                _desktop_macos_relaunchable_fixup(desktop_dir)
-
-            # Build succeeded — write the stamp so next run can skip
-            _write_desktop_build_stamp(PROJECT_ROOT, source_mode=source_mode)
-
-    # --build-only: produce the artifact but do NOT launch. The installer's
-    # --update flow drives the rebuild headlessly and then launches the desktop
-    # itself (detached, after the old exe has exited), so the launch must NOT
-    # happen here — it would block the installer and, on Windows, the old exe
-    # is still being replaced. Verify the expected artifact exists so a silent
-    # "built nothing" can't slip past, then return success.
-    if getattr(args, "build_only", False):
-        if source_mode:
-            if not _desktop_dist_exists(desktop_dir):
-                print(f"✗ --build-only --source produced no dist at: {desktop_dir / 'dist'}")
-                sys.exit(1)
-            print(f"✓ Desktop source build ready at {desktop_dir / 'dist'} (not launching; --build-only)")
-        elif packaged_executable is None:
-            print(f"✗ --build-only produced no launchable app at: {desktop_dir / 'release'}")
-            print("  Expected an unpacked Electron app for the current OS.")
-            sys.exit(1)
-        else:
-            print(f"✓ Desktop packaged app ready: {packaged_executable} (not launching; --build-only)")
-        return
-
-    if source_mode:
-        print("→ Launching her Desktop from source build...")
-        launch_result = subprocess.run([npm, "exec", "--", "electron", "."], cwd=desktop_dir, env=env, check=False)
-        sys.exit(launch_result.returncode)
-
-    if packaged_executable is None:
-        print(f"✗ Desktop package build completed but no launchable app was found at: {desktop_dir / 'release'}")
-        print("  Expected an unpacked Electron app for the current OS.")
-        sys.exit(1)
-
-    if not _desktop_linux_sandbox_fixup(packaged_executable):
-        sys.exit(1)
-
-    print(f"→ Launching packaged her Desktop: {packaged_executable}")
-    launch_result = subprocess.run([str(packaged_executable)], cwd=desktop_dir, env=env, check=False)
-    sys.exit(launch_result.returncode)
-
-
 def _find_stale_dashboard_pids(
     *,
     exclude_pids: set[int] | None = None,
@@ -7020,13 +6507,7 @@ def _find_stale_dashboard_pids(
     ``_kill_stale_dashboard_processes`` for the kill.
 
     *exclude_pids* is an optional set of PIDs that must never be returned.
-    This is used by the her Desktop Electron app to protect its own
-    backend child process: when the desktop spawns ``her dashboard`` as
-    a backend and triggers an auto-update, the update must not kill the
-    dashboard that the desktop itself manages.  The desktop sets the
-    environment variable ``HER_DESKTOP_CHILD_PID`` on the spawned
-    backend process; ``_kill_stale_dashboard_processes`` reads it and
-    passes it here.  (#37532)
+    Callers pass *exclude_pids* via the ``update`` subcommand. (#37532)
 
     Returns an empty list on any scan error (missing ps/wmic, timeout, etc.).
     """
@@ -7253,30 +6734,10 @@ def _kill_stale_dashboard_processes(
     equivalent for background console apps.
 
     The dashboard isn't auto-restarted because we don't know the original
-    launch args (--host, --port, --insecure, --tui, --no-open).  The user
+    launch args (--host, --port, --insecure, --no-open).  The user
     restarts it manually; a hint is printed.
     """
-    # When the her Desktop Electron app spawns this dashboard as a
-    # backend child, it sets HER_DESKTOP_CHILD_PID so that the update
-    # path can skip killing the desktop-managed process.  (#37532)
-    exclude: set[int] | None = None
-    raw_pid = os.environ.get("HER_DESKTOP_CHILD_PID")
-    if raw_pid:
-        # The desktop may manage several backends (one per active profile) and
-        # passes them comma-separated; a lone int still parses for back-compat.
-        parsed: set[int] = set()
-        for part in raw_pid.split(","):
-            part = part.strip()
-            if not part:
-                continue
-            try:
-                parsed.add(int(part))
-            except (ValueError, TypeError):
-                pass
-        if parsed:
-            exclude = parsed
-
-    pids = _find_stale_dashboard_pids(exclude_pids=exclude)
+    pids = _find_stale_dashboard_pids(exclude_pids=exclude_pids)
     if not pids:
         return
 
@@ -8048,7 +7509,7 @@ def _invalidate_update_cache():
 def _load_installable_optional_extras(group: str = "all") -> list[str]:
     """Return optional extras referenced by a dependency group.
 
-    ``group`` is usually ``all`` (desktop/server broad install) or
+    ``group`` is usually ``all`` (broad install) or
     ``termux-all`` (Termux-compatible broad install).
     """
     try:
@@ -8148,10 +7609,10 @@ def _detect_concurrent_her_instances(
 
     Windows blocks DELETE/REPLACE on a running .exe — and even RENAME on the
     same .exe when another process opened it without ``FILE_SHARE_DELETE``.
-    The her Desktop Electron app spawns ``her.EXE`` as a backend child,
-    so during ``her update`` the user-invoked process and the desktop's
-    child both hold the same file. The quarantine rename then fails with
-    ``[WinError 32]`` and uv inherits the lock.
+    Long-running gateways / REPLs / dashboard backends spawn ``her.exe``
+    as a child, so during ``her update`` the user-invoked process and any
+    managed child both hold the same file. The quarantine rename then
+    fails with ``[WinError 32]`` and uv inherits the lock.
 
     This helper enumerates processes whose ``exe`` matches one of the venv's
     shims (``her.exe`` / ``her-gateway.exe``) and returns ``(pid,
@@ -8198,8 +7659,8 @@ def _detect_concurrent_her_instances(
     #      across session/elevation boundaries), leaving the launcher shim in
     #      the candidate set and re-triggering the false positive.
     #   2. Only exclude ancestors whose exe is itself a shim. A genuine second
-    #      her.exe sitting *under* a non-her parent (e.g. a her
-    #      Desktop backend child) must still be flagged, so we don't blanket-
+    #      her.exe sitting *under* a non-her parent (e.g. a managed
+    #      backend child) must still be flagged, so we don't blanket-
     #      exclude unrelated ancestors like the shell or terminal.
     # Broad ``except Exception`` guards against partially-stubbed psutil in
     # unit tests; this helper is documented as "never raises".
@@ -8270,8 +7731,8 @@ def _format_concurrent_instances_message(
     lines.append(f"  Updating now would fail to overwrite {shim} because")
     lines.append("  Windows blocks REPLACE on a running executable.")
     lines.append("")
-    lines.append("  Close her Desktop, exit any open `her` REPLs, and")
-    lines.append("  stop the gateway (`her gateway stop`) before retrying.")
+    lines.append("  Close any open `her` REPLs / dashboard / chat tabs,")
+    lines.append("  and stop the gateway (`her gateway stop`) before retrying.")
     lines.append("")
     if matches:
         pid_args = " ".join(f"/PID {pid}" for pid, _ in matches)
@@ -8301,7 +7762,7 @@ def _quarantine_running_her_exe(
 
     Rename can still fail when *another* process has opened the .exe without
     ``FILE_SHARE_DELETE`` — typically AV real-time scanners with transient
-    handles (recovers in <1s), or the her Desktop backend child process
+    handles (recovers in <1s), or a managed backend child process
     (won't recover until the user closes it). We mitigate:
 
     1. Retry up to ``max_attempts`` times with exponential backoff
@@ -8313,7 +7774,7 @@ def _quarantine_running_her_exe(
        update can complete; the user just needs to reboot to fully unload
        the stale image.
     3. Print a clear warning naming the most likely culprit (running
-       her Desktop / gateway / REPL) and pointing to ``--force``.
+       gateway / REPL / dashboard / chat) and pointing to ``--force``.
 
     Returns the list of (original, quarantined) pairs so the caller can roll
     back if the install itself fails before uv writes a replacement. Pairs
@@ -8380,7 +7841,7 @@ def _quarantine_running_her_exe(
             f"another process is holding it open)."
         )
         print(
-            "    Close her Desktop, exit other `her` REPLs, stop the "
+            "    Close any `her` REPLs / dashboard / chat tabs, stop the "
             "gateway, or pause AV scanning, then re-run `her update`."
         )
 
@@ -8614,7 +8075,7 @@ def _install_python_dependencies_with_optional_fallback(
     # partial installs where a newly added base dep (e.g. ``pathspec``)
     # silently fails to land on top of a half-stale venv, and the only
     # symptom is a downstream subprocess crashing with ModuleNotFoundError
-    # hours later inside ``her update``'s desktop-rebuild or skill-sync
+    # hours later inside ``her update``'s web-rebuild or skill-sync
     # stage. Reinstall with --reinstall to force resolution if anything is
     # missing, then re-verify so the failure surfaces here instead of
     # downstream.
@@ -8909,12 +8370,8 @@ def _update_node_dependencies() -> None:
         return
 
     # With a single workspace lockfile the root install would cover ALL
-    # workspaces — but apps/desktop pulls in Electron as a devDependency,
-    # and its postinstall downloads a ~200MB binary.  Most users don't
-    # need desktop during `her update`, so we install root-only first
-    # then add just the workspaces the CLI/TUI/web build actually requires.
-    # Desktop deps are installed on demand by the desktop launcher
-    # (see _desktop_build_needed).
+    # workspaces, so we install root-only first then add just the
+    # workspaces the CLI/TUI/web build actually requires.
     print("→ Updating Node.js dependencies...")
     extra_args = ["--no-fund", "--no-audit", "--progress=false"]
 
@@ -8934,7 +8391,8 @@ def _update_node_dependencies() -> None:
         return
 
     # Step 2: install only the workspaces update needs (ui-tui, web).
-    # --workspace selects specific workspaces; the rest (desktop) are skipped.
+    # --workspace selects specific workspaces; other packages at the
+    # repo root (none today) are skipped.
     ws_args = [*extra_args, "--workspace", "ui-tui", "--workspace", "web"]
     ws_result = _run_npm_install_deterministic(
         npm,
@@ -8943,7 +8401,7 @@ def _update_node_dependencies() -> None:
         capture_output=False,
     )
     if ws_result.returncode == 0:
-        print("  ✓ repo root + ui-tui, web workspaces (desktop skipped)")
+        print("  ✓ repo root + ui-tui, web workspaces")
     else:
         print("  ⚠ npm workspace install failed")
         stderr = (ws_result.stderr or "").strip() if ws_result.stderr else ""
@@ -9614,8 +9072,8 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
     # Whether this update is running without a human at the keyboard.
     # Interactive terminal updates always stash-and-ask (unchanged behavior);
-    # only non-interactive updates (desktop/chat app, gateway, `--yes`) consult
-    # the `updates.non_interactive_local_changes` config setting to decide
+    # only non-interactive updates (gateway, `--yes`) consult the
+    # `updates.non_interactive_local_changes` config setting to decide
     # whether to auto-restore stashed local source changes or throw them away.
     _non_interactive_update = (
         gateway_mode
@@ -10054,28 +9512,6 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
         _update_node_dependencies()
         _build_web_ui(PROJECT_ROOT / "web")
-
-        # Rebuild the desktop app if the source tree changed since the last
-        # build.  ``her desktop --build-only`` uses the content-hash stamp
-        # internally, so this is effectively a no-op when nothing changed.
-        # Only bother if the user has a desktop app installed (indicated by
-        # an existing packaged executable or desktop dist); people who have
-        # never run ``her desktop`` shouldn't be forced into a full
-        # Electron build by ``her update``.
-        desktop_dir = PROJECT_ROOT / "apps" / "desktop"
-        has_desktop_app = _desktop_packaged_executable(desktop_dir) is not None or _desktop_dist_exists(desktop_dir)
-        if (desktop_dir / "package.json").exists() and shutil.which("npm") and has_desktop_app:
-            print("→ Checking if desktop app needs rebuilding...")
-            _desktop_build_cmd = [sys.executable, "-m", "her_cli.main", "desktop", "--build-only"]
-            # Stream the build output live (long Electron builds otherwise
-            # look hung). On the rare nonzero exit, retry once after waiting
-            # again for the venv — this covers a still-settling rebuild window
-            # the first wait didn't fully catch.
-            build_result = subprocess.run(_desktop_build_cmd, cwd=PROJECT_ROOT, check=False)
-            if build_result.returncode != 0:
-                build_result = subprocess.run(_desktop_build_cmd, cwd=PROJECT_ROOT, check=False)
-            if build_result.returncode != 0:
-                print("  ⚠ Desktop build failed (non-fatal; run `her desktop` to retry)")
 
         print()
         print("✓ Code updated!")
@@ -10980,8 +10416,6 @@ def _coalesce_session_name_args(argv: list) -> list:
         "uninstall",
         "profile",
         "dashboard",
-        "desktop",
-        "gui",
         "honcho",
         "claw",
         "plugins",
@@ -11738,10 +11172,9 @@ def cmd_dashboard(args):
         print(f"Import error: {e}")
         sys.exit(1)
 
-    # Seed bundled skills on first dashboard launch so the desktop GUI's
-    # skills picker / agent skill discovery sees the bundled library.
-    # cmd_chat does this in its own pre-dispatch block; the dashboard
-    # backend is the desktop's primary entrypoint and needs the same.
+    # Seed bundled skills on first dashboard launch so the skills picker /
+    # agent skill discovery sees the bundled library.  cmd_chat does this
+    # in its own pre-dispatch block; the dashboard backend does it here.
     _sync_bundled_skills_quietly()
 
     if "HER_WEB_DIST" not in os.environ and not getattr(args, "skip_build", False):
@@ -11782,8 +11215,9 @@ def cmd_dashboard(args):
     from her_cli.web_server import start_server
 
     # The in-browser Chat tab (the embedded TUI over PTY/WebSocket) is always
-    # available — the desktop app and the dashboard's own Chat tab both rely on
-    # the `/api/ws` + `/api/pty` sockets, so there is no reason to gate them.
+    # available — the dashboard's own Chat tab and any external frontend rely
+    # on the `/api/ws` + `/api/pty` sockets, so there is no reason to gate
+    # them.
     start_server(
         host=args.host,
         port=args.port,
@@ -11853,7 +11287,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "computer-use",
         "config", "cron", "curator", "dashboard", "debug", "doctor",
         "dump", "fallback", "gateway", "hooks", "import", "insights",
-        "gui", "desktop", "kanban", "login", "logout", "logs", "lsp", "mcp", "memory", "migrate",
+        "kanban", "login", "logout", "logs", "lsp", "mcp", "memory", "migrate",
         "model", "pairing", "plugins", "portal", "postinstall", "profile", "proxy",
         "prompt-size",
         "send", "sessions", "setup",
@@ -14736,17 +14170,6 @@ Examples:
         help="Full uninstall - remove everything including configs and data",
     )
     uninstall_parser.add_argument(
-        "--gui",
-        action="store_true",
-        help="Uninstall only the desktop Chat GUI, leaving the agent intact",
-    )
-    uninstall_parser.add_argument(
-        "--gui-summary",
-        action="store_true",
-        help="Print a JSON summary of installed GUI/agent artifacts and exit "
-        "(used by the desktop app to gate uninstall options)",
-    )
-    uninstall_parser.add_argument(
         "--yes", "-y", action="store_true", help="Skip confirmation prompts"
     )
     uninstall_parser.set_defaults(func=cmd_uninstall)
@@ -15069,21 +14492,6 @@ Examples:
         action="store_true",
         help="List running her dashboard processes and exit",
     )
-    # Backward-compat shim: older her desktop app shells (<= 0.15.x) spawn the
-    # backend as `her dashboard --no-open --tui --host ... --port ...`. The
-    # `--tui` flag was removed from this subcommand in cae6b5486 (embedded chat is
-    # always on now). When a user's CLI updates past that commit but their desktop
-    # app binary has not, argparse used to hard-error with "unrecognized arguments:
-    # --tui" and exit(2) — the backend died before becoming ready and the GUI just
-    # showed "her couldn't start" with no actionable cause. Accept and silently
-    # ignore the flag so an old app + new CLI degrades gracefully instead of
-    # bricking. Hidden from --help; safe to delete once the floor app version is
-    # well past 0.16.0.
-    dashboard_parser.add_argument(
-        "--tui",
-        action="store_true",
-        help=argparse.SUPPRESS,
-    )
     dashboard_parser.set_defaults(func=cmd_dashboard)
 
     # `her dashboard register` — register a self-hosted dashboard OAuth
@@ -15131,71 +14539,12 @@ Examples:
     dashboard_register_parser.set_defaults(func=cmd_dashboard_register)
 
     # =========================================================================
-    # desktop (a.k.a. gui) command
-    #
-    # The canonical name is "desktop"; "gui" is kept as a deprecated alias
-    # for one release. The her-Setup.exe success screen tells users to
-    # run `her desktop` from a terminal, so the canonical name needs
-    # to be the one that appears in --help (argparse promotes the primary
-    # name; aliases stay hidden).
-    # =========================================================================
-    gui_parser = subparsers.add_parser(
-        "desktop",
-        aliases=["gui"],
-        help="Build and launch the native desktop app",
-        description=(
-            "Launch the her Electron desktop app. By default this installs "
-            "workspace Node dependencies, builds the current OS's unpacked "
-            "Electron app, then launches that packaged artifact."
-        ),
-    )
-    gui_parser.add_argument(
-        "--source",
-        action="store_true",
-        help="Launch via `electron .` against apps/desktop/dist instead of the packaged app",
-    )
-    gui_parser.add_argument(
-        "--build-only",
-        action="store_true",
-        help="Build the desktop app but do not launch it (used by the installer's --update flow)",
-    )
-    gui_parser.add_argument(
-        "--fake-boot",
-        action="store_true",
-        help="Enable deterministic desktop boot delays for validating startup UI",
-    )
-    gui_parser.add_argument(
-        "--ignore-existing",
-        action="store_true",
-        help="Force Desktop to ignore any her CLI already on PATH during backend resolution",
-    )
-    gui_parser.add_argument(
-        "--her-root",
-        help="Override the her source root used by Desktop (sets HER_DESKTOP_HER_ROOT)",
-    )
-    gui_parser.add_argument(
-        "--cwd",
-        help="Initial project directory for Desktop chat sessions (sets HER_DESKTOP_CWD)",
-    )
-    gui_parser.add_argument(
-        "--skip-build",
-        action="store_true",
-        help="Skip npm install/package and launch the existing unpacked app from apps/desktop/release",
-    )
-    gui_parser.add_argument(
-        "--force-build",
-        action="store_true",
-        help="Force a full rebuild even if the content stamp matches",
-    )
-    gui_parser.set_defaults(func=cmd_gui)
-
-    # =========================================================================
     # logs command
     # =========================================================================
     logs_parser = subparsers.add_parser(
         "logs",
         help="View and filter her log files",
-        description="View, tail, and filter agent.log / errors.log / gateway.log / gui.log / desktop.log",
+        description="View, tail, and filter agent.log / errors.log / gateway.log",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
@@ -15203,10 +14552,8 @@ Examples:
     her logs -f                 Follow agent.log in real time
     her logs errors             Show last 50 lines of errors.log
     her logs gateway -n 100     Show last 100 lines of gateway.log
-    her logs gui -f             Follow gui.log in real time
-    her logs desktop -f         Follow desktop.log (Electron app boot/backend)
     her logs --level WARNING    Only show WARNING and above
-    her logs --session abc123   Filter by session ID
+    her logs --session abc123   Filter by session ID substring
     her logs --component tools  Only show tool-related lines
     her logs --since 1h         Lines from the last hour
     her logs --since 30m -f     Follow, starting from 30 min ago
@@ -15217,7 +14564,7 @@ Examples:
         "log_name",
         nargs="?",
         default="agent",
-        help="Log to view: agent (default), errors, gateway, gui, or 'list' to show available files",
+        help="Log to view: agent (default), errors, gateway, or 'list' to show available files",
     )
     logs_parser.add_argument(
         "-n",

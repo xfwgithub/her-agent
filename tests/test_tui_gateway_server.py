@@ -12,11 +12,12 @@ from tui_gateway import server
 
 
 def test_session_context_uses_session_cwd(monkeypatch, tmp_path):
-    """Desktop/TUI sessions must pin the agent cwd per session.
+    """TUI sessions must pin the agent cwd per session.
 
-    The gateway process itself is often launched from apps/desktop in dev, so
-    falling back to os.getcwd() makes agents answer from the desktop app folder
-    even when the sidebar/session cwd is a real project.
+    The gateway process can be launched from any process whose cwd is not
+    the user's project, so falling back to os.getcwd() makes agents answer
+    from that process's folder even when the sidebar/session cwd is a real
+    project.
     """
     from agent.runtime_cwd import resolve_agent_cwd
 

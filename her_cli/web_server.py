@@ -102,55 +102,19 @@ _log = logging.getLogger(__name__)
 # when the same module is used across TestClient instances or uvicorn reloads.
 # ---------------------------------------------------------------------------
 
-def _start_desktop_cron_ticker(stop_event: "threading.Event", interval: int = 60) -> None:
-    """Tick the cron scheduler from inside the desktop dashboard backend.
-
-    The scheduler tick loop normally lives in ``her gateway run`` — but the
-    desktop app spawns a ``her dashboard`` backend, not a gateway, so a cron
-    a user creates in the app would never fire. We run a minimal ticker here
-    (no live adapters; delivery falls back to the per-platform send path).
-
-    Cross-process safe: ``cron.scheduler.tick`` takes the ``cron/.tick.lock``
-    file lock, so this never double-fires alongside a real gateway on the same
-    HER_HOME — whichever process grabs the lock first wins the tick.
-    """
-    from cron.scheduler import tick as cron_tick
-
-    _log.info("Desktop cron ticker started (interval=%ds)", interval)
-    # Tick once up front (catches jobs due at launch), then on the interval.
-    while not stop_event.is_set():
-        try:
-            cron_tick(verbose=False, sync=False)
-        except Exception as e:
-            _log.debug("Desktop cron tick error: %s", e)
-        stop_event.wait(interval)
-
-
 @asynccontextmanager
 async def _lifespan(app: "FastAPI"):
     app.state.event_channels = {}  # dict[str, set]
     app.state.event_lock = asyncio.Lock()
 
-    # Desktop-spawned backends (HER_DESKTOP=1) fire cron jobs themselves,
-    # since the app has no gateway running the scheduler. Server `her
-    # dashboard` is unaffected — it relies on its own gateway.
-    cron_stop: "threading.Event | None" = None
-    cron_thread: "threading.Thread | None" = None
-    if os.getenv("HER_DESKTOP") == "1":
-        cron_stop = threading.Event()
-        cron_thread = threading.Thread(
-            target=_start_desktop_cron_ticker,
-            args=(cron_stop,),
-            daemon=True,
-            name="desktop-cron-ticker",
-        )
-        cron_thread.start()
-
+    # The dashboard backend is fire-and-forget from the user's perspective.
+    # Cron jobs created in the dashboard are driven by a separate, user-
+    # managed `her gateway run` process; the dashboard never ticks cron
+    # itself, so a user who only runs the dashboard never sees jobs fire.
     try:
         yield
     finally:
-        if cron_stop is not None:
-            cron_stop.set()
+        pass
 
 
 def _get_event_state(app: "FastAPI"):
@@ -174,8 +138,8 @@ app = FastAPI(title="her Agent", version=__version__, lifespan=_lifespan)
 
 # ---------------------------------------------------------------------------
 # Session token for protecting sensitive endpoints (reveal).
-# The desktop shell mints the token and injects it via
-# HER_DASHBOARD_SESSION_TOKEN so its main process can authenticate the
+# External frontends mint the token and inject it via
+# HER_DASHBOARD_SESSION_TOKEN so their main process can authenticate the
 # /api calls it makes on the user's behalf; otherwise we generate one fresh
 # on every server start. Either way it dies when the process exits and is
 # injected into the SPA HTML so only the legitimate web UI can use it.
@@ -184,8 +148,8 @@ _SESSION_TOKEN = os.environ.get("HER_DASHBOARD_SESSION_TOKEN") or secrets.token_
 _SESSION_HEADER_NAME = "X-Her-Session-Token"
 
 # In-browser Chat tab (/chat, /api/pty, /api/ws, …).  Always enabled: the
-# desktop app and the dashboard's own Chat tab both drive the agent over the
-# `/api/ws` + `/api/pty` WebSockets, so the embedded-chat surface is an
+# dashboard's own Chat tab and any external frontend drive the agent over
+# the `/api/ws` + `/api/pty` WebSockets, so the embedded-chat surface is an
 # unconditional part of the dashboard.  Kept as a module-level constant (rather
 # than inlining ``True`` at every gate) so the WS endpoints and the SPA token
 # injection share a single, testable seam.
@@ -1419,7 +1383,7 @@ async def transcribe_audio_upload(payload: AudioTranscriptionRequest):
     try:
         suffix = _audio_extension_for_mime(mime_type)
         with tempfile.NamedTemporaryFile(
-            prefix="her-desktop-voice-",
+            prefix="her-voice-",
             suffix=suffix,
             delete=False,
         ) as tmp:
@@ -1470,7 +1434,8 @@ def _elevenlabs_voice_label(voice: Dict[str, Any]) -> str:
 async def get_elevenlabs_voices():
     """Return ElevenLabs voices when an API key is configured.
 
-    The desktop UI uses this for the ``tts.elevenlabs.voice_id`` dropdown.
+    The dashboard settings UI uses this for the ``tts.elevenlabs.voice_id``
+    dropdown.
     Only non-secret voice metadata is returned; the API key stays server-side.
     """
     api_key = (load_env().get("ELEVENLABS_API_KEY") or os.environ.get("ELEVENLABS_API_KEY") or "").strip()
@@ -1520,7 +1485,7 @@ async def get_elevenlabs_voices():
 async def speak_text(payload: TTSSpeakRequest):
     """Synthesize speech and return audio as base64 data URL.
 
-    Used by the desktop voice-conversation mode to play back assistant
+    Used by the dashboard's voice-conversation mode to play back assistant
     responses without exposing the on-disk file path. Reuses the
     existing TTS provider chain (Edge / OpenAI / ElevenLabs / etc.)
     configured in ``~/.her/config.yaml`` under ``tts.``.
@@ -1625,7 +1590,7 @@ async def get_sessions(
 
     ``archived`` controls how soft-archived sessions are treated:
     ``exclude`` (default) hides them, ``only`` returns just the archived ones
-    (used by the desktop "Archived sessions" settings panel), and ``include``
+    (used by the dashboard's "Archived sessions" settings panel), and ``include``
     returns both.
 
     ``order`` controls pagination order: ``created`` (default, by original
@@ -1651,7 +1616,7 @@ async def get_sessions(
             archived_only = archived == "only"
             include_archived = archived == "include"
             # Optional source scoping: ``source`` includes a single class,
-            # ``exclude_sources`` (comma-separated) drops classes. The desktop
+            # ``exclude_sources`` (comma-separated) drops classes. The UI
             # uses these to split recents (exclude=cron) from the cron-jobs
             # section (source=cron) into two independent lists.
             exclude_list = [s for s in (exclude_sources or "").split(",") if s.strip()]
@@ -1704,7 +1669,7 @@ async def get_profiles_sessions(
 
     Intentionally process-light: this opens each profile's ``state.db`` directly
     from disk — it does NOT spawn a dashboard backend per profile. Each returned
-    session is tagged with its owning ``profile`` so the desktop renders one
+    session is tagged with its owning ``profile`` so the UI renders one
     browsable list and only spins up a profile's backend when the user actually
     interacts (sends a message). A user with a single (default) profile gets the
     same rows as ``/api/sessions``, just tagged ``profile="default"``.
@@ -3593,7 +3558,7 @@ _OAUTH_PROVIDER_CATALOG: tuple[Dict[str, Any], ...] = (
     {
         "id": "xai-oauth",
         "name": "xAI Grok OAuth (SuperGrok / Premium+)",
-        # Loopback PKCE: the desktop's local backend binds a 127.0.0.1
+        # Loopback PKCE: the local backend binds a 127.0.0.1
         # callback server, the client opens the browser, and the redirect
         # lands back on the loopback listener — no code to copy/paste.
         "flow": "loopback",
@@ -4859,7 +4824,7 @@ async def get_session_messages(session_id: str, profile: Optional[str] = None):
 async def delete_session_endpoint(session_id: str, profile: Optional[str] = None):
     # ``profile`` deletes a session belonging to another (local) profile by
     # opening its state.db directly. Remote profiles never reach here — the
-    # desktop routes their DELETE to the remote backend. Omit for current/default.
+    # UI routes their DELETE to the remote backend. Omit for current/default.
     db = _open_session_db_for_profile(profile)
     try:
         if not db.delete_session(session_id):
@@ -5145,7 +5110,7 @@ async def list_cron_job_runs(job_id: str, profile: Optional[str] = None, limit: 
     ``cron_{job_id}_{timestamp}`` (see cron/scheduler.run_job). A job's history
     is therefore every session whose id carries that prefix; ``source='cron'``
     narrows it and the id substring binds it to this job. Powers the run-history
-    list under each job in the desktop cron detail. Same row shape as
+    list under each job in the cron detail. Same row shape as
     ``/api/sessions`` so the frontend can reuse SessionInfo.
     """
     selected = profile or _find_cron_job_profile(job_id)
@@ -7177,10 +7142,10 @@ class ToolsetToggle(BaseModel):
 
 @app.put("/api/tools/toolsets/{name}")
 async def toggle_toolset(name: str, body: ToolsetToggle):
-    """Enable/disable a configurable toolset for the desktop (cli) platform.
+    """Enable/disable a configurable toolset for the CLI / dashboard platform.
 
     Persists to ``platform_toolsets.cli`` via the same ``_save_platform_tools``
-    helper the CLI ``her tools`` picker uses, so the GUI and CLI stay in
+    helper the CLI ``her tools`` picker uses, so the dashboard and CLI stay in
     lockstep. Returns 400 for unknown toolset keys.
     """
     from her_cli.tools_config import (
@@ -8370,9 +8335,9 @@ def mount_spa(application: FastAPI):
         prefix = _normalise_prefix(request.headers.get("x-forwarded-prefix"))
         # An unmatched /api/* path is a missing/renamed endpoint, NOT a
         # client-side route. Falling through to index.html here returns
-        # `<!doctype html>` with status 200, which makes JSON clients (the
-        # desktop app's fetchJson, dashboard fetch wrappers) blow up with an
-        # opaque `SyntaxError: Unexpected token '<'`. Return a real 404 JSON
+        # `<!doctype html>` with status 200, which makes JSON clients (dashboard
+        # fetch wrappers) blow up with an opaque `SyntaxError: Unexpected token
+        # '<'`. Return a real 404 JSON
         # so the caller sees a clear "no such endpoint" instead.
         if full_path == "api" or full_path.startswith("api/"):
             return JSONResponse(

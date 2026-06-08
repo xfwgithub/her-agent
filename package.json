@@ -4,7 +4,6 @@
   "description": "An AI agent with advanced tool-calling capabilities, featuring a flexible toolsets system for organizing and managing tools.",
   "private": true,
   "workspaces": [
-    "apps/*",
     "ui-tui",
     "ui-tui/packages/*",
     "web"
@@ -14,7 +13,6 @@
     "install:root": "npm install --workspaces=false",
     "install:web": "npm install --workspace web",
     "install:tui": "npm install --workspace ui-tui",
-    "install:desktop": "npm install --workspace apps/desktop",
     "audit:root": "npm audit --workspaces=false",
     "audit:web": "npm audit --workspace web",
     "audit:tui": "npm audit --workspace ui-tui",

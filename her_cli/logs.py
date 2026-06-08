@@ -11,7 +11,6 @@ Usage examples::
     her logs errors             # last 50 lines of errors.log
     her logs gateway -n 100    # last 100 lines of gateway.log
     her logs gui -f            # follow gui.log (dashboard/pty/ws)
-    her logs desktop -f        # follow desktop.log (Electron app boot/backend)
     her logs --level WARNING    # only WARNING+ lines
     her logs --session abc123   # filter by session ID substring
     her logs --component tools  # only tool-related lines
@@ -34,7 +33,6 @@ LOG_FILES = {
     "errors": "errors.log",
     "gateway": "gateway.log",
     "gui": "gui.log",
-    "desktop": "desktop.log",
 }
 
 # Log line timestamp regex — matches "2026-04-05 22:35:00,123" or

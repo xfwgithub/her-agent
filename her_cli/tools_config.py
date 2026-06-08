@@ -846,8 +846,8 @@ def _run_post_setup(post_setup_key: str):
             # behaviour as before.
             result = subprocess.run(
                 # --workspaces=false restricts the install to the repo root
-                # only, avoiding the apps/* glob which would pull in
-                # apps/desktop (Electron + node-pty) unnecessarily. See #38772.
+                # only. The remaining workspaces (ui-tui, web) are installed
+                # on demand by their respective commands. See #38772.
                 [npm_bin, "install", "--silent", "--workspaces=false"],
                 capture_output=True, text=True, cwd=str(PROJECT_ROOT)
             )
@@ -953,7 +953,7 @@ def _run_post_setup(post_setup_key: str):
             import subprocess
             # Absolute npm path so .cmd shim executes on Windows.
             result = subprocess.run(
-                # --workspaces=false avoids resolving apps/desktop. See #38772.
+                # --workspaces=false skips workspace package resolution. See #38772.
                 [_npm_bin, "install", "--silent", "--workspaces=false"],
                 capture_output=True, text=True, cwd=str(PROJECT_ROOT)
             )
@@ -2729,7 +2729,8 @@ def _write_provider_config(provider: dict, config: dict, *, managed_feature) -> 
     it writes ``tts.provider`` / ``browser.cloud_provider`` / ``web.backend``
     and the ``use_gateway`` flags based on the provider's markers, but does
     NOT prompt for env vars, run post-setup hooks, gate on Nous auth, or run
-    interactive model pickers. Both the CLI configurator and the desktop GUI
+    interactive model pickers. Both the CLI configurator and external
+    configuration drivers
     ``PUT .../provider`` endpoint call through here so there is one code path.
     """
     # Set TTS provider in config if applicable
@@ -2776,7 +2777,7 @@ def apply_provider_selection(ts_key: str, provider_name: str, config: dict) -> N
     :func:`_configure_provider`, this does NOT prompt for API keys, run
     post-setup hooks, gate on Nous Portal auth, or run interactive model
     pickers — those are handled separately (env endpoints, post-setup
-    endpoints, the model picker) in the desktop GUI.
+    endpoints, the model picker) by the calling flow.
 
     Raises ``KeyError`` if the toolset has no category or the provider name
     is not found among the visible providers.

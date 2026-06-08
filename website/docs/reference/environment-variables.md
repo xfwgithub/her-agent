@@ -416,11 +416,11 @@ For cloud sandbox backends, persistence is filesystem-oriented. `TERMINAL_LIFETI
 | `GATEWAY_ALLOWED_USERS` | Comma-separated user IDs allowed across all platforms |
 | `GATEWAY_ALLOW_ALL_USERS` | Allow all users without allowlists (`true`/`false`, default: `false`) |
 
-### Web Dashboard & her Desktop
+### Web Dashboard
 
-Auth for the [web dashboard](/user-guide/features/web-dashboard) and for connecting [her Desktop to a remote backend](/user-guide/features/web-dashboard#connecting-her-desktop-to-a-remote-backend). Per the secrets-only convention, credentials belong in `~/.her/.env`; the OAuth `client_id` is better set under `dashboard.oauth` in `config.yaml` (env wins when set).
+Auth for the [web dashboard](/user-guide/features/web-dashboard). Per the secrets-only convention, credentials belong in `~/.her/.env`; the OAuth `client_id` is better set under `dashboard.oauth` in `config.yaml` (env wins when set).
 
-Three dashboard-auth providers ship in the box. For a remote her Desktop connection or any internet-facing dashboard, the recommended provider is **OAuth (Nous Portal)** — set `HER_DASHBOARD_OAUTH_CLIENT_ID` (provision it with `her dashboard register`). The bundled **username/password** provider (`HER_DASHBOARD_BASIC_AUTH_*`) is the quickest option for a backend on a trusted LAN or behind a VPN, but is not suitable for direct public-internet exposure. To authenticate against your own identity provider, use the **self-hosted OIDC** provider (`HER_DASHBOARD_OIDC_*`). Either way, a non-loopback bind (`her dashboard --host 0.0.0.0`) engages the auth gate. See [Web Dashboard → Authentication](/user-guide/features/web-dashboard#authentication-gated-mode) for the full picture.
+Three dashboard-auth providers ship in the box. For any internet-facing dashboard, the recommended provider is **OAuth (Nous Portal)** — set `HER_DASHBOARD_OAUTH_CLIENT_ID` (provision it with `her dashboard register`). The bundled **username/password** provider (`HER_DASHBOARD_BASIC_AUTH_*`) is the quickest option for a backend on a trusted LAN or behind a VPN, but is not suitable for direct public-internet exposure. To authenticate against your own identity provider, use the **self-hosted OIDC** provider (`HER_DASHBOARD_OIDC_*`). Either way, a non-loopback bind (`her dashboard --host 0.0.0.0`) engages the auth gate. See [Web Dashboard → Authentication](/user-guide/features/web-dashboard#authentication-gated-mode) for the full picture.
 
 | Variable | Description |
 |----------|-------------|
@@ -434,7 +434,6 @@ Three dashboard-auth providers ship in the box. For a remote her Desktop connect
 | `HER_DASHBOARD_OIDC_ISSUER` | OIDC issuer URL for the bundled self-hosted OIDC provider (`plugins/dashboard_auth/self_hosted`). Required to activate it. Overrides `dashboard.oauth.self_hosted.issuer`. |
 | `HER_DASHBOARD_OIDC_CLIENT_ID` | Public OIDC client id (authorization-code + PKCE) for the self-hosted OIDC provider. Required to activate it. Overrides `dashboard.oauth.self_hosted.client_id`. |
 | `HER_DASHBOARD_OIDC_SCOPES` | Requested OIDC scopes for the self-hosted OIDC provider (default `openid profile email`). Overrides `dashboard.oauth.self_hosted.scopes`. |
-| `HER_DESKTOP_REMOTE_URL` | (Desktop side) Base URL of the remote backend, e.g. `http://host:9119`. When set, overrides the in-app Gateway URL; you still sign in from the Gateway settings panel (OAuth redirect or username/password, whichever the backend advertises). |
 
 ### Microsoft Graph (Teams Meetings)
 

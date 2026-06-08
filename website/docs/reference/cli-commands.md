@@ -836,7 +836,6 @@ View, tail, and filter her log files. All logs are stored in `~/.her/logs/` (or 
 | `errors` | `errors.log` | Warnings and errors only — a filtered subset of agent.log |
 | `gateway` | `gateway.log` | Messaging gateway activity — platform connections, message dispatch, webhook events |
 | `gui` | `gui.log` | Dashboard / TUI-gateway / PTY-bridge / websocket events |
-| `desktop` | `desktop.log` | Electron desktop app — boot, backend spawn output, and recent Python tracebacks |
 
 ### Options
 
@@ -1471,7 +1470,7 @@ Additional behavior:
 | `her version` | Print version information. |
 | `her update` | Pull latest changes and reinstall dependencies. |
 | `her postinstall` | Internal bootstrap. Runs once after `pip install her-agent` (or `her update` on pip installs) to install non-Python dependencies that pip cannot provide — Node.js runtime, headless browser, ripgrep, ffmpeg — and then trigger `her setup` if the profile has not been configured yet. Safe to re-run idempotently. |
-| `her uninstall [--full] [--gui] [--yes]` | Remove her, optionally deleting all config/data. `--gui` removes only the desktop Chat GUI, leaving the agent intact; `--full` also deletes config/data; `--yes` skips prompts. |
+| `her uninstall [--full] [--yes]` | Remove her, optionally deleting all config/data. `--full` also deletes config/data; `--yes` skips prompts. |
 
 ## See also
 

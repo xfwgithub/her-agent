@@ -9,27 +9,16 @@ description: "Install her Agent on Linux, macOS, WSL2, native Windows, or Androi
 Get her Agent up and running in under two minutes!
 
 ## Quick Install
-### With the her Desktop installer on macOS or Windows (recommended)
-To easily install the command-line and desktop applications, [download the her Desktop installer](https://her-agent.nousresearch.com/desktop) from our website and run it.
-
-### Without her Desktop:
-For a command-line only install without her Desktop, run:
-
-#### Linux / macOS / WSL2 / Android (Termux)
+### Linux / macOS / WSL2 / Android (Termux)
 ```bash
 curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
 ```
 
-#### Windows (native)
+### Windows (native)
 
 Run in powershell:
 ```powershell
 iex (irm https://her-agent.nousresearch.com/install.ps1) 
-```
-
-If you want to install & run her Desktop after a command-line only install, simply run
-```bash
-her desktop
 ```
 
 ### What the Installer Does

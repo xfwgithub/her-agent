@@ -17,7 +17,7 @@ param(
     [switch]$SkipSetup,
     [string]$Branch = "main",
     # -Commit and -Tag are higher-precedence variants of -Branch for users
-    # who need reproducible installs (desktop installer pinning, CI, release
+    # who need reproducible installs (CI pinning, release engineering).
     # bundles).  When set, the repository stage clones $Branch (faster than
     # cloning the full default-branch history) and then `git checkout`s the
     # exact ref.  Precedence: Commit > Tag > Branch.
@@ -28,7 +28,7 @@ param(
 
     # --- Stage protocol (additive; default invocation behaves as before) ----
     # See the "Stage protocol" section near the bottom of the file for the
-    # full contract.  Intended for programmatic drivers (the desktop GUI's
+    # full contract.  Intended for programmatic drivers (CI step-runners,
     # onboarding wizard, CI, future install.sh parity, etc.).  CLI users
     # running the canonical `irm | iex` one-liner never touch these flags.
     [switch]$Manifest,
@@ -39,24 +39,7 @@ param(
 
     # --- Ensure mode (dep_ensure.py entry point) ---
     [string]$Ensure = "",
-    [switch]$PostInstall,
-
-    # --- Desktop GUI build (opt-in) ---
-    # When set, install.ps1 includes Stage-Desktop in the manifest and
-    # builds apps/desktop into a launchable her.exe.
-    #
-    # Why opt-in:
-    #   * her-Setup.exe (the signed Tauri bootstrap installer) passes
-    #     -IncludeDesktop so a user who installed via the GUI ends up
-    #     with a launchable desktop binary.
-    #   * The Electron desktop's own bootstrap-runner.cjs runs install.ps1
-    #     from inside an already-launched her.exe; if THAT recursively
-    #     built apps/desktop it would try to overwrite the live her.exe
-    #     on disk and fail. The recursive path omits the flag.
-    #   * The canonical CLI one-liner (irm | iex) omits the flag too;
-    #     terminal users don't need a desktop binary built for them, and
-    #     `her desktop` already builds on demand.
-    [switch]$IncludeDesktop
+    [switch]$PostInstall
 )
 
 $ErrorActionPreference = "Stop"
@@ -106,7 +89,7 @@ $InstallStageProtocolVersion = 1
 # Helper functions
 
 # Return the real OS processor architecture as a lowercase string suitable for
-# Node.js / electron download URL slugs: "arm64", "x64", or "x86".
+# Node.js download URL slugs: "arm64", "x64", or "x86".
 #
 # Why not just trust [Environment]::Is64BitOperatingSystem or
 # [RuntimeInformation]::OSArchitecture?  On Windows on ARM, when this script
@@ -189,7 +172,7 @@ function Write-Err {
 # remediation. npm/Node surface corporate MITM proxies and missing root CAs as
 # "unable to get local issuer certificate" / "self-signed certificate in
 # certificate chain" / UNABLE_TO_GET_ISSUER_CERT_LOCALLY -- most commonly while
-# Electron's install.js postinstall downloads the Electron binary. The reporter
+# npm postinstall downloads browser-tool binaries. The reporter
 # usually misreads this as an admin-rights or generic install failure (see
 # issue #38016), so detect it once here and route every npm stage through this
 # hint. Returns $true when a cert error was detected (caller may adjust its own
@@ -375,7 +358,7 @@ function Sync-EnvPath {
 }
 
 # Re-discover uv without re-installing it.  Cross-process stage drivers
-# (the desktop GUI's onboarding wizard, CI step-runners) invoke each stage
+# (the onboarding wizard, CI step-runners) invoke each stage
 # in a fresh powershell process, so $script:UvCmd set by Install-Uv in a
 # prior process is not visible here.  Later stages (Test-Python,
 # Install-Venv, Install-Dependencies, Install-PlatformSdks) call this
@@ -744,10 +727,9 @@ function Set-GitBashEnvVar {
     Write-Info "If needed, set HER_GIT_BASH_PATH manually to your bash.exe path."
 }
 
-# The desktop build runs Vite ^8, which refuses to start on Node outside
+# The Vite ^8 build (browser tools) refuses to start on Node outside
 # `^20.19 || >=22.12` -- older Node lacks node:util.styleText, so `vite build`
-# crashes with a SyntaxError that surfaces only as the opaque "Build desktop
-# app ... exit code 1" install failure. Returns $true when a `node --version`
+# crashes with a SyntaxError that surfaces only as the opaque "Vite build ... exit code 1" install failure. Returns $true when a `node --version`
 # string clears that floor.
 function Test-NodeVersionOk {
     param([string]$Version)
@@ -771,7 +753,7 @@ function Test-Node {
             $script:HasNode = $true
             return $true
         }
-        Write-Warn "Node.js $version is too old for the desktop build (need ^20.19 or >=22.12)"
+        Write-Warn "Node.js $version is too old for the Vite build (need ^20.19 or >=22.12)"
     }
 
     # Prefer a her-managed Node from a previous run over a too-old system one.
@@ -1145,7 +1127,7 @@ function Install-Repository {
                     # Default to restoring so work is never silently dropped.
                     # Only prompt when we're certain a human can answer: an
                     # interactive session AND a real, non-redirected console on
-                    # both stdin and stdout. The desktop "Update" button and
+                    # both stdin and stdout. The "Update" button and
                     # bootstrap run the installer without a usable console -- in
                     # those cases Read-Host would hang or return empty, so we
                     # skip the prompt and just restore (the safe default).
@@ -1631,82 +1613,6 @@ function Set-PathVariable {
     Write-Success "her command ready"
 }
 
-function Write-BootstrapMarker {
-    # Writes $InstallDir\.her-bootstrap-complete which tells the her
-    # desktop app (apps/desktop/electron/main.cjs) "install.ps1 ran
-    # successfully — DON'T trigger the legacy first-launch bootstrap
-    # runner."
-    #
-    # Schema mirrors what main.cjs's writeBootstrapMarker() / isBootstrap
-    # Complete() expect. Keep this in lockstep when either side changes:
-    #   apps/desktop/electron/main.cjs lines 1199-1222
-    #   BOOTSTRAP_MARKER_SCHEMA_VERSION = 1 (line 187)
-    #
-    # Pinned commit/branch come from -Commit + -Branch flags (passed by
-    # her-Setup.exe) or fall back to whatever git resolves in the
-    # checkout. The desktop validates schemaVersion + pinnedCommit
-    # length but doesn't enforce that HEAD matches the pin (users
-    # update via `her update` which moves HEAD legitimately).
-    if (-not (Test-Path $InstallDir)) {
-        Write-Warn "Skipping bootstrap marker: $InstallDir doesn't exist"
-        return
-    }
-
-    # Resolve the pinned commit: explicit -Commit wins, otherwise read
-    # the checkout's HEAD via git. If git can't run, leave commit empty
-    # and the marker will fail desktop validation (pinnedCommit.length
-    # >= 7) — better to be invalid than wrong.
-    $pinnedCommit = $Commit
-    if (-not $pinnedCommit) {
-        # PS 5.1 doesn't support the ?. null-conditional operator, so
-        # check Get-Command's result explicitly before reading .Source.
-        $gitCmd = Get-Command git -ErrorAction SilentlyContinue
-        $gitExe = if ($gitCmd) { $gitCmd.Source } else { $null }
-        if ($gitExe) {
-            Push-Location $InstallDir
-            try {
-                $resolved = & $gitExe rev-parse HEAD 2>$null
-                if ($LASTEXITCODE -eq 0 -and $resolved) {
-                    $pinnedCommit = $resolved.Trim()
-                }
-            } catch {
-                # Ignore — pinnedCommit stays empty, marker stays invalid,
-                # desktop falls through to its legacy bootstrap path.
-            } finally {
-                Pop-Location
-            }
-        }
-    }
-
-    $pinnedBranch = $Branch
-    if (-not $pinnedBranch) {
-        $pinnedBranch = "main"  # install.ps1's own default for -Branch
-    }
-
-    $markerPath = Join-Path $InstallDir ".her-bootstrap-complete"
-    $marker = [ordered]@{
-        schemaVersion = 1
-        pinnedCommit  = $pinnedCommit
-        pinnedBranch  = $pinnedBranch
-        completedAt   = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-        # desktopVersion field intentionally omitted — only the desktop
-        # app knows its own version, and the marker validator doesn't
-        # require it. The desktop fills it in if/when it writes its
-        # own marker (e.g. after a future in-app upgrade).
-    }
-    $json = $marker | ConvertTo-Json -Compress:$false
-
-    # Write WITHOUT a UTF-8 BOM. PowerShell 5.1's `Set-Content -Encoding UTF8`
-    # always emits a BOM, and Node's plain JSON.parse rejects the BOM as an
-    # unexpected character — so a BOM'd marker would silently fail the
-    # desktop's readJson(), make isBootstrapComplete() return null, and the
-    # desktop would re-run the legacy bootstrap runner anyway. Defeats the
-    # whole point. Use the .NET API directly for BOM-less UTF-8.
-    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
-    [System.IO.File]::WriteAllText($markerPath, $json, $utf8NoBom)
-
-    Write-Success "Bootstrap marker written: $markerPath"
-}
 
 function Copy-ConfigTemplates {
     Write-Info "Setting up configuration files..."
@@ -2029,336 +1935,6 @@ function Install-NodeDeps {
     }
 }
 
-# Clear the cached Electron download + any half-written unpacked output so the
-# next `npm run pack` re-downloads and re-stages from scratch. A corrupt zip in
-# the per-user Electron download cache - most often a partial download resumed
-# into the same file, leaving concatenated junk - makes electron-builder's
-# `app-builder unpack-electron` extract a tree MISSING the electron binary, so
-# the final `electron` -> `her` rename dies with ENOENT and every re-run
-# repeats the broken extraction forever.
-#
-# We deliberately do not validate the zip ourselves: the common
-# prepended/concatenated-junk corruption slips past naive checks, so a
-# self-rolled gate would skip the real-world case. We unconditionally drop the
-# cached electron-*.zip (loose copy and any @electron/get hash-subdir copy) plus
-# the stale unpacked dir, then let the caller retry once - @electron/get
-# re-downloads with its own SHASUM verification, the real source of truth.
-#
-# Returns the removed paths. Best-effort: never throws.
-function Clear-ElectronBuildCache {
-    param([string]$DesktopDir)
-    $removed = @()
-
-    # Per-user Electron download cache dirs, honoring the overrides @electron/get
-    # respects, then the Windows default (%LOCALAPPDATA%\electron\Cache).
-    $cacheDirs = @()
-    if ($env:electron_config_cache) { $cacheDirs += $env:electron_config_cache }
-    if ($env:ELECTRON_CACHE)        { $cacheDirs += $env:ELECTRON_CACHE }
-    if ($env:LOCALAPPDATA)          { $cacheDirs += (Join-Path $env:LOCALAPPDATA 'electron\Cache') }
-    $cacheDirs += (Join-Path $HOME 'AppData\Local\electron\Cache')
-
-    foreach ($dir in $cacheDirs) {
-        if (-not (Test-Path -LiteralPath $dir)) { continue }
-        # Recurse: the bad copy may be the top-level zip OR a copy inside an
-        # @electron/get hash subdir.
-        $removed += @(Get-ChildItem -LiteralPath $dir -Recurse -Filter 'electron-*.zip' -File -ErrorAction SilentlyContinue | ForEach-Object {
-            try { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop; $_.FullName } catch { }
-        })
-    }
-
-    # A half-written unpacked dir from an interrupted prior pack poisons the
-    # rename even after the zip is fixed (win-unpacked / win-arm64-unpacked).
-    $releaseDir = Join-Path $DesktopDir 'release'
-    if (Test-Path -LiteralPath $releaseDir) {
-        $removed += @(Get-ChildItem -LiteralPath $releaseDir -Directory -Filter '*-unpacked' -ErrorAction SilentlyContinue | ForEach-Object {
-            try { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction Stop; $_.FullName } catch { }
-        })
-    }
-
-    return $removed
-}
-
-function Install-Desktop {
-    # Build apps/desktop into a launchable her.exe. Only called from
-    # Stage-Desktop, which is itself only included in the manifest when
-    # -IncludeDesktop was passed to install.ps1.
-    #
-    # The workspace npm install at repo root (done by Install-NodeDeps for
-    # browser tools) does NOT pull apps/desktop's dependencies, because the
-    # browser-tools workspace at $InstallDir\package.json is a separate
-    # workspace from apps/*. We do a full root-level `npm install` here
-    # so the workspace resolves apps/desktop's deps (including Electron
-    # itself, ~150MB), then run `npm run pack` in apps/desktop which
-    # produces the unpacked binary at apps/desktop/release/<os>-unpacked/.
-    #
-    # The Tauri bootstrap installer's launch_her_desktop command
-    # resolves apps/desktop/release/win-unpacked/her.exe directly,
-    # so an "unpacked" build (electron-builder --dir) is enough — we
-    # don't need to produce an NSIS/MSI artifact here.
-
-    # Always re-resolve Node here. Stages run in separate PowerShell processes,
-    # so $script:HasNode from Stage-Node isn't visible; more importantly Test-Node
-    # enforces the build floor (^20.19 || >=22.12) and prepends the her-managed
-    # Node to PATH, so the build never runs on a too-old system Node -- the cause
-    # of the opaque "Build desktop app ... exit code 1" failure (Vite crashes on
-    # old Node).
-    Test-Node | Out-Null
-    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-        Write-Warn "Skipping desktop build (Node.js / npm not on PATH)"
-        $script:_StageSkippedReason = "Node.js not available"
-        return
-    }
-
-    $desktopDir = "$InstallDir\apps\desktop"
-    if (-not (Test-Path "$desktopDir\package.json")) {
-        Write-Warn "Skipping desktop build (apps/desktop not present in checkout)"
-        $script:_StageSkippedReason = "apps/desktop not present"
-        return
-    }
-
-    $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
-    if (-not $npmCmd) {
-        Write-Warn "Skipping desktop build (npm not on PATH)"
-        $script:_StageSkippedReason = "npm not found"
-        return
-    }
-    $npmExe = $npmCmd.Source
-    if ($npmExe -like "*.ps1") {
-        $sibling = Join-Path (Split-Path $npmExe -Parent) "npm.cmd"
-        if (Test-Path $sibling) { $npmExe = $sibling }
-    }
-
-    # 1. Workspace-level install so apps/desktop's deps (Electron, Vite,
-    # node-pty prebuilds, etc.) actually land in node_modules. This is
-    # the SAME `npm install` Install-NodeDeps does for browser tools,
-    # but at the root rather than the browser-tools workspace, so all
-    # apps/* workspaces resolve.
-    Write-Info "Installing desktop workspace dependencies (this includes Electron ~150MB, takes 1-3min)..."
-    Push-Location $InstallDir
-    $prevEAP = $ErrorActionPreference
-    try {
-        $ErrorActionPreference = "Continue"
-        # Drop --silent so npm emits its full progress + error trail.
-        # When this fails on a non-dev box (e.g. native-module build
-        # without VS Build Tools, ETARGET on a transitive, etc.), the
-        # actual reason needs to reach the Tauri installer's log; with
-        # --silent it was completely suppressed and the user just saw
-        # "exit 1" with no actionable detail.
-        #
-        # The streaming sink in bootstrap.rs's run_install_script
-        # captures every stdout/stderr line as it's emitted, so we don't
-        # need a side TEMP log file — the installer's bootstrap log
-        # IS the artifact a support engineer reads.
-        #
-        # Prefer `npm ci`: it wipes node_modules and reinstalls from the
-        # lockfile, always producing a complete tree. Bare `npm install`
-        # can report "up to date" against a stale
-        # node_modules\.package-lock.json marker while node_modules is
-        # actually empty (Windows workspace-hoisting flake), leaving
-        # tsc/typescript unresolved so `npm run pack`'s `tsc -b` dies with
-        # no obvious cause. Fall back to `npm install` only if `npm ci`
-        # fails (lockfile out of sync / very old npm without ci).
-        #
-        # Tee the merged output into $npmOut while still emitting every line
-        # live. We don't need a side log file (the bootstrap streaming sink
-        # is the artifact), but on failure we scan $npmOut for the TLS-trust
-        # signature so corporate-proxy users get the NODE_EXTRA_CA_CERTS hint
-        # instead of an opaque "exit 1" (issue #38016).
-        & $npmExe ci 2>&1 | ForEach-Object { "$_" } | Tee-Object -Variable npmOut
-        $code = $LASTEXITCODE
-        if ($code -ne 0) {
-            Write-Info "  npm ci failed (exit $code) -- retrying with npm install..."
-            & $npmExe install 2>&1 | ForEach-Object { "$_" } | Tee-Object -Variable npmOut
-            $code = $LASTEXITCODE
-        }
-        $ErrorActionPreference = $prevEAP
-        if ($code -ne 0) {
-            Show-NpmCertHint ($npmOut -join "`n") | Out-Null
-            throw "desktop workspace npm install failed (exit $code) -- see lines above for cause"
-        }
-        Write-Success "Desktop workspace dependencies installed"
-    } catch {
-        if ($prevEAP) { $ErrorActionPreference = $prevEAP }
-        Pop-Location
-        throw
-    }
-    Pop-Location
-
-    # 2. Build apps/desktop. `npm run pack` runs:
-    #      assert-root-install + write-build-stamp + stage-native-deps +
-    #      tsc -b + vite build + electron-builder --dir
-    # The --dir mode produces an unpacked her.exe in
-    # apps/desktop/release/win-unpacked/ without bundling NSIS/MSI;
-    # we don't need a distributable installer artifact, just a
-    # launchable binary the Tauri installer can spawn.
-    #
-    # CSC_IDENTITY_AUTO_DISCOVERY=false tells electron-builder we are
-    # NOT signing the output. Combined with signAndEditExecutable=false in
-    # apps/desktop/package.json's build.win block, electron-builder never
-    # invokes signtool and therefore never fetches/extracts winCodeSign
-    # (whose macOS symlinks crash 7-Zip on non-admin Windows — a dead end we
-    # are NOT trying to work around). The her icon + product name are
-    # stamped onto her.exe by our own rcedit step (Set-DesktopExeIdentity)
-    # AFTER this build, completely decoupled from electron-builder signing.
-    #
-    # WIN_CSC_LINK and WIN_CSC_KEY_PASSWORD explicitly cleared as
-    # belt-and-suspenders: if the user's environment has them set
-    # for some other tool, electron-builder would still try to sign.
-    Write-Info "Building desktop app (this takes 1-3 minutes)..."
-    $buildLog = "$env:TEMP\her-desktop-build-$(Get-Random).log"
-    Push-Location $desktopDir
-    $prevEAP = $ErrorActionPreference
-    $prevCSCAuto = $env:CSC_IDENTITY_AUTO_DISCOVERY
-    $prevWinCscLink = $env:WIN_CSC_LINK
-    $prevWinCscKeyPassword = $env:WIN_CSC_KEY_PASSWORD
-    try {
-        $ErrorActionPreference = "Continue"
-        $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
-        $env:WIN_CSC_LINK = ""
-        $env:WIN_CSC_KEY_PASSWORD = ""
-        & $npmExe run pack 2>&1 | ForEach-Object { "$_" } | Tee-Object -FilePath $buildLog
-        $code = $LASTEXITCODE
-        if ($code -ne 0) {
-            # A corrupt cached Electron zip makes `pack` fail with an opaque
-            # ENOENT on the final `electron` -> `her` rename: app-builder's
-            # unpack-electron extracted a partial tree (missing the binary) from
-            # the bad zip, and re-running reuses the poisoned cache forever.
-            # Purge the cached download + any stale unpacked output and retry
-            # once; @electron/get re-downloads with its own SHASUM check. Without
-            # this a corrupt download hard-fails the whole installer.
-            $purged = @(Clear-ElectronBuildCache -DesktopDir $desktopDir)
-            if ($purged.Count -gt 0) {
-                Write-Warn "Desktop build failed - cleared cached Electron download, retrying once:"
-                foreach ($p in $purged) { Write-Info "  - $p" }
-                & $npmExe run pack 2>&1 | ForEach-Object { "$_" } | Tee-Object -FilePath $buildLog
-                $code = $LASTEXITCODE
-            }
-        }
-        $ErrorActionPreference = $prevEAP
-        if ($code -ne 0) {
-            $errText = Get-Content $buildLog -Raw -ErrorAction SilentlyContinue
-            if ($errText) {
-                $snippet = if ($errText.Length -gt 1800) { $errText.Substring(0, 1800) + "..." } else { $errText }
-                Write-Info "  desktop build output:"
-                foreach ($line in $snippet -split "`n") { Write-Host "    $line" -ForegroundColor DarkGray }
-                Write-Info "  Full log: $buildLog"
-            }
-            throw "apps/desktop build failed (exit $code)"
-        }
-        Write-Success "Desktop app built"
-        Remove-Item -Force $buildLog -ErrorAction SilentlyContinue
-    } catch {
-        if ($prevEAP) { $ErrorActionPreference = $prevEAP }
-        Pop-Location
-        throw
-    } finally {
-        # Restore env to whatever the caller had — don't leak our
-        # signing-off override into anything install.ps1 invokes later
-        # (Stage-PlatformSdks, etc.).
-        $env:CSC_IDENTITY_AUTO_DISCOVERY = $prevCSCAuto
-        $env:WIN_CSC_LINK = $prevWinCscLink
-        $env:WIN_CSC_KEY_PASSWORD = $prevWinCscKeyPassword
-    }
-    Pop-Location
-
-    # 3. Sanity-check the produced binary. Probe both arches so this works
-    # on x64 and arm64 build machines.
-    $exeCandidates = @(
-        "$desktopDir\release\win-unpacked\her.exe",
-        "$desktopDir\release\win-arm64-unpacked\her.exe"
-    )
-    $found = $false
-    $desktopExe = $null
-    foreach ($cand in $exeCandidates) {
-        if (Test-Path $cand) {
-            Write-Success "Desktop ready: $cand"
-            $desktopExe = $cand
-            $found = $true
-            break
-        }
-    }
-    if (-not $found) {
-        throw "Desktop build completed but no her.exe was found under $desktopDir\release\*-unpacked\"
-    }
-
-    # 3b. The her icon + identity are stamped onto her.exe by the
-    #     electron-builder `afterPack` hook (apps/desktop/scripts/after-pack.cjs)
-    #     during `npm run pack` above — for every build, so the installer's
-    #     --update rebuild stays branded too. No separate stamp step needed here.
-    #     electron-builder's own rcedit step stays disabled (signAndEditExecutable
-    #     =false) because enabling it drags in signtool -> winCodeSign -> the
-    #     unfixable symlink crash; the afterPack hook runs rcedit directly.
-
-    # 4. Create Start Menu + Desktop shortcuts pointing DIRECTLY at the packed
-    #    her.exe. We deliberately do NOT point them at `her desktop`: that
-    #    command rebuilds (npm install + electron-builder) on every launch,
-    #    which would cost minutes each time. The packed exe is the consumer —
-    #    launching it directly is instant, and updates flow through the
-    #    installer's --update path (which rebuilds once, then relaunches).
-    New-DesktopShortcuts -TargetExe $desktopExe
-}
-
-function New-DesktopShortcuts {
-    param([Parameter(Mandatory = $true)][string]$TargetExe)
-
-    # Best-effort: a shortcut failure must never fail an otherwise-good install.
-    try {
-        $shell = New-Object -ComObject WScript.Shell
-        $workDir = Split-Path -Parent $TargetExe
-
-        # Prefer the standalone icon.ico (shipped beside the exe via
-        # electron-builder extraResources -> resources/icon.ico) over the exe's
-        # embedded resource. An explicit .ico path is more stable across update
-        # cycles: pointing at "$TargetExe,0" makes Windows cache the icon it
-        # extracted from the exe at shortcut-creation time, and that cached
-        # bitmap can persist (showing the OLD/Electron icon) even after the exe
-        # is re-stamped on update. A dedicated .ico sidesteps that extraction.
-        $iconIco = Join-Path $workDir 'resources\icon.ico'
-        if (Test-Path $iconIco) {
-            $iconLocation = "$iconIco,0"
-        } else {
-            $iconLocation = "$TargetExe,0"
-        }
-
-        $targets = @(
-            (Join-Path ([Environment]::GetFolderPath('Programs')) 'her.lnk'),
-            (Join-Path ([Environment]::GetFolderPath('Desktop')) 'her.lnk')
-        )
-
-        foreach ($lnkPath in $targets) {
-            try {
-                $parent = Split-Path -Parent $lnkPath
-                if (-not (Test-Path $parent)) {
-                    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-                }
-                $sc = $shell.CreateShortcut($lnkPath)
-                $sc.TargetPath = $TargetExe
-                $sc.WorkingDirectory = $workDir
-                $sc.IconLocation = $iconLocation
-                $sc.Description = 'her Agent'
-                $sc.Save()
-                Write-Success "Shortcut created: $lnkPath"
-            } catch {
-                Write-Warn "Could not create shortcut $lnkPath : $($_.Exception.Message)"
-            }
-        }
-
-        # Bust the Windows shell icon cache so the desktop/Start-Menu shortcut
-        # repaints with the (possibly newly-stamped) icon instead of a stale
-        # cached bitmap. Critical on the --update path: the exe was re-stamped
-        # with the her icon, but without this the shortcut can keep drawing
-        # the old Electron icon until the user manually refreshes / reboots.
-        # Best-effort and silent — never fail the install over a cosmetic cache.
-        try {
-            & ie4uinit.exe -show 2>$null
-        } catch {
-            # ie4uinit may be absent/renamed on some SKUs — ignore.
-        }
-    } catch {
-        Write-Warn "Skipping shortcut creation: $($_.Exception.Message)"
-    }
-}
-
 function Install-PlatformSdks {
     # Ensure messaging-platform SDKs matching tokens the user added to
     # ~/.her/.env are importable.  Two problems this solves:
@@ -2638,7 +2214,7 @@ function Write-Completion {
 # ============================================================================
 #
 # install.ps1 supports a small, stable "stage protocol" that lets programmatic
-# callers (the desktop GUI's onboarding wizard, CI, future install.sh, etc.)
+# callers (the onboarding wizard, CI, future install.sh, etc.)
 # drive the install one step at a time and surface progress/errors with their
 # own UI.  CLI users running the canonical `irm | iex` one-liner never
 # encounter this -- default invocation behaves exactly as before.
@@ -2716,20 +2292,9 @@ $InstallStages = @(
     @{ Name = "venv";             Title = "Creating Python virtual environment";  Category = "install";      NeedsUserInput = $false; Worker = "Stage-Venv" }
     @{ Name = "dependencies";     Title = "Installing Python dependencies";       Category = "install";      NeedsUserInput = $false; Worker = "Stage-Dependencies" }
     @{ Name = "node-deps";        Title = "Installing Node.js dependencies";      Category = "install";      NeedsUserInput = $false; Worker = "Stage-NodeDeps" }
-)
-if ($IncludeDesktop) {
-    # Insert AFTER node-deps so workspace npm is already installed when
-    # the desktop build runs. Inserted only when explicitly requested
-    # (her-Setup.exe), never via the irm|iex CLI one-liner.
-    $InstallStages += @{ Name = "desktop"; Title = "Building desktop app"; Category = "install"; NeedsUserInput = $false; Worker = "Stage-Desktop" }
-}
-$InstallStages += @(
     @{ Name = "path";             Title = "Adding her to PATH";                Category = "finalize";     NeedsUserInput = $false; Worker = "Stage-Path" }
     @{ Name = "config-templates"; Title = "Writing configuration templates";      Category = "finalize";     NeedsUserInput = $false; Worker = "Stage-ConfigTemplates" }
     @{ Name = "platform-sdks";    Title = "Installing messaging platform SDKs";   Category = "finalize";     NeedsUserInput = $false; Worker = "Stage-PlatformSdks" }
-    @{ Name = "bootstrap-marker"; Title = "Marking install complete";              Category = "finalize";     NeedsUserInput = $false; Worker = "Stage-BootstrapMarker" }
-    # Interactive stages.  In non-interactive mode these become no-ops; the
-    # caller (GUI / CI) handles the equivalent UX themselves.
     @{ Name = "configure";        Title = "Configuring API keys and models";      Category = "post-install"; NeedsUserInput = $true;  Worker = "Stage-Configure" }
     @{ Name = "gateway";          Title = "Starting messaging gateway";           Category = "post-install"; NeedsUserInput = $true;  Worker = "Stage-Gateway" }
 )
@@ -2763,22 +2328,6 @@ function Stage-SystemPackages   { Install-SystemPackages }
 function Stage-Repository       { Install-Repository }
 function Stage-Venv             { Resolve-UvCmd; Install-Venv }
 function Stage-Dependencies     { Resolve-UvCmd; Install-Dependencies }
-function Stage-NodeDeps         { Install-NodeDeps }
-function Stage-Desktop          { Install-Desktop }
-function Stage-Path             { Set-PathVariable }
-function Stage-ConfigTemplates  { Copy-ConfigTemplates }
-function Stage-PlatformSdks     { Resolve-UvCmd; Install-PlatformSdks }
-function Stage-BootstrapMarker  { Write-BootstrapMarker }
-function Stage-Configure        { Invoke-SetupWizard }
-function Stage-Gateway          { Start-GatewayIfConfigured }
-
-function Get-InstallStage {
-    param([string]$Name)
-    foreach ($s in $InstallStages) {
-        if ($s.Name -eq $Name) { return $s }
-    }
-    return $null
-}
 
 function Step-OutOfInstallDir {
     # Windows refuses to delete a directory any shell is currently cd'd

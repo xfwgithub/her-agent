@@ -47,18 +47,12 @@ Pick the row that matches your goal:
 ---
 
 ## 1. Install her Agent
-### With the her Desktop installer on macOS or Windows (recommended)
-To easily install the command-line and desktop applications, [download the her Desktop installer](https://her-agent.nousresearch.com/desktop) from our website and run it.
-
-### Without her Desktop:
-For a command-line only install without her Desktop, run:
-
-#### Linux / macOS / WSL2 / Android (Termux)
+### Linux / macOS / WSL2 / Android (Termux)
 ```bash
 curl -fsSL https://her-agent.nousresearch.com/install.sh | bash
 ```
 
-#### Windows (native)
+### Windows (native)
 
 Run in powershell:
 ```powershell
