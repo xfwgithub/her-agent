@@ -1,8 +1,8 @@
 ---
 name: her-s6-container-supervision
-description: Modify, debug, or extend the s6-overlay supervision tree inside the Hermes Agent Docker image — adding new services, debugging profile gateways, understanding the Architecture B main-program pattern.
+description: Modify, debug, or extend the s6-overlay supervision tree inside the her Agent Docker image — adding new services, debugging profile gateways, understanding the Architecture B main-program pattern.
 version: 1.0.0
-author: Hermes Agent
+author: her Agent
 license: MIT
 platforms: [linux]
 environments: [s6]
@@ -12,18 +12,18 @@ metadata:
     related_skills: [her-agent, her-agent-dev]
 ---
 
-# Hermes s6-overlay Container Supervision
+# her s6-overlay Container Supervision
 
 ## When to use this skill
 
 Load this skill when you're working on:
-- Adding or removing a static service in the Hermes Docker image (something that should be supervised at every container start, like the dashboard)
+- Adding or removing a static service in the her Docker image (something that should be supervised at every container start, like the dashboard)
 - Diagnosing why a per-profile gateway isn't starting, restarting, or surviving `docker restart`
 - Understanding why the container's CMD is `/opt/her/docker/main-wrapper.sh` and how leading-dash args reach the user's program
 - Modifying `cont-init.d` boot scripts (UID remap, volume seeding, profile reconciliation)
 - Changing the rendered run-script for per-profile gateways (Phase 4)
 
-If you're just running the Hermes Agent and want to use Docker, see `website/docs/user-guide/docker.md` instead.
+If you're just running the her Agent and want to use Docker, see `website/docs/user-guide/docker.md` instead.
 
 ## Architecture at a glance
 
@@ -44,7 +44,7 @@ If you're just running the Hermes Agent and want to use Docker, see `website/doc
 │
 ├── s6-rc.d (static services, in /etc/s6-overlay/s6-rc.d/)
 │   ├── main-her/run                ← exec sleep infinity (no-op slot)
-│   └── dashboard/run                  ← if HERMES_DASHBOARD=1, runs `her dashboard`
+│   └── dashboard/run                  ← if HER_DASHBOARD=1, runs `her dashboard`
 │
 ├── /run/service (s6-svscan watches; tmpfs)
 │   ├── gateway-coder/                 ← runtime-registered per-profile
@@ -68,7 +68,7 @@ If you're just running the Hermes Agent and want to use Docker, see `website/doc
 | `docker/cont-init.d/02-reconcile-profiles` | Calls `her_cli.container_boot` on every boot to restore profile gateway slots from the persistent volume. |
 | `docker/main-wrapper.sh` | The container's CMD. Routes user args, drops to her via `s6-setuidgid`, exec's the chosen program. |
 | `docker/s6-rc.d/main-her/run` | No-op `sleep infinity` — slot exists so the s6-rc user bundle is valid; main her runs as the CMD, not as a supervised service. |
-| `docker/s6-rc.d/dashboard/run` | Conditional service — `exec sleep infinity` unless `HERMES_DASHBOARD` is truthy. |
+| `docker/s6-rc.d/dashboard/run` | Conditional service — `exec sleep infinity` unless `HER_DASHBOARD` is truthy. |
 | `docker/entrypoint.sh` | Back-compat shim that `exec`s the stage2 hook. External scripts that hard-coded the old entrypoint path still work. |
 | `her_cli/service_manager.py` | `S6ServiceManager`: `register_profile_gateway`, `unregister_profile_gateway`, `start/stop/restart/is_running`, `list_profile_gateways`. |
 | `her_cli/container_boot.py` | `reconcile_profile_gateways()` — walks persistent profiles, regenerates s6 slots, emits `container-boot.log`. |
@@ -78,7 +78,7 @@ If you're just running the Hermes Agent and want to use Docker, see `website/doc
 
 The original plan (v1–v3) called for main her to run as a supervised s6-rc service. Two real s6-overlay v3 mechanics blocked that:
 
-1. **cont-init.d scripts receive no CMD args** — so the stage2 hook can't parse `docker run <image> chat -q "hi"` to set `HERMES_ARGS` for a service `run` script to consume.
+1. **cont-init.d scripts receive no CMD args** — so the stage2 hook can't parse `docker run <image> chat -q "hi"` to set `HER_ARGS` for a service `run` script to consume.
 2. **`/run/s6/basedir/bin/halt` does NOT propagate the exit code** written to `/run/s6-linux-init-container-results/exitcode`. Containers always exit 143 (SIGTERM) regardless. Confirmed by skarnet (s6 author) in [issue #477](https://github.com/just-containers/s6-overlay/issues/477): _"if you want a container shutdown, you need to either have your CMD exit, or, if you have no CMD, write the container exit code you want then call halt"_.
 
 So we use the s6-overlay-native CMD pattern: `ENTRYPOINT ["/init", "/opt/her/docker/main-wrapper.sh"]`. /init prepends the wrapper to user args automatically — so `docker run <image> --version` becomes `/init main-wrapper.sh --version`, and `--version` doesn't get intercepted by /init's POSIX shell. The wrapper drops to her via `s6-setuidgid`, then exec's the chosen program. The program's exit code becomes the container exit code, exactly matching the pre-s6 tini contract.
@@ -136,7 +136,7 @@ Edit `S6ServiceManager._render_run_script` in `her_cli/service_manager.py`. The 
 
 ```sh
 docker build -t her-agent-harness:latest .
-HERMES_TEST_IMAGE=her-agent-harness:latest scripts/run_tests.sh tests/docker/ -v
+HER_TEST_IMAGE=her-agent-harness:latest scripts/run_tests.sh tests/docker/ -v
 # Expect 19 passed, 0 xfailed against the s6 image
 ```
 
@@ -175,4 +175,4 @@ Check whether something is invoking `s6-svscanctl -t` or `/run/s6/basedir/bin/ha
 ## Related skills
 
 - `her-agent-dev`: General her-agent codebase navigation
-- `her-tool-quirks`: Specific Hermes-tool workarounds (sed/grep/etc.) — load when debugging the s6 stack's interaction with her built-in tools.
+- `her-tool-quirks`: Specific her-tool workarounds (sed/grep/etc.) — load when debugging the s6 stack's interaction with her built-in tools.

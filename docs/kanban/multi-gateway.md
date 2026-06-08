@@ -1,6 +1,6 @@
 # Multi-gateway deployment
 
-Hermes supports multiple gateway processes running concurrently — one per profile
+her supports multiple gateway processes running concurrently — one per profile
 (default, writer, admin, coder, researcher). Each gateway opens its own connection
 to platform APIs and delivers messages for its profile's subscribers.
 
@@ -26,7 +26,7 @@ kanban:
   dispatch_in_gateway: false
 ```
 
-Or set the env var: `HERMES_KANBAN_DISPATCH_IN_GATEWAY=false`
+Or set the env var: `HER_KANBAN_DISPATCH_IN_GATEWAY=false`
 
 ## What each gateway does
 

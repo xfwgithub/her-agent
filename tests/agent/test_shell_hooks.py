@@ -284,7 +284,7 @@ class TestCallbackSubprocess:
         """v1 schema-bug regression gate.
 
         Shell hook returns the Claude-Code-style payload and the bridge
-        must translate it to the canonical Hermes block shape so that
+        must translate it to the canonical her block shape so that
         get_pre_tool_call_block_message() surfaces the block.
         """
         script = _write_script(
@@ -314,7 +314,7 @@ class TestCallbackSubprocess:
         )
 
         monkeypatch.setenv("HER_HOME", str(tmp_path / "home"))
-        monkeypatch.setenv("HERMES_ACCEPT_HOOKS", "1")
+        monkeypatch.setenv("HER_ACCEPT_HOOKS", "1")
 
         # Fresh manager
         plugins._plugin_manager = plugins.PluginManager()
@@ -516,7 +516,7 @@ class TestIdempotentRegistration:
         script = _write_script(tmp_path, "h.sh",
                                "#!/usr/bin/env bash\nprintf '{}\\n'\n")
         monkeypatch.setenv("HER_HOME", str(tmp_path / "home"))
-        monkeypatch.setenv("HERMES_ACCEPT_HOOKS", "1")
+        monkeypatch.setenv("HER_ACCEPT_HOOKS", "1")
 
         plugins._plugin_manager = plugins.PluginManager()
 
@@ -540,7 +540,7 @@ class TestIdempotentRegistration:
         script = _write_script(tmp_path, "h.sh",
                                "#!/usr/bin/env bash\nprintf '{}\\n'\n")
         monkeypatch.setenv("HER_HOME", str(tmp_path / "home"))
-        monkeypatch.setenv("HERMES_ACCEPT_HOOKS", "1")
+        monkeypatch.setenv("HER_ACCEPT_HOOKS", "1")
 
         plugins._plugin_manager = plugins.PluginManager()
 

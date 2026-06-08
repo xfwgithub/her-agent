@@ -56,7 +56,7 @@ body:
     id: component
     attributes:
       label: Affected Component
-      description: Which part of Hermes is affected?
+      description: Which part of her is affected?
       multiple: true
       options:
         - CLI (interactive chat)
@@ -121,7 +121,7 @@ body:
   - type: input
     id: her-version
     attributes:
-      label: Hermes Version
+      label: her Version
       description: Output of `her version`
       placeholder: "2.1.0"
 

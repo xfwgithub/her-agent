@@ -1,7 +1,7 @@
 ---
 sidebar_position: 3
 title: "更新与卸载"
-description: "如何将 Hermes Agent 更新至最新版本或将其卸载"
+description: "如何将 her Agent 更新至最新版本或将其卸载"
 ---
 
 # 更新与卸载
@@ -41,11 +41,11 @@ pip install --upgrade her-agent    # 或：uv pip install --upgrade her-agent
 
 运行 `her update` 时，将依次执行以下步骤：
 
-1. **配对数据快照** — 保存一份轻量级的更新前状态快照（涵盖 `~/.her/pairing/`、飞书评论规则及其他运行时修改的状态文件）。可通过 [快照与回滚](../user-guide/checkpoints-and-rollback.md) 中描述的快照恢复流程进行恢复，或从 Hermes 写入 `~/.her/` 目录旁的最新快速快照 zip 文件中提取。
+1. **配对数据快照** — 保存一份轻量级的更新前状态快照（涵盖 `~/.her/pairing/`、飞书评论规则及其他运行时修改的状态文件）。可通过 [快照与回滚](../user-guide/checkpoints-and-rollback.md) 中描述的快照恢复流程进行恢复，或从 her 写入 `~/.her/` 目录旁的最新快速快照 zip 文件中提取。
 2. **Git pull** — 从 `main` 分支拉取最新代码并更新子模块
 3. **依赖安装** — 运行 `uv pip install -e ".[all]"` 以获取新增或变更的依赖项
 4. **配置迁移** — 检测自当前版本以来新增的配置选项并提示设置
-5. **Gateway 自动重启** — 更新完成后刷新正在运行的 gateway，使新代码立即生效。由服务管理的 gateway（Linux 上的 systemd、macOS 上的 launchd）通过服务管理器重启；手动启动的 gateway 在 Hermes 能将运行中的 PID 映射回某个 profile 时会自动重新启动。
+5. **Gateway 自动重启** — 更新完成后刷新正在运行的 gateway，使新代码立即生效。由服务管理的 gateway（Linux 上的 systemd、macOS 上的 launchd）通过服务管理器重启；手动启动的 gateway 在 her 能将运行中的 PID 映射回某个 profile 时会自动重新启动。
 
 ### 仅预览：`her update --check`
 
@@ -71,7 +71,7 @@ updates:
 
 ### Windows：另一个 `her.exe` 正在运行
 
-在 Windows 上，如果 `her update` 检测到另一个 `her.exe` 进程持有 venv 入口点可执行文件的句柄，它将拒绝运行 — 最常见的情况是 Hermes Desktop 应用启动的后端进程、另一个终端中打开的 `her` REPL，或正在运行的 gateway：
+在 Windows 上，如果 `her update` 检测到另一个 `her.exe` 进程持有 venv 入口点可执行文件的句柄，它将拒绝运行 — 最常见的情况是 her Desktop 应用启动的后端进程、另一个终端中打开的 `her` REPL，或正在运行的 gateway：
 
 ```
 $ her update
@@ -81,7 +81,7 @@ $ her update
   Updating now would fail to overwrite ...\venv\Scripts\her.exe because
   Windows blocks REPLACE on a running executable.
 
-  Close Hermes Desktop, exit any open `her` REPLs, and
+  Close her Desktop, exit any open `her` REPLs, and
   stop the gateway (`her gateway stop`) before retrying.
   Override with `her update --force` if you've already
   confirmed those processes will not write to the venv.
@@ -93,7 +93,7 @@ $ her update
 
 ```
 $ her update
-Updating Hermes Agent...
+Updating her Agent...
 📥 Pulling latest code...
 Already up to date.  (or: Updating abc1234..def5678)
 📦 Updating dependencies...
@@ -102,7 +102,7 @@ Already up to date.  (or: Updating abc1234..def5678)
 ✅ Config is up to date  (or: Found 2 new options — running migration...)
 🔄 Restarting gateways...
 ✅ Gateway restarted
-✅ Hermes Agent updated successfully!
+✅ her Agent updated successfully!
 ```
 
 ### 更新后建议的验证步骤

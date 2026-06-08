@@ -76,7 +76,7 @@ RUN set -eu; \
     rm /tmp/s6-overlay-*.tar.xz /tmp/s6-overlay.sha256; \
     # #34192: backward-compat shim for orchestration templates that still\
     # reference the legacy /usr/bin/tini entrypoint (e.g. Hostinger's\
-    # 'Hermes WebUI' catalog). The image has moved to s6-overlay /init\
+    # 'her WebUI' catalog). The image has moved to s6-overlay /init\
     # as PID 1 (see ENTRYPOINT below + the migration comment at the top\
     # of this file), but external wrappers pinned to /usr/bin/tini will\
     # crash with 'tini: No such file or directory' on startup. The shim\
@@ -183,7 +183,7 @@ RUN cd web && npm run build && \
 # node_modules trees additionally need to be writable by the her user
 # so the runtime `npm install` triggered by _tui_need_npm_install() in
 # her_cli/main.py succeeds (see #18800). /opt/her/web is build-time
-# only (HERMES_WEB_DIST points at her_cli/web_dist) and is intentionally
+# only (HER_WEB_DIST points at her_cli/web_dist) and is intentionally
 # not chowned here.
 # /opt/her/gateway is runtime-writable: Python may create __pycache__ and
 # gateway state artifacts beneath the package after services drop privileges,
@@ -212,7 +212,7 @@ RUN uv pip install --no-cache-dir --no-deps -e "."
 # That makes support triage from container bug reports impossible:
 # we can't tell which commit the user is actually running.
 #
-# Fix: write the commit SHA passed via the HERMES_GIT_SHA build-arg to
+# Fix: write the commit SHA passed via the HER_GIT_SHA build-arg to
 # /opt/her/.her_build_sha at build time, and have
 # her_cli/build_info.py read it at runtime.  Both `her dump` and
 # banner.get_git_banner_state() try the baked SHA first, then fall back
@@ -222,9 +222,9 @@ RUN uv pip install --no-cache-dir --no-deps -e "."
 # omits the file, and the runtime falls back to live-git lookup.  CI
 # (.github/workflows/docker-publish.yml) passes ${{ github.sha }} so
 # every published image has it.
-ARG HERMES_GIT_SHA=
-RUN if [ -n "${HERMES_GIT_SHA}" ]; then \
-        printf '%s\n' "${HERMES_GIT_SHA}" > /opt/her/.her_build_sha && \
+ARG HER_GIT_SHA=
+RUN if [ -n "${HER_GIT_SHA}" ]; then \
+        printf '%s\n' "${HER_GIT_SHA}" > /opt/her/.her_build_sha && \
         chown her:her /opt/her/.her_build_sha; \
     fi
 
@@ -252,7 +252,7 @@ COPY --chmod=0755 docker/cont-init.d/015-supervise-perms /etc/cont-init.d/015-su
 COPY --chmod=0755 docker/cont-init.d/02-reconcile-profiles /etc/cont-init.d/02-reconcile-profiles
 
 # ---------- Runtime ----------
-ENV HERMES_WEB_DIST=/opt/her/her_cli/web_dist
+ENV HER_WEB_DIST=/opt/her/her_cli/web_dist
 # Point the TUI launcher at the prebuilt bundle baked at build time (Layer 8:
 # `ui-tui && npm run build`). This makes _make_tui_argv take the prebuilt-bundle
 # fast path (`node --expose-gc /opt/her/ui-tui/dist/entry.js`) and skip the
@@ -282,7 +282,7 @@ ENV HER_HOME=/opt/data
 # `--user her`, etc.) hit the short-circuit path with no overhead.
 # Recursion is impossible because the shim exec's the venv binary by
 # absolute path (/opt/her/.venv/bin/her). See the shim source for
-# the opt-out env var (HERMES_DOCKER_EXEC_AS_ROOT=1).
+# the opt-out env var (HER_DOCKER_EXEC_AS_ROOT=1).
 COPY --chmod=0755 docker/her-exec-shim.sh /opt/her/bin/her
 
 # Pre-s6 entrypoint.sh did `source .venv/bin/activate` which exported

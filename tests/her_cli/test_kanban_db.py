@@ -59,7 +59,7 @@ def test_connect_honors_kanban_busy_timeout_env(kanban_home, monkeypatch):
     setup.  The timeout must be queryable via PRAGMA so CLI, gateway, and tool
     connections behave the same way.
     """
-    monkeypatch.setenv("HERMES_KANBAN_BUSY_TIMEOUT_MS", "123456")
+    monkeypatch.setenv("HER_KANBAN_BUSY_TIMEOUT_MS", "123456")
 
     with kb.connect() as conn:
         row = conn.execute("PRAGMA busy_timeout").fetchone()
@@ -93,8 +93,8 @@ def test_connect_rejects_tls_record_in_sqlite_header(tmp_path, monkeypatch):
     home = tmp_path / ".her"
     home.mkdir()
     monkeypatch.setenv("HER_HOME", str(home))
-    monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
-    monkeypatch.delenv("HERMES_KANBAN_HOME", raising=False)
+    monkeypatch.delenv("HER_KANBAN_DB", raising=False)
+    monkeypatch.delenv("HER_KANBAN_HOME", raising=False)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     corrupt = home / "kanban.db"
@@ -360,7 +360,7 @@ def test_claim_once_wins_second_loses(kanban_home):
 
 
 def test_claim_uses_env_default_ttl(kanban_home, monkeypatch):
-    monkeypatch.setenv("HERMES_KANBAN_CLAIM_TTL_SECONDS", "3600")
+    monkeypatch.setenv("HER_KANBAN_CLAIM_TTL_SECONDS", "3600")
     with kb.connect() as conn:
         t = kb.create_task(conn, title="x", assignee="a")
         kb.claim_task(conn, t, claimer="host:1")
@@ -483,7 +483,7 @@ def test_stale_claim_with_live_pid_uses_env_ttl_override(
 ):
     import her_cli.kanban_db as _kb
 
-    monkeypatch.setenv("HERMES_KANBAN_CLAIM_TTL_SECONDS", "3600")
+    monkeypatch.setenv("HER_KANBAN_CLAIM_TTL_SECONDS", "3600")
 
     with kb.connect() as conn:
         t = kb.create_task(conn, title="x", assignee="a")
@@ -612,7 +612,7 @@ def test_detect_crashed_workers_skips_freshly_claimed_tasks(
     import her_cli.kanban_db as _kb
 
     monkeypatch.setattr(_kb, "_pid_alive", lambda _pid: False)
-    monkeypatch.delenv("HERMES_KANBAN_CRASH_GRACE_SECONDS", raising=False)
+    monkeypatch.delenv("HER_KANBAN_CRASH_GRACE_SECONDS", raising=False)
 
     now = 1_000_000.0
     monkeypatch.setattr(_kb.time, "time", lambda: now)
@@ -640,11 +640,11 @@ def test_detect_crashed_workers_skips_freshly_claimed_tasks(
 def test_detect_crashed_workers_grace_period_env_override(
     kanban_home, monkeypatch,
 ):
-    """HERMES_KANBAN_CRASH_GRACE_SECONDS env var adjusts the window."""
+    """HER_KANBAN_CRASH_GRACE_SECONDS env var adjusts the window."""
     import her_cli.kanban_db as _kb
 
     monkeypatch.setattr(_kb, "_pid_alive", lambda _pid: False)
-    monkeypatch.setenv("HERMES_KANBAN_CRASH_GRACE_SECONDS", "5")
+    monkeypatch.setenv("HER_KANBAN_CRASH_GRACE_SECONDS", "5")
 
     now = 2_000_000.0
 
@@ -672,7 +672,7 @@ def test_resolve_crash_grace_seconds_handles_bad_env(monkeypatch):
     import her_cli.kanban_db as _kb
 
     for bad_val in ("notanumber", "-5", ""):
-        monkeypatch.setenv("HERMES_KANBAN_CRASH_GRACE_SECONDS", bad_val)
+        monkeypatch.setenv("HER_KANBAN_CRASH_GRACE_SECONDS", bad_val)
         result = _kb._resolve_crash_grace_seconds()
         assert result == _kb.DEFAULT_CRASH_GRACE_SECONDS, (
             f"expected default for {bad_val!r}, got {result}"
@@ -716,7 +716,7 @@ def test_rate_limit_exit_requeues_without_counting_failure(
     import her_cli.kanban_db as _kb
 
     monkeypatch.setattr(_kb, "_pid_alive", lambda _pid: False)
-    monkeypatch.setenv("HERMES_KANBAN_CRASH_GRACE_SECONDS", "0")
+    monkeypatch.setenv("HER_KANBAN_CRASH_GRACE_SECONDS", "0")
 
     with kb.connect() as conn:
         host = _kb._claimer_id().split(":", 1)[0]
@@ -806,7 +806,7 @@ def test_respawn_guard_defers_rate_limited_within_cooldown(
     fall into ``blocker_auth`` (which would defer forever)."""
     import her_cli.kanban_db as _kb
 
-    monkeypatch.setenv("HERMES_KANBAN_RATE_LIMIT_COOLDOWN_SECONDS", "300")
+    monkeypatch.setenv("HER_KANBAN_RATE_LIMIT_COOLDOWN_SECONDS", "300")
     now = 5_000_000
 
     with kb.connect() as conn:
@@ -844,7 +844,7 @@ def test_respawn_guard_rate_limit_cooldown_zero_allows_immediately(
     and the stamped rate-limit text does not re-trap it via blocker_auth."""
     import her_cli.kanban_db as _kb
 
-    monkeypatch.setenv("HERMES_KANBAN_RATE_LIMIT_COOLDOWN_SECONDS", "0")
+    monkeypatch.setenv("HER_KANBAN_RATE_LIMIT_COOLDOWN_SECONDS", "0")
     now = 6_000_000
 
     with kb.connect() as conn:
@@ -872,7 +872,7 @@ def test_resolve_rate_limit_cooldown_handles_bad_env(monkeypatch):
 
     for bad_val in ("notanumber", "-5", ""):
         monkeypatch.setenv(
-            "HERMES_KANBAN_RATE_LIMIT_COOLDOWN_SECONDS", bad_val
+            "HER_KANBAN_RATE_LIMIT_COOLDOWN_SECONDS", bad_val
         )
         assert (
             _kb._resolve_rate_limit_cooldown_seconds()
@@ -943,7 +943,7 @@ def test_heartbeat_extends_claim(kanban_home):
 
 
 def test_heartbeat_uses_env_default_ttl(kanban_home, monkeypatch):
-    monkeypatch.setenv("HERMES_KANBAN_CLAIM_TTL_SECONDS", "3600")
+    monkeypatch.setenv("HER_KANBAN_CLAIM_TTL_SECONDS", "3600")
     with kb.connect() as conn:
         t = kb.create_task(conn, title="x", assignee="a")
         claimer = "host:hb"
@@ -1508,7 +1508,7 @@ def test_has_spawnable_ready_false_when_only_terminal_lanes(kanban_home, monkeyp
 
 def test_has_spawnable_ready_true_when_real_profile_present(kanban_home, monkeypatch):
     """``has_spawnable_ready`` returns True as soon as ANY ready task
-    has an assignee that maps to a real Hermes profile — preserves the
+    has an assignee that maps to a real her profile — preserves the
     real "stuck" signal when a daily/agent task is queued."""
     from her_cli import profiles
     monkeypatch.setattr(
@@ -1942,7 +1942,7 @@ def test_cleanup_workspace_removes_managed_scratch_dir(kanban_home):
         kb.set_workspace_path(conn, t, ws)
         assert ws.is_dir()
         kb.complete_task(conn, t, result="ok")
-    assert not ws.exists(), "Hermes-managed scratch dir should be cleaned up"
+    assert not ws.exists(), "her-managed scratch dir should be cleaned up"
 
 
 def test_cleanup_workspace_refuses_path_outside_scratch_root(kanban_home, tmp_path):
@@ -1977,7 +1977,7 @@ def test_cleanup_workspace_refuses_path_outside_scratch_root(kanban_home, tmp_pa
 
 
 def test_cleanup_workspace_honors_workspaces_root_env_override(tmp_path, monkeypatch):
-    """``HERMES_KANBAN_WORKSPACES_ROOT`` extends the managed-scratch set.
+    """``HER_KANBAN_WORKSPACES_ROOT`` extends the managed-scratch set.
 
     Worker subprocesses run with this env var injected by the dispatcher. The
     cleanup containment check must treat paths under it as managed even when
@@ -1989,7 +1989,7 @@ def test_cleanup_workspace_honors_workspaces_root_env_override(tmp_path, monkeyp
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     workspaces_override = tmp_path / "ext-workspaces"
     workspaces_override.mkdir()
-    monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", str(workspaces_override))
+    monkeypatch.setenv("HER_KANBAN_WORKSPACES_ROOT", str(workspaces_override))
     kb.init_db()
 
     with kb.connect() as conn:
@@ -2021,13 +2021,13 @@ def test_is_managed_scratch_path_rejects_real_source_tree(kanban_home, tmp_path)
 
 
 def test_is_managed_scratch_path_rejects_kanban_metadata_subtrees(kanban_home):
-    """Hermes' own DB/metadata/log subtrees under ``<kanban_home>/kanban`` are NOT managed.
+    """her' own DB/metadata/log subtrees under ``<kanban_home>/kanban`` are NOT managed.
 
     Regression guard for the Copilot finding on #28819: a scratch task whose
     ``workspace_path`` was mis-set to the kanban home, the logs dir, or a
     board's metadata dir (i.e. the board root itself, not its ``workspaces/``
     child) must be refused. Without this, the containment check would happily
-    ``shutil.rmtree`` Hermes' DB/metadata/logs on task completion.
+    ``shutil.rmtree`` her' DB/metadata/logs on task completion.
     """
     kanban_root = kanban_home / "kanban"
     kanban_root.mkdir(parents=True, exist_ok=True)
@@ -2213,7 +2213,7 @@ class TestSharedBoardPaths:
     def _set_home(self, monkeypatch, tmp_path, her_home):
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HER_HOME", str(her_home))
-        monkeypatch.delenv("HERMES_KANBAN_HOME", raising=False)
+        monkeypatch.delenv("HER_KANBAN_HOME", raising=False)
 
     def test_default_install_anchors_at_home_dot_her(
         self, tmp_path, monkeypatch
@@ -2316,7 +2316,7 @@ class TestSharedBoardPaths:
     def test_explicit_override_via_her_kanban_home(
         self, tmp_path, monkeypatch
     ):
-        # Explicit override: HERMES_KANBAN_HOME beats every other
+        # Explicit override: HER_KANBAN_HOME beats every other
         # resolution rule.
         default_home = tmp_path / ".her"
         profile_home = default_home / "profiles" / "any"
@@ -2326,7 +2326,7 @@ class TestSharedBoardPaths:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HER_HOME", str(profile_home))
-        monkeypatch.setenv("HERMES_KANBAN_HOME", str(override))
+        monkeypatch.setenv("HER_KANBAN_HOME", str(override))
 
         assert kb.kanban_home() == override
         assert kb.kanban_db_path() == override / "kanban.db"
@@ -2338,7 +2338,7 @@ class TestSharedBoardPaths:
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HER_HOME", str(default_home))
-        monkeypatch.setenv("HERMES_KANBAN_HOME", "   ")
+        monkeypatch.setenv("HER_KANBAN_HOME", "   ")
 
         assert kb.kanban_home() == default_home
 
@@ -2369,8 +2369,8 @@ class TestSharedBoardPaths:
     def test_her_kanban_db_pin_beats_kanban_home(
         self, tmp_path, monkeypatch
     ):
-        # HERMES_KANBAN_DB pins the file path directly and beats both
-        # HERMES_KANBAN_HOME and the `get_default_her_root()` path.
+        # HER_KANBAN_DB pins the file path directly and beats both
+        # HER_KANBAN_HOME and the `get_default_her_root()` path.
         # This is the env the dispatcher injects into workers.
         default_home = tmp_path / ".her"
         default_home.mkdir()
@@ -2381,18 +2381,18 @@ class TestSharedBoardPaths:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HER_HOME", str(default_home))
-        monkeypatch.setenv("HERMES_KANBAN_HOME", str(umbrella))
-        monkeypatch.setenv("HERMES_KANBAN_DB", str(pinned_db))
+        monkeypatch.setenv("HER_KANBAN_HOME", str(umbrella))
+        monkeypatch.setenv("HER_KANBAN_DB", str(pinned_db))
 
         assert kb.kanban_db_path() == pinned_db
-        # workspaces_root still follows HERMES_KANBAN_HOME -- the pins
+        # workspaces_root still follows HER_KANBAN_HOME -- the pins
         # are independent.
         assert kb.workspaces_root() == umbrella / "kanban" / "workspaces"
 
     def test_her_kanban_workspaces_root_pin_beats_kanban_home(
         self, tmp_path, monkeypatch
     ):
-        # HERMES_KANBAN_WORKSPACES_ROOT pins the workspaces root directly.
+        # HER_KANBAN_WORKSPACES_ROOT pins the workspaces root directly.
         default_home = tmp_path / ".her"
         default_home.mkdir()
         umbrella = tmp_path / "umbrella"
@@ -2402,24 +2402,24 @@ class TestSharedBoardPaths:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HER_HOME", str(default_home))
-        monkeypatch.setenv("HERMES_KANBAN_HOME", str(umbrella))
-        monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", str(pinned_ws))
+        monkeypatch.setenv("HER_KANBAN_HOME", str(umbrella))
+        monkeypatch.setenv("HER_KANBAN_WORKSPACES_ROOT", str(pinned_ws))
 
         assert kb.workspaces_root() == pinned_ws
-        # kanban_db_path still follows HERMES_KANBAN_HOME.
+        # kanban_db_path still follows HER_KANBAN_HOME.
         assert kb.kanban_db_path() == umbrella / "kanban.db"
 
     def test_empty_per_path_overrides_fall_through(
         self, tmp_path, monkeypatch
     ):
         # Empty/whitespace pins are treated as unset, same as
-        # HERMES_KANBAN_HOME.
+        # HER_KANBAN_HOME.
         default_home = tmp_path / ".her"
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HER_HOME", str(default_home))
-        monkeypatch.setenv("HERMES_KANBAN_DB", "   ")
-        monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", "")
+        monkeypatch.setenv("HER_KANBAN_DB", "   ")
+        monkeypatch.setenv("HER_KANBAN_WORKSPACES_ROOT", "")
 
         assert kb.kanban_db_path() == default_home / "kanban.db"
         assert kb.workspaces_root() == default_home / "kanban" / "workspaces"
@@ -2427,8 +2427,8 @@ class TestSharedBoardPaths:
     def test_dispatcher_spawn_injects_kanban_db_and_workspaces_root(
         self, tmp_path, monkeypatch
     ):
-        # The dispatcher's `_default_spawn` must inject HERMES_KANBAN_DB
-        # and HERMES_KANBAN_WORKSPACES_ROOT into the worker env so the
+        # The dispatcher's `_default_spawn` must inject HER_KANBAN_DB
+        # and HER_KANBAN_WORKSPACES_ROOT into the worker env so the
         # worker converges on the dispatcher's paths even when the
         # `-p <profile>` flag rewrites HER_HOME.
         default_home = tmp_path / ".her"
@@ -2466,12 +2466,12 @@ class TestSharedBoardPaths:
         kb._default_spawn(task, str(tmp_path / "ws"))
 
         env = captured["env"]
-        assert env["HERMES_KANBAN_DB"] == str(default_home / "kanban.db")
-        assert env["HERMES_KANBAN_WORKSPACES_ROOT"] == str(
+        assert env["HER_KANBAN_DB"] == str(default_home / "kanban.db")
+        assert env["HER_KANBAN_WORKSPACES_ROOT"] == str(
             default_home / "kanban" / "workspaces"
         )
         assert env["HER_KANBAN_TASK"] == "t_dispatch_env"
-        assert env["HERMES_KANBAN_BRANCH"] == "wt/t_dispatch_env"
+        assert env["HER_KANBAN_BRANCH"] == "wt/t_dispatch_env"
 
 
 # ---------------------------------------------------------------------------
@@ -2776,7 +2776,7 @@ def test_resolve_her_argv_prefers_path_shim(monkeypatch):
     import shutil
     import her_cli.kanban_db as kb
 
-    monkeypatch.delenv("HERMES_BIN", raising=False)
+    monkeypatch.delenv("HER_BIN", raising=False)
     monkeypatch.setattr(shutil, "which", lambda name: "/usr/local/bin/her")
     argv = kb._resolve_her_argv()
     assert argv == ["/usr/local/bin/her"]
@@ -2787,7 +2787,7 @@ def test_resolve_her_argv_absolutizes_relative_exe_shim(monkeypatch, tmp_path):
     import her_cli.kanban_db as kb
 
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("HERMES_BIN", ".\\her.exe")
+    monkeypatch.setenv("HER_BIN", ".\\her.exe")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
     assert kb._resolve_her_argv() == [os.path.abspath(".\\her.exe")]
@@ -2801,7 +2801,7 @@ def test_resolve_her_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_pa
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     (bin_dir / "her.CMD").write_text("@echo off\n", encoding="utf-8")
-    monkeypatch.delenv("HERMES_BIN", raising=False)
+    monkeypatch.delenv("HER_BIN", raising=False)
     monkeypatch.setenv("PATH", str(bin_dir))
     monkeypatch.setenv("PATHEXT", ".CMD")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
@@ -2810,21 +2810,21 @@ def test_resolve_her_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_pa
 
 
 def test_resolve_her_argv_honors_her_bin_path_override(monkeypatch, tmp_path):
-    """An explicit path-like HERMES_BIN lets service managers pin the executable."""
+    """An explicit path-like HER_BIN lets service managers pin the executable."""
     import shutil
     import her_cli.kanban_db as kb
 
     shim = tmp_path / "bin" / "her"
     shim.parent.mkdir()
     shim.write_text("#!/bin/sh\n", encoding="utf-8")
-    monkeypatch.setenv("HERMES_BIN", str(shim))
+    monkeypatch.setenv("HER_BIN", str(shim))
     monkeypatch.setattr(shutil, "which", lambda name: None)
 
     assert kb._resolve_her_argv() == [str(shim)]
 
 
 def test_resolve_her_argv_her_bin_bare_name_uses_path(monkeypatch, tmp_path):
-    """Bare HERMES_BIN values keep PATH semantics instead of cwd shadowing."""
+    """Bare HER_BIN values keep PATH semantics instead of cwd shadowing."""
     import stat
     import her_cli.kanban_db as kb
 
@@ -2837,27 +2837,27 @@ def test_resolve_her_argv_her_bin_bare_name_uses_path(monkeypatch, tmp_path):
     path_her.chmod(path_her.stat().st_mode | stat.S_IXUSR)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("PATH", str(path_her.parent))
-    monkeypatch.setenv("HERMES_BIN", "her")
+    monkeypatch.setenv("HER_BIN", "her")
 
     assert kb._resolve_her_argv() == [str(path_her)]
 
 
 def test_resolve_her_argv_her_bin_bare_name_ignores_cwd(monkeypatch, tmp_path):
-    """Bare HERMES_BIN does not accept current-directory shadow executables."""
+    """Bare HER_BIN does not accept current-directory shadow executables."""
     import sys
     import her_cli.kanban_db as kb
 
     (tmp_path / "her.exe").write_text("wrong\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("PATH", "")
-    monkeypatch.setenv("HERMES_BIN", "her")
+    monkeypatch.setenv("HER_BIN", "her")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
     assert kb._resolve_her_argv() == [sys.executable, "-m", "her_cli.main"]
 
 
 def test_resolve_her_argv_her_bin_bare_cmd_uses_module_fallback(monkeypatch, tmp_path):
-    """A PATH-resolved HERMES_BIN batch shim is not used as worker argv[0]."""
+    """A PATH-resolved HER_BIN batch shim is not used as worker argv[0]."""
     import sys
     import her_cli.kanban_db as kb
 
@@ -2866,19 +2866,19 @@ def test_resolve_her_argv_her_bin_bare_cmd_uses_module_fallback(monkeypatch, tmp
     (bin_dir / "her.CMD").write_text("@echo off\n", encoding="utf-8")
     monkeypatch.setenv("PATH", str(bin_dir))
     monkeypatch.setenv("PATHEXT", ".CMD")
-    monkeypatch.setenv("HERMES_BIN", "her")
+    monkeypatch.setenv("HER_BIN", "her")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
     assert kb._resolve_her_argv() == [sys.executable, "-m", "her_cli.main"]
 
 
 def test_resolve_her_argv_her_bin_unresolved_bare_name_falls_back(monkeypatch):
-    """Unresolved HERMES_BIN command names do not delegate cwd search to Popen."""
+    """Unresolved HER_BIN command names do not delegate cwd search to Popen."""
     import sys
     import her_cli.kanban_db as kb
 
     monkeypatch.setenv("PATH", "")
-    monkeypatch.setenv("HERMES_BIN", "her")
+    monkeypatch.setenv("HER_BIN", "her")
 
     assert kb._resolve_her_argv() == [sys.executable, "-m", "her_cli.main"]
 
@@ -2895,7 +2895,7 @@ def test_resolve_her_argv_falls_back_to_module_form_when_no_path_shim(monkeypatc
     import sys
     import her_cli.kanban_db as kb
 
-    monkeypatch.delenv("HERMES_BIN", raising=False)
+    monkeypatch.delenv("HER_BIN", raising=False)
     monkeypatch.setattr(shutil, "which", lambda name: None)
     argv = kb._resolve_her_argv()
     assert argv == [sys.executable, "-m", "her_cli.main"]
@@ -2916,7 +2916,7 @@ def test_resolve_her_argv_module_actually_runs():
     import unittest.mock as mock
 
     with mock.patch.dict(os.environ, {}, clear=False):
-        os.environ.pop("HERMES_BIN", None)
+        os.environ.pop("HER_BIN", None)
         with mock.patch.object(shutil, "which", return_value=None):
             argv = kb._resolve_her_argv()
     r = subprocess.run(argv + ["--version"], capture_output=True, text=True, timeout=30)
@@ -2924,7 +2924,7 @@ def test_resolve_her_argv_module_actually_runs():
         f"`{' '.join(argv)} --version` failed (rc={r.returncode}); "
         f"stderr={r.stderr[:200]!r}"
     )
-    assert "Hermes Agent" in r.stdout, f"unexpected output: {r.stdout[:200]!r}"
+    assert "her Agent" in r.stdout, f"unexpected output: {r.stdout[:200]!r}"
 
 
 # ---------------------------------------------------------------------------

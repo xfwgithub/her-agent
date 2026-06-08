@@ -452,7 +452,7 @@ class TestGatewayStopCleanup:
 
 class TestLaunchdServiceRecovery:
     def test_get_restart_drain_timeout_prefers_env_then_config_then_default(self, monkeypatch):
-        monkeypatch.delenv("HERMES_RESTART_DRAIN_TIMEOUT", raising=False)
+        monkeypatch.delenv("HER_RESTART_DRAIN_TIMEOUT", raising=False)
         monkeypatch.setattr(gateway_cli, "read_raw_config", lambda: {})
 
         assert (
@@ -467,10 +467,10 @@ class TestLaunchdServiceRecovery:
         )
         assert gateway_cli._get_restart_drain_timeout() == 14.0
 
-        monkeypatch.setenv("HERMES_RESTART_DRAIN_TIMEOUT", "9")
+        monkeypatch.setenv("HER_RESTART_DRAIN_TIMEOUT", "9")
         assert gateway_cli._get_restart_drain_timeout() == 9.0
 
-        monkeypatch.setenv("HERMES_RESTART_DRAIN_TIMEOUT", "invalid")
+        monkeypatch.setenv("HER_RESTART_DRAIN_TIMEOUT", "invalid")
         assert (
             gateway_cli._get_restart_drain_timeout()
             == DEFAULT_GATEWAY_RESTART_DRAIN_TIMEOUT
@@ -1336,7 +1336,7 @@ class TestDetectVenvDir:
         assert result is None
 
 
-class TestSystemUnitHermesHome:
+class TestSystemUnitherHome:
     """HER_HOME in system units must reference the target user, not root."""
 
     def test_system_unit_uses_target_user_home_not_calling_user(self, monkeypatch):
@@ -1400,7 +1400,7 @@ class TestSystemUnitHermesHome:
         assert f'HER_HOME={her_home}' in unit
 
 
-class TestHermesHomeForTargetUser:
+class TestherHomeForTargetUser:
     """Unit tests for _her_home_for_target_user()."""
 
     def test_remaps_default_home(self, monkeypatch):
@@ -1964,7 +1964,7 @@ class TestDockerAwareGateway:
         assert "her gateway run" in out
 
 
-class TestLegacyHermesUnitDetection:
+class TestLegacyherUnitDetection:
     """Tests for _find_legacy_her_units / has_legacy_her_units.
 
     These guard against the scenario that tripped Luis in April 2026: an
@@ -1980,7 +1980,7 @@ class TestLegacyHermesUnitDetection:
 
     # Minimal ExecStart that looks like our gateway
     _OUR_UNIT_TEXT = (
-        "[Unit]\nDescription=Hermes Gateway\n[Service]\n"
+        "[Unit]\nDescription=her Gateway\n[Service]\n"
         "ExecStart=/usr/bin/python -m her_cli.main gateway run --replace\n"
     )
 
@@ -2058,7 +2058,7 @@ class TestLegacyHermesUnitDetection:
         """
         user_dir, _ = self._setup_search_paths(tmp_path, monkeypatch)
         (user_dir / "her.service").write_text(
-            "[Unit]\nDescription=Some Other Hermes\n[Service]\n"
+            "[Unit]\nDescription=Some Other her\n[Service]\n"
             "ExecStart=/opt/other-her/bin/daemon --foreground\n",
             encoding="utf-8",
         )
@@ -2106,7 +2106,7 @@ class TestLegacyHermesUnitDetection:
             name = f"her.service" if i == 0 else f"her.service"  # same name
             # Test each variant fresh
             (user_dir / "her.service").write_text(
-                f"[Unit]\nDescription=Old Hermes\n[Service]\n{execstart}\n",
+                f"[Unit]\nDescription=Old her\n[Service]\n{execstart}\n",
                 encoding="utf-8",
             )
             results = gateway_cli._find_legacy_her_units()
@@ -2151,11 +2151,11 @@ class TestLegacyHermesUnitDetection:
         assert results == []
 
 
-class TestRemoveLegacyHermesUnits:
+class TestRemoveLegacyherUnits:
     """Tests for remove_legacy_her_units (the migration action)."""
 
     _OUR_UNIT_TEXT = (
-        "[Unit]\nDescription=Hermes Gateway\n[Service]\n"
+        "[Unit]\nDescription=her Gateway\n[Service]\n"
         "ExecStart=/usr/bin/python -m her_cli.main gateway run --replace\n"
     )
 

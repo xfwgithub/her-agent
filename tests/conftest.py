@@ -11,7 +11,7 @@ Hermetic-test invariants enforced here (see AGENTS.md for rationale):
    CI. Code using ``Path.home() / ".her"`` instead of the canonical
    ``get_her_home()`` is a bug to fix at the callsite.)
 3. **Deterministic runtime.** TZ=UTC, LANG=C.UTF-8, PYTHONHASHSEED=0.
-4. **No HERMES_SESSION_* inheritance** — the agent's current gateway
+4. **No HER_SESSION_* inheritance** — the agent's current gateway
    session must not leak into tests.
 
 These invariants make the local test run match CI closely. Gaps that
@@ -166,60 +166,60 @@ def _looks_like_credential(name: str) -> bool:
     return any(name.endswith(suf) for suf in _CREDENTIAL_SUFFIXES)
 
 
-# HERMES_* vars that change test behavior by being set. Unset all of these
+# HER_* vars that change test behavior by being set. Unset all of these
 # unconditionally — individual tests that need them set do so explicitly.
-_HERMES_BEHAVIORAL_VARS = frozenset({
-    "HERMES_YOLO_MODE",
-    "HERMES_INTERACTIVE",
+_HER_BEHAVIORAL_VARS = frozenset({
+    "HER_YOLO_MODE",
+    "HER_INTERACTIVE",
     "HER_QUIET",
-    "HERMES_TOOL_PROGRESS",
-    "HERMES_TOOL_PROGRESS_MODE",
-    "HERMES_MAX_ITERATIONS",
-    "HERMES_SESSION_PLATFORM",
-    "HERMES_SESSION_CHAT_ID",
-    "HERMES_SESSION_CHAT_NAME",
-    "HERMES_SESSION_THREAD_ID",
-    "HERMES_SESSION_SOURCE",
-    "HERMES_SESSION_KEY",
-    "HERMES_GATEWAY_SESSION",
-    "HERMES_CRON_SESSION",
-    "_HERMES_GATEWAY",
-    "HERMES_PLATFORM",
-    "HERMES_MODEL",
-    "HERMES_INFERENCE_MODEL",
-    "HERMES_INFERENCE_PROVIDER",
+    "HER_TOOL_PROGRESS",
+    "HER_TOOL_PROGRESS_MODE",
+    "HER_MAX_ITERATIONS",
+    "HER_SESSION_PLATFORM",
+    "HER_SESSION_CHAT_ID",
+    "HER_SESSION_CHAT_NAME",
+    "HER_SESSION_THREAD_ID",
+    "HER_SESSION_SOURCE",
+    "HER_SESSION_KEY",
+    "HER_GATEWAY_SESSION",
+    "HER_CRON_SESSION",
+    "_HER_GATEWAY",
+    "HER_PLATFORM",
+    "HER_MODEL",
+    "HER_INFERENCE_MODEL",
+    "HER_INFERENCE_PROVIDER",
     "HER_TUI_PROVIDER",
-    "HERMES_MANAGED",
-    "HERMES_DEV",
-    "HERMES_CONTAINER",
-    "HERMES_EPHEMERAL_SYSTEM_PROMPT",
-    "HERMES_TIMEZONE",
-    "HERMES_REDACT_SECRETS",
+    "HER_MANAGED",
+    "HER_DEV",
+    "HER_CONTAINER",
+    "HER_EPHEMERAL_SYSTEM_PROMPT",
+    "HER_TIMEZONE",
+    "HER_REDACT_SECRETS",
     "HER_BACKGROUND_NOTIFICATIONS",
-    "HERMES_EXEC_ASK",
+    "HER_EXEC_ASK",
     "HER_HOME_MODE",
-    "HERMES_AGENT_USE_LEGACY_SESSION_KEYS",
+    "HER_AGENT_USE_LEGACY_SESSION_KEYS",
     # Kanban path/board pins must never leak from a developer shell or
     # dispatched worker into tests; otherwise tests can write fake tasks to
     # the real ~/.her/kanban.db instead of the per-test HER_HOME.
-    "HERMES_KANBAN_DB",
+    "HER_KANBAN_DB",
     "HER_KANBAN_BOARD",
-    "HERMES_KANBAN_HOME",
-    "HERMES_KANBAN_WORKSPACES_ROOT",
-    "HERMES_KANBAN_LOGS_ROOT",
+    "HER_KANBAN_HOME",
+    "HER_KANBAN_WORKSPACES_ROOT",
+    "HER_KANBAN_LOGS_ROOT",
     "HER_KANBAN_TASK",
-    "HERMES_KANBAN_WORKSPACE",
-    "HERMES_KANBAN_RUN_ID",
-    "HERMES_KANBAN_CLAIM_LOCK",
-    "HERMES_KANBAN_DISPATCH_IN_GATEWAY",
-    "HERMES_TENANT",
+    "HER_KANBAN_WORKSPACE",
+    "HER_KANBAN_RUN_ID",
+    "HER_KANBAN_CLAIM_LOCK",
+    "HER_KANBAN_DISPATCH_IN_GATEWAY",
+    "HER_TENANT",
     # Dashboard OAuth auth gate (PR #30156). When set, the bundled
     # dashboard-auth `nous` plugin auto-registers itself on plugin discovery,
     # which is triggered by any `/api/status` call. That leaks a provider
     # into the dashboard_auth registry across tests in the same worker and
     # makes assertions like `auth_providers == []` flaky. CI never sets
     # these, so production tests must not see them either.
-    "HERMES_DASHBOARD_OAUTH_CLIENT_ID",
+    "HER_DASHBOARD_OAUTH_CLIENT_ID",
     "HER_DASHBOARD_PORTAL_URL",
     "TERMINAL_CWD",
     "TERMINAL_ENV",
@@ -337,8 +337,8 @@ def _hermetic_environment(tmp_path, monkeypatch):
         if _looks_like_credential(name):
             monkeypatch.delenv(name, raising=False)
 
-    # 2. Blank behavioral HERMES_* vars that could change test semantics.
-    for name in _HERMES_BEHAVIORAL_VARS:
+    # 2. Blank behavioral HER_* vars that could change test semantics.
+    for name in _HER_BEHAVIORAL_VARS:
         monkeypatch.delenv(name, raising=False)
 
     # 3. Redirect HER_HOME to a per-test tempdir. Code that reads
@@ -643,7 +643,7 @@ def _live_system_guard(request, monkeypatch):
         monkeypatch.setattr(_os, "killpg", _guarded_killpg)
 
     # ── Subprocess command-string inspection (whole-line) ──────────
-    _HERMES_TOKENS = (
+    _HER_TOKENS = (
         "her-gateway",
         "her.service",
         "her_cli.main gateway",
@@ -677,7 +677,7 @@ def _live_system_guard(request, monkeypatch):
 
     def _matches_her_gateway(cmd_str: str) -> bool:
         low = cmd_str.lower()
-        return any(tok in low for tok in _HERMES_TOKENS)
+        return any(tok in low for tok in _HER_TOKENS)
 
     def _is_blocked_systemctl(cmd) -> bool:
         cmd_str = _cmd_to_string(cmd)

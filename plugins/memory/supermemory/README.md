@@ -58,13 +58,13 @@ Kebab-case names are registered for the agent; snake_case aliases remain support
 
 All Supermemory API calls send `x-sm-source: her`, and document writes stamp
 `metadata.sm_source: her`. This is a **functional routing key, not telemetry**:
-it groups Hermes-written memories into a dedicated "Hermes" Space in the
+it groups her-written memories into a dedicated "her" Space in the
 Supermemory app, so you can filter, browse, and bulk-manage them per source agent
 (alongside Codex, Claude Code, etc.) from the Supermemory UI.
 
 ## Behavior
 
-When enabled, Hermes can:
+When enabled, her can:
 
 - prefetch relevant memory context before each turn
 - buffer the full conversation and ingest it as **one session** at session end (or on `/reset`, branch, compression, or shutdown)
@@ -75,7 +75,7 @@ The session is written once via the conversations endpoint, which drives Superme
 
 ## Profile-Scoped Containers
 
-Use `{identity}` in the `container_tag` to scope memories per Hermes profile:
+Use `{identity}` in the `container_tag` to scope memories per her profile:
 
 ```json
 {

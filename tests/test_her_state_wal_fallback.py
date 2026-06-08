@@ -1,7 +1,7 @@
 """Tests for the WAL→DELETE journal-mode fallback on NFS / SMB / FUSE.
 
 When ``PRAGMA journal_mode=WAL`` raises ``OperationalError("locking protocol")``
-(SQLITE_PROTOCOL — typical on NFS/SMB), Hermes must fall back to
+(SQLITE_PROTOCOL — typical on NFS/SMB), her must fall back to
 ``journal_mode=DELETE`` so ``state.db`` / ``kanban.db`` remain usable.
 
 Without this fallback, users on NFS-mounted ``HER_HOME`` silently lose

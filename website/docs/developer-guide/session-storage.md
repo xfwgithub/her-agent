@@ -1,6 +1,6 @@
 # Session Storage
 
-Hermes Agent uses a SQLite database (`~/.her/state.db`) to persist session
+her Agent uses a SQLite database (`~/.her/state.db`) to persist session
 metadata, full message history, and model configuration across CLI and gateway
 sessions. This replaces the earlier per-session JSONL file approach.
 

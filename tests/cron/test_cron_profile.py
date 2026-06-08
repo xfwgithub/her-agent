@@ -14,7 +14,7 @@ import pytest
 
 @pytest.fixture()
 def isolated_cron_profile_home(tmp_path, monkeypatch):
-    """Create an isolated Hermes root with a named profile and temp cron store."""
+    """Create an isolated her root with a named profile and temp cron store."""
     root = tmp_path / "her-root"
     profile_home = root / "profiles" / "support"
     profile_home.mkdir(parents=True)
@@ -220,7 +220,7 @@ class TestRunJobProfileContext:
         monkeypatch.setattr(sched, "_resolve_delivery_target", lambda job: None)
         monkeypatch.setattr(sched, "_resolve_cron_enabled_toolsets", lambda job, cfg: None)
         monkeypatch.setattr(sched, "_her_home", None)
-        monkeypatch.setenv("HERMES_CRON_TIMEOUT", "0")
+        monkeypatch.setenv("HER_CRON_TIMEOUT", "0")
 
         import dotenv
 
@@ -276,7 +276,7 @@ class TestRunJobProfileContext:
             observed.setdefault("dotenv_paths", []).append(str(path))
             os.environ["HER_PROFILE_TEST_SHARED"] = "profile-value"
             os.environ["HER_PROFILE_TEST_ONLY"] = "profile-only"
-            os.environ["HERMES_CRON_TIMEOUT"] = "123"
+            os.environ["HER_CRON_TIMEOUT"] = "123"
             return True
 
         monkeypatch.setattr(dotenv, "load_dotenv", fake_load_dotenv)
@@ -298,7 +298,7 @@ class TestRunJobProfileContext:
         assert observed["profile_env_shared_during_run"] == "profile-value"
         assert os.environ["HER_PROFILE_TEST_SHARED"] == "outer"
         assert "HER_PROFILE_TEST_ONLY" not in os.environ
-        assert os.environ["HERMES_CRON_TIMEOUT"] == "0"
+        assert os.environ["HER_CRON_TIMEOUT"] == "0"
         assert os.environ["HER_HOME"] == str(root)
         assert sched._get_her_home() == root
 

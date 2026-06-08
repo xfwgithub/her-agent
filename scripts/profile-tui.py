@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Drive the Hermes TUI under HERMES_DEV_PERF and summarize the pipeline.
+"""Drive the her TUI under HER_DEV_PERF and summarize the pipeline.
 
 Usage:
   scripts/profile-tui.py [--session SID] [--hold KEY] [--seconds N] [--rate HZ]
@@ -13,12 +13,12 @@ bypasses the her_cli wrapper — we want repeatable timing, not the CLI's
 session-picker flow.
 
 Environment overrides:
-  HERMES_PERF_LOG     (default ~/.her/perf.log)
-  HERMES_PERF_NODE    (default node from $PATH)
+  HER_PERF_LOG     (default ~/.her/perf.log)
+  HER_PERF_NODE    (default node from $PATH)
   HER_TUI_DIR      (default: <repo>/ui-tui relative to this script)
 
 Exit code is 0 if the harness ran and parsed results, 2 if the TUI crashed
-or produced no perf data (suggests HERMES_DEV_PERF wiring is broken).
+or produced no perf data (suggests HER_DEV_PERF wiring is broken).
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ DEFAULT_TUI_DIR = Path(
     os.environ.get("HER_TUI_DIR")
     or str(Path(__file__).resolve().parent.parent / "ui-tui")
 )
-DEFAULT_LOG = Path(os.environ.get("HERMES_PERF_LOG", str(get_her_home() / "perf.log")))
+DEFAULT_LOG = Path(os.environ.get("HER_PERF_LOG", str(get_her_home() / "perf.log")))
 DEFAULT_STATE_DB = get_her_home() / "state.db"
 
 # Keystroke escape sequences.  Matches what xterm/VT220 send when the
@@ -151,7 +151,7 @@ def format_report(data: dict[str, Any]) -> str:
 
     out.append("═══ React Profiler ═══")
     if not react:
-        out.append("  (no react events — HERMES_DEV_PERF wired? threshold too high?)")
+        out.append("  (no react events — HER_DEV_PERF wired? threshold too high?)")
     else:
         by_id: dict[str, list[float]] = {}
         for r in react:
@@ -420,9 +420,9 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
     since_ms = int(time.time() * 1000)
 
     env = os.environ.copy()
-    env["HERMES_DEV_PERF"] = "1"
-    env["HERMES_DEV_PERF_MS"] = str(args.threshold_ms)
-    env["HERMES_DEV_PERF_LOG"] = str(log)
+    env["HER_DEV_PERF"] = "1"
+    env["HER_DEV_PERF_MS"] = str(args.threshold_ms)
+    env["HER_DEV_PERF_LOG"] = str(log)
     env["HER_TUI_RESUME"] = sid
     env["COLUMNS"] = str(args.cols)
     env["LINES"] = str(args.rows)
@@ -430,7 +430,7 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
 
     # Pass through extra flags the TUI wrapper recognizes (e.g. --no-fullscreen).
     # Stored on args as `extra_flags` list.
-    node = os.environ.get("HERMES_PERF_NODE", "node")
+    node = os.environ.get("HER_PERF_NODE", "node")
     node_args = [node, str(entry), *getattr(args, "extra_flags", [])]
 
     pid, fd = pty.fork()
@@ -480,7 +480,7 @@ def main() -> int:
     p.add_argument("--seconds", type=float, default=8.0, help="how long to hold the key")
     p.add_argument("--rate", type=int, default=30, help="keystrokes per second")
     p.add_argument("--warmup", type=float, default=3.0, help="seconds to wait after launch before input")
-    p.add_argument("--threshold-ms", type=float, default=0.0, help="HERMES_DEV_PERF_MS (0 = capture all)")
+    p.add_argument("--threshold-ms", type=float, default=0.0, help="HER_DEV_PERF_MS (0 = capture all)")
     p.add_argument("--cols", type=int, default=120)
     p.add_argument("--rows", type=int, default=40)
     p.add_argument("--keep-log", action="store_true", help="don't wipe perf.log before run")

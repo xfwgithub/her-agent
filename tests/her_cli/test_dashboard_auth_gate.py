@@ -51,7 +51,7 @@ def test_loopback_protected_route_accepts_session_token(client_loopback):
     """The injected SPA token unlocks protected /api/ routes."""
     r = client_loopback.get(
         "/api/sessions",
-        headers={"X-Hermes-Session-Token": web_server._SESSION_TOKEN},
+        headers={"X-Her-Session-Token": web_server._SESSION_TOKEN},
     )
     # 200 or 404 (no sessions yet) both prove the auth layer let it through.
     # 500 is also acceptable if there's a downstream issue unrelated to auth.
@@ -69,7 +69,7 @@ def test_loopback_index_injects_session_token(client_loopback):
     r = client_loopback.get("/")
     if r.status_code == 404:
         pytest.skip("WEB_DIST not built in this env")
-    assert "__HERMES_SESSION_TOKEN__" in r.text
+    assert "__HER_SESSION_TOKEN__" in r.text
 
 
 def test_loopback_host_header_validation_still_enforced(client_loopback):
@@ -212,18 +212,18 @@ def test_start_server_surfaces_nous_skip_reason_when_unconfigured(monkeypatch):
     """When the bundled Nous plugin loaded but skipped registration (no
     env vars set), the gate's fail-closed message should surface the
     plugin's LAST_SKIP_REASON so the operator knows the config fix is
-    'set HERMES_DASHBOARD_OAUTH_CLIENT_ID', not 'install a plugin'."""
+    'set HER_DASHBOARD_OAUTH_CLIENT_ID', not 'install a plugin'."""
     from her_cli.dashboard_auth import clear_providers
     from plugins.dashboard_auth import nous as nous_plugin
 
     # Simulate the plugin running and skipping for "no client_id".
     clear_providers()
     _stub_uvicorn_run(monkeypatch)
-    monkeypatch.delenv("HERMES_DASHBOARD_OAUTH_CLIENT_ID", raising=False)
+    monkeypatch.delenv("HER_DASHBOARD_OAUTH_CLIENT_ID", raising=False)
     monkeypatch.delenv("HER_DASHBOARD_PORTAL_URL", raising=False)
     from unittest.mock import MagicMock
     nous_plugin.register(MagicMock())  # populates LAST_SKIP_REASON
-    assert "HERMES_DASHBOARD_OAUTH_CLIENT_ID" in nous_plugin.LAST_SKIP_REASON
+    assert "HER_DASHBOARD_OAUTH_CLIENT_ID" in nous_plugin.LAST_SKIP_REASON
 
     web_server.app.state.auth_required = None
     with pytest.raises(SystemExit) as exc_info:
@@ -234,7 +234,7 @@ def test_start_server_surfaces_nous_skip_reason_when_unconfigured(monkeypatch):
     # The error message embeds the plugin's specific skip reason rather
     # than the generic "Install the default Nous provider" boilerplate.
     msg = str(exc_info.value)
-    assert "HERMES_DASHBOARD_OAUTH_CLIENT_ID" in msg
+    assert "HER_DASHBOARD_OAUTH_CLIENT_ID" in msg
     assert "nous:" in msg
 
 

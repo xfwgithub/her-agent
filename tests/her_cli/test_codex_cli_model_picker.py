@@ -1,11 +1,11 @@
 """Regression tests for the /model picker's credential-discovery paths.
 
 Covers:
- - Normal path (tokens already in Hermes auth store)
+ - Normal path (tokens already in her auth store)
  - Claude Code fallback (tokens only in ~/.claude/.credentials.json)
  - Negative case (no credentials anywhere)
 
-Note: auto-import from ~/.codex/auth.json was removed in #12360 — Hermes
+Note: auto-import from ~/.codex/auth.json was removed in #12360 — her
 now owns its own openai-codex auth state, and users explicitly adopt
 existing Codex CLI tokens via `her auth openai-codex`. The old
 "Codex CLI shared file" discovery tests were removed with that change.
@@ -30,7 +30,7 @@ def _make_fake_jwt(expiry_offset: int = 3600) -> str:
 
 @pytest.fixture()
 def her_auth_only_env(tmp_path, monkeypatch):
-    """Tokens already in Hermes auth store (no Codex CLI needed)."""
+    """Tokens already in her auth store (no Codex CLI needed)."""
     her_home = tmp_path / ".her"
     her_home.mkdir()
 
@@ -61,7 +61,7 @@ def her_auth_only_env(tmp_path, monkeypatch):
 
 
 def test_normal_path_still_works(her_auth_only_env):
-    """openai-codex appears when tokens are already in Hermes auth store."""
+    """openai-codex appears when tokens are already in her auth store."""
     from her_cli.model_switch import list_authenticated_providers
 
     providers = list_authenticated_providers(
@@ -106,7 +106,7 @@ def test_codex_picker_uses_live_codex_catalog(her_auth_only_env, tmp_path, monke
 @pytest.fixture()
 def claude_code_only_env(tmp_path, monkeypatch):
     """Set up an environment where Anthropic credentials only exist in
-    ~/.claude/.credentials.json (Claude Code) — not in env vars or Hermes
+    ~/.claude/.credentials.json (Claude Code) — not in env vars or her
     auth store."""
     her_home = tmp_path / ".her"
     her_home.mkdir()

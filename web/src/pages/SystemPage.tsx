@@ -204,7 +204,7 @@ export default function SystemPage() {
       api.getPortal(),
       // Cached (non-forced) check so the version row shows update status on
       // load without a separate effect / a forced network round-trip.
-      api.checkHermesUpdate(false),
+      api.checkherUpdate(false),
     ])
       .then(([s, st, m, p, c, h, cur, prt, upd]) => {
         if (s.status === "fulfilled") setStatus(s.value);
@@ -383,7 +383,7 @@ export default function SystemPage() {
     async (force = false) => {
       setCheckingUpdate(true);
       try {
-        const info = await api.checkHermesUpdate(force);
+        const info = await api.checkherUpdate(force);
         setUpdateInfo(info);
         if (force) {
           if (info.update_available) {
@@ -413,7 +413,7 @@ export default function SystemPage() {
   const applyUpdate = async () => {
     setUpdateConfirmOpen(false);
     try {
-      const resp = await api.updateHermes();
+      const resp = await api.updateher();
       if (!resp.ok && resp.error === "docker_update_unsupported") {
         showToast(
           resp.message ??
@@ -510,7 +510,7 @@ export default function SystemPage() {
         open={updateConfirmOpen}
         onCancel={() => setUpdateConfirmOpen(false)}
         onConfirm={() => void applyUpdate()}
-        title="Update Hermes?"
+        title="Update her?"
         description={
           updateInfo && updateInfo.behind && updateInfo.behind > 0
             ? `This will run 'her update' (${updateInfo.update_command}) and pull ${updateInfo.behind} new commit${updateInfo.behind === 1 ? "" : "s"}. The gateway restarts when the update finishes; the current session keeps its prompt cache until then.`
@@ -683,7 +683,7 @@ export default function SystemPage() {
                 <div>{stats?.python_impl} {stats?.python_version}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Hermes</div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">her</div>
                 <div className="flex items-center gap-2">
                   <span>v{stats?.her_version}</span>
                   {updateInfo &&
@@ -1059,7 +1059,7 @@ export default function SystemPage() {
                   <span className="text-sm font-medium">Share debug report</span>
                   <span className="text-xs text-muted-foreground max-w-prose">
                     Uploads system info + logs to a public paste service and
-                    returns links to send the Hermes team. Pastes auto-delete
+                    returns links to send the her team. Pastes auto-delete
                     after 6 hours.
                   </span>
                 </div>

@@ -1,4 +1,4 @@
-"""Tests for acp_adapter.server — HermesACPAgent ACP server."""
+"""Tests for acp_adapter.server — HerACPAgent ACP server."""
 
 import asyncio
 import os
@@ -36,7 +36,7 @@ from acp.schema import (
     UserMessageChunk,
 )
 from acp_adapter.auth import TERMINAL_SETUP_AUTH_METHOD_ID
-from acp_adapter.server import HermesACPAgent, HERMES_VERSION
+from acp_adapter.server import HerACPAgent, HER_VERSION
 from acp_adapter.session import SessionManager
 from her_state import SessionDB
 
@@ -49,8 +49,8 @@ def mock_manager():
 
 @pytest.fixture()
 def agent(mock_manager):
-    """HermesACPAgent backed by a mock session manager."""
-    return HermesACPAgent(session_manager=mock_manager)
+    """HerACPAgent backed by a mock session manager."""
+    return HerACPAgent(session_manager=mock_manager)
 
 
 @pytest.mark.asyncio
@@ -100,7 +100,7 @@ class TestInitialize:
         assert resp.agent_info is not None
         assert isinstance(resp.agent_info, Implementation)
         assert resp.agent_info.name == "her-agent"
-        assert resp.agent_info.version == HERMES_VERSION
+        assert resp.agent_info.version == HER_VERSION
 
     @pytest.mark.asyncio
     async def test_initialize_returns_capabilities(self, agent):
@@ -150,11 +150,11 @@ class TestInitialize:
             {
                 "args": ["--setup"],
                 "description": (
-                    "Open Hermes' interactive model/provider setup in a terminal. "
-                    "Use this when Hermes has not been configured on this machine yet."
+                    "Open her' interactive model/provider setup in a terminal. "
+                    "Use this when her has not been configured on this machine yet."
                 ),
                 "id": TERMINAL_SETUP_AUTH_METHOD_ID,
-                "name": "Configure Hermes provider",
+                "name": "Configure her provider",
                 "type": "terminal",
             }
         ]
@@ -242,7 +242,7 @@ class TestSessionOps:
         manager = SessionManager(
             agent_factory=lambda: SimpleNamespace(model="gpt-5.4", provider="openai-codex")
         )
-        acp_agent = HermesACPAgent(session_manager=manager)
+        acp_agent = HerACPAgent(session_manager=manager)
 
         with patch(
             "her_cli.models.curated_models_for_provider",
@@ -367,7 +367,7 @@ class TestSessionOps:
         state.history = [
             {"role": "system", "content": "hidden system"},
             {"role": "user", "content": "what controls the / slash commands?"},
-            {"role": "assistant", "content": "HermesACPAgent._ADVERTISED_COMMANDS controls them."},
+            {"role": "assistant", "content": "HerACPAgent._ADVERTISED_COMMANDS controls them."},
             {
                 "role": "assistant",
                 "content": "",
@@ -405,7 +405,7 @@ class TestSessionOps:
         assert isinstance(replay_calls[0].kwargs["update"], UserMessageChunk)
         assert replay_calls[0].kwargs["update"].content.text == "what controls the / slash commands?"
         assert isinstance(replay_calls[1].kwargs["update"], AgentMessageChunk)
-        assert replay_calls[1].kwargs["update"].content.text.startswith("HermesACPAgent")
+        assert replay_calls[1].kwargs["update"].content.text.startswith("HerACPAgent")
 
         tool_updates = [
             call.kwargs["update"]
@@ -984,7 +984,7 @@ class TestSessionConfiguration:
         manager = SessionManager(db=SessionDB(tmp_path / "state.db"))
 
         with patch("run_agent.AIAgent", side_effect=fake_agent):
-            acp_agent = HermesACPAgent(session_manager=manager)
+            acp_agent = HerACPAgent(session_manager=manager)
             state = manager.create_session(cwd="/tmp")
             result = await acp_agent.set_session_model(
                 model_id="anthropic:claude-sonnet-4-6",
@@ -1103,13 +1103,13 @@ class TestPrompt:
     @pytest.mark.asyncio
     async def test_prompt_propagates_her_session_id_env(self, agent, monkeypatch):
         """ACP must propagate the originating session id to the agent loop
-        via ``HERMES_SESSION_ID`` so tools that want to stamp side-effects
+        via ``HER_SESSION_ID`` so tools that want to stamp side-effects
         with it (e.g. ``kanban_create``) can read the env var inside
         ``run_conversation``. The variable must be visible during the
         agent call AND restored afterwards so a re-used executor thread
         doesn't leak one session's id into another."""
         # Pre-condition: env is clean.
-        monkeypatch.delenv("HERMES_SESSION_ID", raising=False)
+        monkeypatch.delenv("HER_SESSION_ID", raising=False)
 
         new_resp = await agent.new_session(cwd=".")
         state = agent.session_manager.get_session(new_resp.session_id)
@@ -1120,7 +1120,7 @@ class TestPrompt:
             # Inside the agent loop the env var must reflect the active
             # ACP session id. ``task_id`` is also the session id at this
             # boundary; assert both for symmetry.
-            captured["env"] = os.environ.get("HERMES_SESSION_ID")
+            captured["env"] = os.environ.get("HER_SESSION_ID")
             captured["task_id"] = task_id
             return {"final_response": "ok", "messages": []}
 
@@ -1134,23 +1134,23 @@ class TestPrompt:
         await agent.prompt(prompt=prompt, session_id=new_resp.session_id)
 
         assert captured["env"] == new_resp.session_id, (
-            "HERMES_SESSION_ID must be set to the originating ACP session id "
+            "HER_SESSION_ID must be set to the originating ACP session id "
             "while the agent loop is running"
         )
         assert captured["task_id"] == new_resp.session_id
         # Post-condition: must be restored to the prior value (None here).
-        assert os.environ.get("HERMES_SESSION_ID") is None, (
-            "HERMES_SESSION_ID must be restored after the agent call so "
+        assert os.environ.get("HER_SESSION_ID") is None, (
+            "HER_SESSION_ID must be restored after the agent call so "
             "a re-used executor thread doesn't leak the id into the next "
             "session's tools"
         )
 
     @pytest.mark.asyncio
     async def test_prompt_restores_prior_her_session_id(self, agent, monkeypatch):
-        """If the env already had HERMES_SESSION_ID set (e.g. nested
+        """If the env already had HER_SESSION_ID set (e.g. nested
         agent loops), the prior value must be restored after the inner
         prompt completes — not popped, not left at the inner id."""
-        monkeypatch.setenv("HERMES_SESSION_ID", "outer-sess")
+        monkeypatch.setenv("HER_SESSION_ID", "outer-sess")
 
         new_resp = await agent.new_session(cwd=".")
         state = agent.session_manager.get_session(new_resp.session_id)
@@ -1158,7 +1158,7 @@ class TestPrompt:
         captured: dict[str, str | None] = {}
 
         def mock_run(*args, **kwargs):
-            captured["inner"] = os.environ.get("HERMES_SESSION_ID")
+            captured["inner"] = os.environ.get("HER_SESSION_ID")
             return {"final_response": "ok", "messages": []}
 
         state.agent.run_conversation = mock_run
@@ -1172,7 +1172,7 @@ class TestPrompt:
 
         assert captured["inner"] == new_resp.session_id
         # Outer scope must be restored.
-        assert os.environ.get("HERMES_SESSION_ID") == "outer-sess"
+        assert os.environ.get("HER_SESSION_ID") == "outer-sess"
 
     @pytest.mark.asyncio
     async def test_prompt_does_not_duplicate_streamed_final_message(self, agent):
@@ -1468,7 +1468,7 @@ class TestSlashCommands:
     def test_version(self, agent, mock_manager):
         state = self._make_state(mock_manager)
         result = agent._handle_slash_command("/version", state)
-        assert HERMES_VERSION in result
+        assert HER_VERSION in result
 
     def test_compact_compresses_context(self, agent, mock_manager):
         state = self._make_state(mock_manager)
@@ -1612,7 +1612,7 @@ class TestSlashCommands:
         manager = SessionManager(db=SessionDB(tmp_path / "state.db"))
 
         with patch("run_agent.AIAgent", side_effect=fake_agent):
-            acp_agent = HermesACPAgent(session_manager=manager)
+            acp_agent = HerACPAgent(session_manager=manager)
             state = manager.create_session(cwd="/tmp")
             result = acp_agent._cmd_model("anthropic:claude-sonnet-4-6", state)
 

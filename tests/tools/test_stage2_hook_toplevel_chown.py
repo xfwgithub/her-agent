@@ -11,7 +11,7 @@ startup.
 
 The fix uses an explicit allowlist rather than a blanket `find -user root`
 sweep, preserving the targeted-ownership contract from #19788 / PR #19795: a
-bind-mounted $HER_HOME may contain host-owned files Hermes does not manage,
+bind-mounted $HER_HOME may contain host-owned files her does not manage,
 and those must never be chowned.
 
 The s6-overlay rework moved bootstrap from docker/entrypoint.sh (now a shim) to

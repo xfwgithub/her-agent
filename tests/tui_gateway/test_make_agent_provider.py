@@ -117,7 +117,7 @@ def test_make_agent_honors_tui_launch_env_flags():
                 "HER_TUI_MAX_TURNS": "7",
                 "HER_TUI_CHECKPOINTS": "1",
                 "HER_TUI_PASS_SESSION_ID": "1",
-                "HERMES_IGNORE_RULES": "1",
+                "HER_IGNORE_RULES": "1",
             },
         ),
         patch("tui_gateway.server._load_cfg", return_value=fake_cfg),

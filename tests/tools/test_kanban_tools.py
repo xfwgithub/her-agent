@@ -154,7 +154,7 @@ def worker_env(monkeypatch, tmp_path):
     home.mkdir()
     monkeypatch.setenv("HER_HOME", str(home))
     monkeypatch.setenv("HER_PROFILE", "test-worker")
-    monkeypatch.delenv("HERMES_SESSION_ID", raising=False)
+    monkeypatch.delenv("HER_SESSION_ID", raising=False)
     from pathlib import Path as _Path
     monkeypatch.setattr(_Path, "home", lambda: tmp_path)
 
@@ -340,7 +340,7 @@ def test_complete_metadata_round_trips_through_show(worker_env):
 def test_complete_stamps_worker_session_id_from_env(monkeypatch, worker_env):
     from tools import kanban_tools as kt
 
-    monkeypatch.setenv("HERMES_SESSION_ID", "session-trusted")
+    monkeypatch.setenv("HER_SESSION_ID", "session-trusted")
     metadata = {"files": 2, "worker_session_id": "user-spoof"}
 
     out = kt._handle_complete({
@@ -368,7 +368,7 @@ def test_complete_does_not_stamp_worker_session_id_without_scoped_task(
     from tools import kanban_tools as kt
 
     monkeypatch.delenv("HER_KANBAN_TASK", raising=False)
-    monkeypatch.setenv("HERMES_SESSION_ID", "session-trusted")
+    monkeypatch.setenv("HER_SESSION_ID", "session-trusted")
 
     out = kt._handle_complete({
         "task_id": worker_env,
@@ -847,10 +847,10 @@ def test_create_no_worker_task_stays_scratch(monkeypatch, worker_env):
 
 def test_create_stamps_session_id_from_env(monkeypatch, worker_env):
     """When the agent loop runs under ACP, the server propagates the
-    originating chat session id via HERMES_SESSION_ID. ``kanban_create``
+    originating chat session id via HER_SESSION_ID. ``kanban_create``
     reads it and stamps the new task so clients can render a per-session
     board (issue: ACP session linkage on kanban tasks)."""
-    monkeypatch.setenv("HERMES_SESSION_ID", "acp-sess-abc")
+    monkeypatch.setenv("HER_SESSION_ID", "acp-sess-abc")
     from tools import kanban_tools as kt
     from her_cli import kanban_db as kb
     out = kt._handle_create({
@@ -873,7 +873,7 @@ def test_create_session_id_arg_overrides_env(monkeypatch, worker_env):
     propagation. Edge case but exercised: a tool call could carry a
     different session id (e.g. cross-session linking) and the explicit
     arg should not be silently overwritten."""
-    monkeypatch.setenv("HERMES_SESSION_ID", "from-env")
+    monkeypatch.setenv("HER_SESSION_ID", "from-env")
     from tools import kanban_tools as kt
     from her_cli import kanban_db as kb
     out = kt._handle_create({
@@ -896,7 +896,7 @@ def test_create_session_id_absent_when_env_unset(monkeypatch, worker_env):
     """No env var, no arg → session_id stays NULL. Important for backwards
     compatibility: pre-ACP-propagation hosts and CLI-driven creates must
     not accidentally inherit a stale id."""
-    monkeypatch.delenv("HERMES_SESSION_ID", raising=False)
+    monkeypatch.delenv("HER_SESSION_ID", raising=False)
     from tools import kanban_tools as kt
     from her_cli import kanban_db as kb
     out = kt._handle_create({
@@ -1409,13 +1409,13 @@ def test_worker_complete_rejects_stale_run_id(worker_env, monkeypatch):
     # creates the task moments before this assertion, so the grace
     # period (default 30s) would skip the liveness check. Zero it out
     # for this test — we WANT immediate reclamation here.
-    monkeypatch.setenv("HERMES_KANBAN_CRASH_GRACE_SECONDS", "0")
+    monkeypatch.setenv("HER_KANBAN_CRASH_GRACE_SECONDS", "0")
 
     conn = kb.connect()
     try:
         run1 = kb.latest_run(conn, worker_env)
         kb._set_worker_pid(conn, worker_env, 98765)
-        monkeypatch.setenv("HERMES_KANBAN_CRASH_GRACE_SECONDS", "0")
+        monkeypatch.setenv("HER_KANBAN_CRASH_GRACE_SECONDS", "0")
         monkeypatch.setattr(_kb, "_pid_alive", lambda pid: False)
         assert kb.detect_crashed_workers(conn) == [worker_env]
 
@@ -1426,7 +1426,7 @@ def test_worker_complete_rejects_stale_run_id(worker_env, monkeypatch):
         conn.close()
 
     from tools import kanban_tools as kt
-    monkeypatch.setenv("HERMES_KANBAN_RUN_ID", str(run1.id))
+    monkeypatch.setenv("HER_KANBAN_RUN_ID", str(run1.id))
     out = kt._handle_complete({"summary": "late stale completion"})
     d = json.loads(out)
     assert d.get("ok") is not True
@@ -1439,7 +1439,7 @@ def test_worker_complete_rejects_stale_run_id(worker_env, monkeypatch):
     finally:
         conn.close()
 
-    monkeypatch.setenv("HERMES_KANBAN_RUN_ID", str(run2.id))
+    monkeypatch.setenv("HER_KANBAN_RUN_ID", str(run2.id))
     out = kt._handle_complete({"summary": "current completion"})
     d = json.loads(out)
     assert d.get("ok") is True
@@ -1479,14 +1479,14 @@ def test_orchestrator_complete_any_task_allowed(monkeypatch, tmp_path):
 # The dispatcher pins the active board via HER_KANBAN_BOARD env var,
 # but a Telegram-side orchestrator handling multiple boards needs to be
 # able to route a single tool call to a specific board's DB without
-# restarting Hermes. These tests pin that ``board=<slug>`` argument
+# restarting her. These tests pin that ``board=<slug>`` argument
 # routes each handler to that board's sqlite file, and that omitting
 # ``board`` preserves the legacy env-driven resolution.
 
 
 @pytest.fixture
 def multi_board_env(monkeypatch, tmp_path):
-    """Isolated Hermes home with two distinct kanban boards seeded.
+    """Isolated her home with two distinct kanban boards seeded.
 
     Returns ``("default", "alt")`` slugs. The default board has one
     pre-existing task ``seed_default``; ``alt`` has ``seed_alt``. No
@@ -1496,9 +1496,9 @@ def multi_board_env(monkeypatch, tmp_path):
     home = tmp_path / ".her"
     home.mkdir()
     monkeypatch.setenv("HER_HOME", str(home))
-    # Make sure neither HERMES_KANBAN_DB nor HER_KANBAN_BOARD pin a
+    # Make sure neither HER_KANBAN_DB nor HER_KANBAN_BOARD pin a
     # board — the test is specifically about the per-call override.
-    monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
+    monkeypatch.delenv("HER_KANBAN_DB", raising=False)
     monkeypatch.delenv("HER_KANBAN_BOARD", raising=False)
     monkeypatch.delenv("HER_KANBAN_TASK", raising=False)
     monkeypatch.setenv("HER_PROFILE", "test-orchestrator")
@@ -1709,7 +1709,7 @@ def test_board_param_routes_heartbeat_to_alt_board(monkeypatch, tmp_path):
     home.mkdir()
     monkeypatch.setenv("HER_HOME", str(home))
     monkeypatch.setenv("HER_PROFILE", "alt-worker")
-    monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
+    monkeypatch.delenv("HER_KANBAN_DB", raising=False)
     monkeypatch.delenv("HER_KANBAN_BOARD", raising=False)
     from pathlib import Path as _Path
     monkeypatch.setattr(_Path, "home", lambda: tmp_path)

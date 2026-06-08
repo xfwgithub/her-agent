@@ -1,7 +1,7 @@
 """
 Dump command for her CLI.
 
-Outputs a compact, plain-text summary of the user's Hermes setup
+Outputs a compact, plain-text summary of the user's her setup
 that can be copy-pasted into Discord/GitHub/Telegram for support context.
 No ANSI colors, no checkmarks — just data.
 """
@@ -26,7 +26,7 @@ def _get_git_commit(project_root: Path) -> str:
     The published Docker image excludes ``.git`` from the build context, so
     that lookup always fails — we fall back to the baked-in build SHA written
     to ``<project_root>/.her_build_sha`` by the Dockerfile's
-    ``HERMES_GIT_SHA`` build-arg (see ``her_cli/build_info.py``).
+    ``HER_GIT_SHA`` build-arg (see ``her_cli/build_info.py``).
     The output format is identical regardless of source.
     """
     try:

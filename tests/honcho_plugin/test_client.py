@@ -437,36 +437,36 @@ class TestResolveActiveHost:
 
     def test_default_returns_her(self):
         with patch.dict(os.environ, {}, clear=True):
-            os.environ.pop("HERMES_HONCHO_HOST", None)
+            os.environ.pop("HER_HONCHO_HOST", None)
             os.environ.pop("HER_HOME", None)
             assert resolve_active_host() == "her"
 
     def test_explicit_env_var_wins(self):
-        with patch.dict(os.environ, {"HERMES_HONCHO_HOST": "her.coder"}):
+        with patch.dict(os.environ, {"HER_HONCHO_HOST": "her.coder"}):
             assert resolve_active_host() == "her.coder"
 
     def test_profile_name_derives_host(self):
         with patch.dict(os.environ, {}, clear=False):
-            os.environ.pop("HERMES_HONCHO_HOST", None)
+            os.environ.pop("HER_HONCHO_HOST", None)
             with patch("her_cli.profiles.get_active_profile_name", return_value="coder"):
                 assert resolve_active_host() == "her_coder"
 
     def test_default_profile_returns_her(self):
         with patch.dict(os.environ, {}, clear=False):
-            os.environ.pop("HERMES_HONCHO_HOST", None)
+            os.environ.pop("HER_HONCHO_HOST", None)
             with patch("her_cli.profiles.get_active_profile_name", return_value="default"):
                 assert resolve_active_host() == "her"
 
     def test_custom_profile_returns_her(self):
         with patch.dict(os.environ, {}, clear=False):
-            os.environ.pop("HERMES_HONCHO_HOST", None)
+            os.environ.pop("HER_HONCHO_HOST", None)
             with patch("her_cli.profiles.get_active_profile_name", return_value="custom"):
                 assert resolve_active_host() == "her"
 
     def test_profiles_import_failure_falls_back(self):
         import sys
         with patch.dict(os.environ, {}, clear=False):
-            os.environ.pop("HERMES_HONCHO_HOST", None)
+            os.environ.pop("HER_HONCHO_HOST", None)
             # Temporarily remove her_cli.profiles to simulate import failure
             saved = sys.modules.get("her_cli.profiles")
             sys.modules["her_cli.profiles"] = None  # type: ignore

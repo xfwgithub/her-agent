@@ -134,7 +134,7 @@ _MARKER_TTL = 86400  # 24 hours
 
 
 def _get_her_home() -> str:
-    """Return the Hermes home directory, respecting HER_HOME env var."""
+    """Return the her home directory, respecting HER_HOME env var."""
     return str(get_her_home())
 
 

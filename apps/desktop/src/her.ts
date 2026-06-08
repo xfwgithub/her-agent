@@ -13,8 +13,8 @@ import type {
   CronJobUpdates,
   ElevenLabsVoicesResponse,
   EnvVarInfo,
-  HermesConfig,
-  HermesConfigRecord,
+  HerConfig,
+  HerConfigRecord,
   LogsResponse,
   MessagingPlatformsResponse,
   MessagingPlatformTestResponse,
@@ -65,8 +65,8 @@ export type {
   ElevenLabsVoicesResponse,
   EnvVarInfo,
   GatewayReadyPayload,
-  HermesConfig,
-  HermesConfigRecord,
+  HerConfig,
+  HerConfigRecord,
   LogsResponse,
   MessagingEnvVarInfo,
   MessagingHomeChannel,
@@ -101,13 +101,13 @@ export type {
   ToolsetInfo
 } from '@/types/her'
 
-export class HermesGateway extends JsonRpcGatewayClient {
+export class HerGateway extends JsonRpcGatewayClient {
   constructor() {
     super({
-      closedErrorMessage: 'Hermes gateway connection closed',
-      connectErrorMessage: 'Could not connect to Hermes gateway',
+      closedErrorMessage: 'her gateway connection closed',
+      connectErrorMessage: 'Could not connect to her gateway',
       createRequestId: nextId => nextId,
-      notConnectedErrorMessage: 'Hermes gateway is not connected',
+      notConnectedErrorMessage: 'her gateway is not connected',
       requestTimeoutMs: DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS
     })
   }
@@ -283,35 +283,35 @@ export function getLogs(params: {
   })
 }
 
-export function getHermesConfig(): Promise<HermesConfig> {
-  return window.herDesktop.api<HermesConfig>({
+export function getherConfig(): Promise<HerConfig> {
+  return window.herDesktop.api<HerConfig>({
     ...profileScoped(),
     path: '/api/config'
   })
 }
 
-export function getHermesConfigRecord(): Promise<HermesConfigRecord> {
-  return window.herDesktop.api<HermesConfigRecord>({
+export function getherConfigRecord(): Promise<HerConfigRecord> {
+  return window.herDesktop.api<HerConfigRecord>({
     ...profileScoped(),
     path: '/api/config'
   })
 }
 
-export function getHermesConfigDefaults(): Promise<HermesConfigRecord> {
-  return window.herDesktop.api<HermesConfigRecord>({
+export function getherConfigDefaults(): Promise<HerConfigRecord> {
+  return window.herDesktop.api<HerConfigRecord>({
     ...profileScoped(),
     path: '/api/config/defaults'
   })
 }
 
-export function getHermesConfigSchema(): Promise<ConfigSchemaResponse> {
+export function getherConfigSchema(): Promise<ConfigSchemaResponse> {
   return window.herDesktop.api<ConfigSchemaResponse>({
     ...profileScoped(),
     path: '/api/config/schema'
   })
 }
 
-export function saveHermesConfig(config: HermesConfigRecord): Promise<{ ok: boolean }> {
+export function saveherConfig(config: HerConfigRecord): Promise<{ ok: boolean }> {
   return window.herDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: '/api/config',
@@ -676,7 +676,7 @@ export function restartGateway(): Promise<ActionResponse> {
   })
 }
 
-export function updateHermes(): Promise<ActionResponse> {
+export function updateher(): Promise<ActionResponse> {
   return window.herDesktop.api<ActionResponse>({
     path: '/api/her/update',
     method: 'POST'

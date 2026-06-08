@@ -1,9 +1,9 @@
 {
   "name": "her",
-  "productName": "Hermes",
+  "productName": "her",
   "private": true,
   "version": "0.15.1",
-  "description": "Native desktop shell for Hermes Agent.",
+  "description": "Native desktop shell for her Agent.",
   "author": "Nous Research",
   "type": "module",
   "main": "electron/main.cjs",
@@ -12,11 +12,11 @@
   },
   "scripts": {
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
-    "dev:fake-boot": "cross-env HERMES_DESKTOP_BOOT_FAKE=1 HERMES_DESKTOP_BOOT_FAKE_STEP_MS=650 npm run dev",
+    "dev:fake-boot": "cross-env HER_DESKTOP_BOOT_FAKE=1 HER_DESKTOP_BOOT_FAKE_STEP_MS=650 npm run dev",
     "dev:renderer": "node scripts/assert-root-install.cjs && vite --host 127.0.0.1 --port 5174",
-    "dev:electron": "wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .",
-    "profile:main": "wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron --inspect=9229 .",
-    "profile:main:cpu": "wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 NODE_OPTIONS=--cpu-prof HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .",
+    "dev:electron": "wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HER_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .",
+    "profile:main": "wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HER_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron --inspect=9229 .",
+    "profile:main:cpu": "wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 NODE_OPTIONS=--cpu-prof HER_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .",
     "start": "npm run build && electron .",
     "build": "node scripts/assert-root-install.cjs && node scripts/write-build-stamp.cjs && node scripts/stage-native-deps.cjs && tsc -b && vite build",
     "builder": "cross-env NODE_OPTIONS=--max-old-space-size=16384 electron-builder",
@@ -131,9 +131,9 @@
   "build": {
     "electronVersion": "40.9.3",
     "appId": "com.nousresearch.her",
-    "productName": "Hermes",
-    "executableName": "Hermes",
-    "artifactName": "Hermes-${version}-${os}-${arch}.${ext}",
+    "productName": "her",
+    "executableName": "her",
+    "artifactName": "her-${version}-${os}-${arch}.${ext}",
     "icon": "assets/icon",
     "directories": {
       "output": "release"
@@ -173,11 +173,11 @@
       "entitlements": "electron/entitlements.mac.plist",
       "entitlementsInherit": "electron/entitlements.mac.inherit.plist",
       "extendInfo": {
-        "CFBundleDisplayName": "Hermes",
-        "CFBundleExecutable": "Hermes",
-        "CFBundleName": "Hermes",
-        "NSAudioCaptureUsageDescription": "Hermes uses audio capture for voice conversations.",
-        "NSMicrophoneUsageDescription": "Hermes uses the microphone for voice input and voice conversations."
+        "CFBundleDisplayName": "her",
+        "CFBundleExecutable": "her",
+        "CFBundleName": "her",
+        "NSAudioCaptureUsageDescription": "her uses audio capture for voice conversations.",
+        "NSMicrophoneUsageDescription": "her uses the microphone for voice input and voice conversations."
       },
       "gatekeeperAssess": false,
       "hardenedRuntime": true,
@@ -187,7 +187,7 @@
       ]
     },
     "dmg": {
-      "title": "Install Hermes",
+      "title": "Install her",
       "backgroundColor": "#f5f5f7",
       "iconSize": 96,
       "window": {
@@ -209,7 +209,7 @@
       ]
     },
     "win": {
-      "legalTrademarks": "Hermes",
+      "legalTrademarks": "her",
       "target": [
         "nsis",
         "msi"
@@ -219,7 +219,7 @@
     "linux": {
       "category": "Development",
       "maintainer": "Nous Research <support@nousresearch.com>",
-      "synopsis": "Native desktop shell for Hermes Agent.",
+      "synopsis": "Native desktop shell for her Agent.",
       "target": [
         "AppImage",
         "deb",
@@ -230,8 +230,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
-      "shortcutName": "Hermes",
-      "uninstallDisplayName": "Hermes",
+      "shortcutName": "her",
+      "uninstallDisplayName": "her",
       "warningsAsErrors": false
     }
   }

@@ -1,12 +1,12 @@
 ---
 sidebar_position: 17
 title: "Extending the Dashboard"
-description: "Build themes and plugins for the Hermes web dashboard — palettes, typography, layouts, custom tabs, shell slots, page-scoped slots, and backend API routes"
+description: "Build themes and plugins for the her web dashboard — palettes, typography, layouts, custom tabs, shell slots, page-scoped slots, and backend API routes"
 ---
 
 # Extending the Dashboard
 
-The Hermes web dashboard (`her dashboard`) is built to be reskinned and extended without forking the codebase. Three layers are exposed:
+The her web dashboard (`her dashboard`) is built to be reskinned and extended without forking the codebase. Three layers are exposed:
 
 1. **Themes** — YAML files that repaint the dashboard's palette, typography, layout, and per-component chrome. Drop a file in `~/.her/dashboard-themes/`; it appears in the theme switcher.
 2. **UI plugins** — a directory with `manifest.json` + a JavaScript bundle that registers a tab, replaces a built-in page, augments one via page-scoped slots, or injects components into named shell slots.
@@ -264,15 +264,15 @@ Each built-in ships its own palette, typography, and layout — switching produc
 
 | Theme | Palette | Typography | Layout |
 |-------|---------|------------|--------|
-| **Hermes Teal** (`default`) | Dark teal + cream | System stack, 15px | 0.5rem radius, comfortable |
-| **Hermes Teal (Large)** (`default-large`) | Same as default | System stack, 18px, line-height 1.65 | 0.5rem radius, spacious |
+| **her Teal** (`default`) | Dark teal + cream | System stack, 15px | 0.5rem radius, comfortable |
+| **her Teal (Large)** (`default-large`) | Same as default | System stack, 18px, line-height 1.65 | 0.5rem radius, spacious |
 | **Midnight** (`midnight`) | Deep blue-violet | Inter + JetBrains Mono, 14px | 0.75rem radius, comfortable |
 | **Ember** (`ember`) | Warm crimson + bronze | Spectral (serif) + IBM Plex Mono, 15px | 0.25rem radius, comfortable |
 | **Mono** (`mono`) | Grayscale | IBM Plex Sans + IBM Plex Mono, 13px | 0 radius, compact |
 | **Cyberpunk** (`cyberpunk`) | Neon green on black | Share Tech Mono everywhere, 14px | 0 radius, compact |
 | **Rosé** (`rose`) | Pink + ivory | Fraunces (serif) + DM Mono, 16px | 1rem radius, spacious |
 
-Themes that reference Google Fonts (all except Hermes Teal) load the stylesheet on demand — the first time you switch to them a `<link>` tag is injected into `<head>`.
+Themes that reference Google Fonts (all except her Teal) load the stylesheet on demand — the first time you switch to them a `<link>` tag is injected into `<head>`.
 
 ### Full theme YAML reference
 
@@ -341,9 +341,9 @@ Refresh the dashboard after creating the file. Switch themes live from the heade
 
 ## Plugins
 
-A dashboard plugin is a directory with a `manifest.json`, a pre-built JS bundle, and optionally a CSS file and a Python file with FastAPI routes. Plugins live next to other Hermes plugins in `~/.her/plugins/<name>/` — the dashboard extension is a `dashboard/` subfolder inside that plugin directory, so one plugin can extend both the CLI/gateway and the dashboard from a single install.
+A dashboard plugin is a directory with a `manifest.json`, a pre-built JS bundle, and optionally a CSS file and a Python file with FastAPI routes. Plugins live next to other her plugins in `~/.her/plugins/<name>/` — the dashboard extension is a `dashboard/` subfolder inside that plugin directory, so one plugin can extend both the CLI/gateway and the dashboard from a single install.
 
-Plugins don't bundle React or UI components. They use the **Plugin SDK** exposed on `window.__HERMES_PLUGIN_SDK__`. This keeps plugin bundles tiny (typically a few KB) and avoids version conflicts.
+Plugins don't bundle React or UI components. They use the **Plugin SDK** exposed on `window.__HER_PLUGIN_SDK__`. This keeps plugin bundles tiny (typically a few KB) and avoids version conflicts.
 
 ### Quick start — your first plugin
 
@@ -377,7 +377,7 @@ Write the JS bundle (a plain IIFE — no build step needed):
 (function () {
   "use strict";
 
-  const SDK = window.__HERMES_PLUGIN_SDK__;
+  const SDK = window.__HER_PLUGIN_SDK__;
   const { React } = SDK;
   const { Card, CardHeader, CardTitle, CardContent } = SDK.components;
 
@@ -394,7 +394,7 @@ Write the JS bundle (a plain IIFE — no build step needed):
     );
   }
 
-  window.__HERMES_PLUGINS__.register("my-plugin", MyPage);
+  window.__HER_PLUGINS__.register("my-plugin", MyPage);
 })();
 ```
 
@@ -474,10 +474,10 @@ Need a different icon? Open a PR to `web/src/App.tsx`'s `ICON_MAP` — pure addi
 
 ### The Plugin SDK
 
-Everything a plugin needs is on `window.__HERMES_PLUGIN_SDK__`. Plugins should never import React directly.
+Everything a plugin needs is on `window.__HER_PLUGIN_SDK__`. Plugins should never import React directly.
 
 ```javascript
-const SDK = window.__HERMES_PLUGIN_SDK__;
+const SDK = window.__HER_PLUGIN_SDK__;
 
 // React + hooks
 SDK.React                    // the React instance
@@ -506,7 +506,7 @@ SDK.components.TabsList
 SDK.components.TabsTrigger
 SDK.components.PluginSlot    // render a named slot (useful for nested plugin UIs)
 
-// Hermes API client + raw fetcher
+// her API client + raw fetcher
 SDK.api                      // typed client — getStatus, getSessions, getConfig, ...
 SDK.fetchJSON                // raw fetch for custom endpoints (plugin-registered routes)
 
@@ -529,7 +529,7 @@ SDK.fetchJSON("/api/plugins/my-plugin/data")
 
 `fetchJSON` injects the session auth token, surfaces errors as thrown exceptions, and parses JSON automatically.
 
-#### Calling built-in Hermes endpoints
+#### Calling built-in her endpoints
 
 ```javascript
 // Agent status
@@ -548,8 +548,8 @@ Slots let a plugin inject components into named locations of the app shell — t
 Register from inside the plugin bundle:
 
 ```javascript
-window.__HERMES_PLUGINS__.registerSlot("my-plugin", "sidebar", MySidebar);
-window.__HERMES_PLUGINS__.registerSlot("my-plugin", "header-left", MyCrest);
+window.__HER_PLUGINS__.registerSlot("my-plugin", "sidebar", MySidebar);
+window.__HER_PLUGINS__.registerSlot("my-plugin", "header-left", MyCrest);
 ```
 
 #### Slot catalogue
@@ -559,7 +559,7 @@ window.__HERMES_PLUGINS__.registerSlot("my-plugin", "header-left", MyCrest);
 | Slot | Location |
 |------|----------|
 | `backdrop` | Inside the `<Backdrop />` layer stack, above the noise layer. |
-| `header-left` | Before the Hermes brand in the top bar. |
+| `header-left` | Before the her brand in the top bar. |
 | `header-right` | Before the theme/language switchers in the top bar. |
 | `header-banner` | Full-width strip below the nav. |
 | `sidebar` | Cockpit sidebar rail — **only rendered when `layoutVariant === "cockpit"`**. |
@@ -593,7 +593,7 @@ function PinnedSessionsBanner() {
   );
 }
 
-window.__HERMES_PLUGINS__.registerSlot("my-plugin", "sessions:top", PinnedSessionsBanner);
+window.__HER_PLUGINS__.registerSlot("my-plugin", "sessions:top", PinnedSessionsBanner);
 ```
 
 Combine page-scoped slots with `tab.hidden: true` if your plugin only augments existing pages and doesn't need a sidebar tab of its own.
@@ -655,7 +655,7 @@ Minimal example — pin a banner to the top of the Sessions page:
 ```javascript
 // ~/.her/plugins/session-notes/dashboard/dist/index.js
 (function () {
-  const SDK = window.__HERMES_PLUGIN_SDK__;
+  const SDK = window.__HER_PLUGIN_SDK__;
   const { React } = SDK;
   const { Card, CardContent } = SDK.components;
 
@@ -667,10 +667,10 @@ Minimal example — pin a banner to the top of the Sessions page:
   }
 
   // Placeholder for the hidden tab.
-  window.__HERMES_PLUGINS__.register("session-notes", function () { return null; });
+  window.__HER_PLUGINS__.register("session-notes", function () { return null; });
 
   // The real work.
-  window.__HERMES_PLUGINS__.registerSlot("session-notes", "sessions:top", Banner);
+  window.__HER_PLUGINS__.registerSlot("session-notes", "sessions:top", Banner);
 })();
 ```
 
@@ -729,7 +729,7 @@ Routes are mounted under `/api/plugins/<name>/`, so the above becomes:
 
 Plugin API routes bypass session-token authentication since the dashboard server binds to localhost by default. **Don't expose the dashboard on a public interface with `--host 0.0.0.0` if you run untrusted plugins** — their routes become reachable too.
 
-#### Accessing Hermes internals
+#### Accessing her internals
 
 Backend routes run inside the dashboard process, so they can import from the her-agent codebase directly:
 
@@ -791,7 +791,7 @@ The dashboard scans three directories for `dashboard/manifest.json`:
 | 1 (wins on conflict) | `~/.her/plugins/<name>/dashboard/` | `user` |
 | 2 | `<repo>/plugins/memory/<name>/dashboard/` | `bundled` |
 | 2 | `<repo>/plugins/<name>/dashboard/` | `bundled` |
-| 3 | `./.her/plugins/<name>/dashboard/` | `project` — only when `HERMES_ENABLE_PROJECT_PLUGINS` is set |
+| 3 | `./.her/plugins/<name>/dashboard/` | `project` — only when `HER_ENABLE_PROJECT_PLUGINS` is set |
 
 Discovery results are cached per dashboard process. After adding a new plugin, either:
 
@@ -804,10 +804,10 @@ curl http://127.0.0.1:9119/api/dashboard/plugins/rescan
 
 #### Plugin load lifecycle
 
-1. Dashboard loads. `main.tsx` exposes the SDK on `window.__HERMES_PLUGIN_SDK__` and the registry on `window.__HERMES_PLUGINS__`.
+1. Dashboard loads. `main.tsx` exposes the SDK on `window.__HER_PLUGIN_SDK__` and the registry on `window.__HER_PLUGINS__`.
 2. `App.tsx` calls `usePlugins()` → fetches `GET /api/dashboard/plugins`.
 3. For each manifest: CSS `<link>` is injected (if declared), then a `<script>` tag loads the JS bundle.
-4. The plugin's IIFE runs and calls `window.__HERMES_PLUGINS__.register(name, Component)` — and optionally `.registerSlot(name, slot, Component)` for each slot.
+4. The plugin's IIFE runs and calls `window.__HER_PLUGINS__.register(name, Component)` — and optionally `.registerSlot(name, slot, Component)` for each slot.
 5. The dashboard resolves the registered component against the manifest, adds the tab to navigation (unless `hidden`), and mounts the component as a route.
 
 Plugins have up to **2 seconds** after their script loads to call `register()`. After that the dashboard stops waiting and finishes initial render. If a plugin later registers, it still appears — the nav is reactive.
@@ -842,7 +842,7 @@ cp her-example-plugins/strike-freedom-cockpit/theme/strike-freedom.yaml \
 cp -r her-example-plugins/strike-freedom-cockpit ~/.her/plugins/
 ```
 
-Open the dashboard, pick **Strike Freedom** from the theme switcher. The cockpit sidebar appears, the crest shows in the header, the tagline replaces the footer. Switch back to **Hermes Teal** and the plugin remains installed but invisible (the `sidebar` slot only renders under the `cockpit` layout variant).
+Open the dashboard, pick **Strike Freedom** from the theme switcher. The cockpit sidebar appears, the crest shows in the header, the tagline replaces the footer. Switch back to **her Teal** and the plugin remains installed but invisible (the `sidebar` slot only renders under the `cockpit` layout variant).
 
 Read the plugin source (`strike-freedom-cockpit/dashboard/dist/index.js` in the companion repo) to see how it reads CSS vars, guards against older dashboards without slot support, and registers three slots from one bundle.
 
@@ -870,9 +870,9 @@ Read the plugin source (`strike-freedom-cockpit/dashboard/dist/index.js` in the 
 
 | Global | Type | Provider |
 |--------|------|----------|
-| `window.__HERMES_PLUGIN_SDK__` | object | `registry.ts` — React, hooks, UI components, API client, utils. |
-| `window.__HERMES_PLUGINS__.register(name, Component)` | function | Register a plugin's main component. |
-| `window.__HERMES_PLUGINS__.registerSlot(name, slot, Component)` | function | Register into a named shell slot. |
+| `window.__HER_PLUGIN_SDK__` | object | `registry.ts` — React, hooks, UI components, API client, utils. |
+| `window.__HER_PLUGINS__.register(name, Component)` | function | Register a plugin's main component. |
+| `window.__HER_PLUGINS__.registerSlot(name, slot, Component)` | function | Register into a named shell slot. |
 
 ---
 
@@ -885,8 +885,8 @@ Check that the file is in `~/.her/dashboard-themes/` and ends in `.yaml` or `.ym
 1. Check the manifest is at `~/.her/plugins/<name>/dashboard/manifest.json` (note the `dashboard/` subdirectory).
 2. `curl http://127.0.0.1:9119/api/dashboard/plugins/rescan` to force re-discovery.
 3. Open browser dev tools → Network — confirm `manifest.json`, `index.js`, and any CSS loaded without 404s.
-4. Open browser dev tools → Console — look for errors during the IIFE or `window.__HERMES_PLUGINS__ is undefined` (indicates the SDK didn't initialize, usually a React render crash earlier).
-5. Verify your bundle calls `window.__HERMES_PLUGINS__.register(...)` with the **same name** as `manifest.json:name`.
+4. Open browser dev tools → Console — look for errors during the IIFE or `window.__HER_PLUGINS__ is undefined` (indicates the SDK didn't initialize, usually a React render crash earlier).
+5. Verify your bundle calls `window.__HER_PLUGINS__.register(...)` with the **same name** as `manifest.json:name`.
 
 **Slot-registered components don't render.**
 The `sidebar` slot only renders when the active theme has `layoutVariant: cockpit`. Other slots always render. If you're registering into a slot with no hits, add `console.log` inside `registerSlot` to confirm the plugin bundle ran at all.

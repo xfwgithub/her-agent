@@ -47,9 +47,9 @@ def fresh_home(tmp_path, monkeypatch):
     home.mkdir()
     monkeypatch.setenv("HER_HOME", str(home))
     for var in (
-        "HERMES_KANBAN_DB",
-        "HERMES_KANBAN_WORKSPACES_ROOT",
-        "HERMES_KANBAN_HOME",
+        "HER_KANBAN_DB",
+        "HER_KANBAN_WORKSPACES_ROOT",
+        "HER_KANBAN_HOME",
         "HER_KANBAN_BOARD",
     ):
         monkeypatch.delenv(var, raising=False)
@@ -127,15 +127,15 @@ class TestPathResolution:
         )
 
     def test_env_var_db_override_still_wins(self, fresh_home, tmp_path, monkeypatch):
-        """``HERMES_KANBAN_DB`` pins the file regardless of board= arg."""
+        """``HER_KANBAN_DB`` pins the file regardless of board= arg."""
         forced = tmp_path / "custom.db"
-        monkeypatch.setenv("HERMES_KANBAN_DB", str(forced))
+        monkeypatch.setenv("HER_KANBAN_DB", str(forced))
         assert kb.kanban_db_path() == forced
         assert kb.kanban_db_path(board="ignored") == forced
 
     def test_env_var_workspaces_override(self, fresh_home, tmp_path, monkeypatch):
         forced = tmp_path / "ws"
-        monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", str(forced))
+        monkeypatch.setenv("HER_KANBAN_WORKSPACES_ROOT", str(forced))
         assert kb.workspaces_root(board="any") == forced
 
 
@@ -425,9 +425,9 @@ class TestWorkerSpawnEnv:
         assert env["HER_KANBAN_TASK"] == "t_abc"
         # DB path should match the per-board DB, not the legacy default.
         expected_db = fresh_home / "kanban" / "boards" / "spawntest" / "kanban.db"
-        assert env["HERMES_KANBAN_DB"] == str(expected_db)
+        assert env["HER_KANBAN_DB"] == str(expected_db)
         expected_ws = fresh_home / "kanban" / "boards" / "spawntest" / "workspaces"
-        assert env["HERMES_KANBAN_WORKSPACES_ROOT"] == str(expected_ws)
+        assert env["HER_KANBAN_WORKSPACES_ROOT"] == str(expected_ws)
 
     def test_default_board_spawn_keeps_legacy_paths(self, fresh_home, monkeypatch):
         captured = {}
@@ -460,7 +460,7 @@ class TestWorkerSpawnEnv:
         kb._default_spawn(task, str(fresh_home / "ws"), board=None)
         env = captured["env"]
         assert env["HER_KANBAN_BOARD"] == "default"
-        assert env["HERMES_KANBAN_DB"] == str(fresh_home / "kanban.db")
+        assert env["HER_KANBAN_DB"] == str(fresh_home / "kanban.db")
 
 
 # ---------------------------------------------------------------------------

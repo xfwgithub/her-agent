@@ -1,4 +1,4 @@
-import type { HermesConnection } from '@/global'
+import type { HerConnection } from '@/global'
 
 /**
  * The desktop main process exposes `getGatewayWsUrl()` to re-mint a WebSocket
@@ -49,7 +49,7 @@ export function isGatewayReauthRequired(error: unknown): error is GatewayReauthR
 
 export async function resolveGatewayWsUrl(
   desktop: ResolveGatewayWsUrlDeps,
-  conn: Pick<HermesConnection, 'authMode' | 'profile' | 'wsUrl'>
+  conn: Pick<HerConnection, 'authMode' | 'profile' | 'wsUrl'>
 ): Promise<string> {
   const mint = desktop.getGatewayWsUrl
   // Mint for THIS connection's profile, not the primary. Without it a pooled

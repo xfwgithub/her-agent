@@ -233,7 +233,7 @@ def test_docker_persist_across_processes_is_bridged_everywhere():
     ``terminal.docker_persist_across_processes`` (issue #20561) controls
     whether ``DockerEnvironment.__init__`` probes for and reuses an existing
     labeled container at startup, and whether ``cleanup()`` removes the
-    container on Hermes exit or just stops it (keeping it for the next
+    container on her exit or just stops it (keeping it for the next
     process).  Same four-bridge invariant as docker_run_as_host_user /
     docker_env / docker_mount_cwd_to_workspace — drift between any of the
     four sites means ``terminal.docker_persist_across_processes: false`` in
@@ -250,7 +250,7 @@ def test_docker_persist_across_processes_is_bridged_everywhere():
 def test_docker_orphan_reaper_is_bridged_everywhere():
     """Regression pin for the startup orphan reaper toggle (issue #20561).
 
-    ``terminal.docker_orphan_reaper`` controls whether Hermes sweeps stale
+    ``terminal.docker_orphan_reaper`` controls whether her sweeps stale
     Exited containers from prior SIGKILL'd processes at startup.  Same
     four-site bridge invariant — drift means
     ``terminal.docker_orphan_reaper: false`` silently does nothing for one

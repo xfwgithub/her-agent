@@ -6,7 +6,7 @@ description: "Three protocols for driving her-agent from external programs: ACP,
 
 # Programmatic Integration
 
-Hermes ships three protocols for driving the agent from external programs — IDE plugins, custom UIs, CI pipelines, embedded sub-agents. Pick the one that matches your transport and consumer.
+her ships three protocols for driving the agent from external programs — IDE plugins, custom UIs, CI pipelines, embedded sub-agents. Pick the one that matches your transport and consumer.
 
 | Protocol | Transport | Best for | Defined by |
 |----------|-----------|----------|------------|
@@ -63,7 +63,7 @@ terminal.resize         clipboard.paste         image.attach
 
 Every command in the Pi-mono RPC spec ([issue #360](https://github.com/NousResearch/her-agent/issues/360)) has a TUI-gateway equivalent:
 
-| Pi command | Hermes equivalent |
+| Pi command | her equivalent |
 |------------|-------------------|
 | `prompt` | `prompt.submit` (or ACP `session/prompt`) |
 | `steer` | `session.steer` |
@@ -98,14 +98,14 @@ GET  /v1/models                  Lists her-agent
 GET  /health, /health/detailed
 ```
 
-Setup, headers (`X-Hermes-Session-Id`, `X-Hermes-Session-Key`), and frontend wiring: [API Server](../user-guide/features/api-server).
+Setup, headers (`X-Her-Session-Id`, `X-Her-Session-Key`), and frontend wiring: [API Server](../user-guide/features/api-server).
 
 ---
 
 ## Which one should I use?
 
 - **You're writing an IDE plugin and the IDE already speaks ACP** → ACP. Zero protocol work on the IDE side.
-- **You're writing a custom desktop / web / TUI host and want every Hermes feature** (slash commands, approvals, clarify, multi-agent, session branching) → TUI gateway JSON-RPC.
+- **You're writing a custom desktop / web / TUI host and want every her feature** (slash commands, approvals, clarify, multi-agent, session branching) → TUI gateway JSON-RPC.
 - **You want any OpenAI-compatible frontend, a language-agnostic HTTP client, or curl-driven automation** → API server.
 - **You want a Python in-process embed without a subprocess** → import `run_agent.AIAgent` directly. See [Agent Loop](./agent-loop).
 
@@ -118,7 +118,7 @@ Mid-session model switching works on every surface — it's the `/model` slash c
 - **CLI / TUI:** `/model claude-sonnet-4` or `/model openrouter:anthropic/claude-sonnet-4.6`
 - **TUI gateway RPC:** `command.dispatch` with `{"command": "/model claude-sonnet-4"}`
 - **ACP:** the IDE sends the slash command as a prompt; the agent dispatches it
-- **API server:** include a `model` field in the request body or set `X-Hermes-Model`
+- **API server:** include a `model` field in the request body or set `X-Her-Model`
 
 Provider-aware resolution (the same model name picks the right format for whatever provider you're on) is built in. See `her_cli/model_switch.py`.
 
@@ -126,4 +126,4 @@ Provider-aware resolution (the same model name picks the right format for whatev
 
 ## A note on `--mode rpc`
 
-Hermes does not have a `--mode rpc` flag. The three protocols above already cover the use cases — ACP for IDE-protocol clients, the TUI gateway for stdio JSON-RPC hosts, and the API server for HTTP. If you find a real gap that none of them fill, open an issue with the concrete consumer you're building.
+her does not have a `--mode rpc` flag. The three protocols above already cover the use cases — ACP for IDE-protocol clients, the TUI gateway for stdio JSON-RPC hosts, and the API server for HTTP. If you find a real gap that none of them fill, open an issue with the concrete consumer you're building.

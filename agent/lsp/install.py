@@ -1,7 +1,7 @@
 """Auto-installation of LSP server binaries.
 
 Tries to install missing servers using whatever package manager is
-appropriate.  All installs go to a Hermes-owned bin staging dir,
+appropriate.  All installs go to a her-owned bin staging dir,
 ``<HER_HOME>/lsp/bin/``, so we don't pollute the user's global
 toolchain.
 
@@ -116,7 +116,7 @@ def _is_windows() -> bool:
 
 
 def her_lsp_bin_dir() -> Path:
-    """Return the Hermes-owned bin staging dir for LSP servers."""
+    """Return the her-owned bin staging dir for LSP servers."""
     home = os.environ.get("HER_HOME")
     if home is None:
         home = os.path.join(os.path.expanduser("~"), ".her")

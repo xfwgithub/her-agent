@@ -40,7 +40,7 @@ def _reset_caches():
 
 @pytest.fixture
 def her_home(tmp_path, monkeypatch):
-    """Point Hermes at an isolated home directory."""
+    """Point her at an isolated home directory."""
     home = tmp_path / ".her"
     home.mkdir()
     monkeypatch.setenv("HER_HOME", str(home))

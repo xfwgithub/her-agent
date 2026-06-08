@@ -1,6 +1,6 @@
 """Regression test: `her dashboard --tui` must not hard-crash.
 
-Older Hermes desktop app shells (<= 0.15.x) spawn the backend as::
+Older her desktop app shells (<= 0.15.x) spawn the backend as::
 
     her dashboard --no-open --tui --host 127.0.0.1 --port <PORT>
 
@@ -8,7 +8,7 @@ The ``--tui`` flag was removed from the ``dashboard`` subcommand in cae6b5486
 (embedded chat is always on now). When a user's CLI updates past that commit
 but their desktop app binary has not, argparse used to reject the unknown flag
 with ``error: unrecognized arguments: --tui`` and ``exit(2)`` — the backend
-died before it became ready and the desktop GUI showed only "Hermes couldn't
+died before it became ready and the desktop GUI showed only "her couldn't
 start" with no actionable cause.
 
 The fix adds a hidden, deprecated, accepted-and-ignored ``--tui`` flag to the

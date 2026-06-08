@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================================
-REM Hermes Agent Installer for Windows (CMD wrapper)
+REM her Agent Installer for Windows (CMD wrapper)
 REM ============================================================================
 REM This batch file launches the PowerShell installer for users running CMD.
 REM
@@ -12,7 +12,7 @@ REM   iex (irm https://her-agent.nousresearch.com/install.ps1)
 REM ============================================================================
 
 echo.
-echo  Hermes Agent Installer
+echo  her Agent Installer
 echo  Launching PowerShell installer...
 echo.
 

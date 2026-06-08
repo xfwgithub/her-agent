@@ -6,7 +6,7 @@ description: "用自然语言调度自动化任务，通过单一 cron 工具管
 
 # 定时任务（Cron）
 
-使用自然语言或 cron 表达式调度自动运行的任务。Hermes 通过单一 `cronjob` 工具暴露 cron 管理能力，采用动作式操作，而非分散的 schedule/list/remove 工具。
+使用自然语言或 cron 表达式调度自动运行的任务。her 通过单一 `cronjob` 工具暴露 cron 管理能力，采用动作式操作，而非分散的 schedule/list/remove 工具。
 
 ## Cron 当前能做什么
 
@@ -19,10 +19,10 @@ Cron 任务可以：
 - 在全新的 agent 会话中运行，使用正常的静态工具列表
 - 以**无 agent 模式**运行——按计划执行脚本，其 stdout 原样投递，零 LLM 参与（参见下方[无 agent 模式](#no-agent-mode-script-only-jobs)章节）
 
-所有这些功能均可通过 `cronjob` 工具由 Hermes 自身使用，因此你可以用自然语言创建、暂停、编辑和删除任务——无需 CLI。
+所有这些功能均可通过 `cronjob` 工具由 her 自身使用，因此你可以用自然语言创建、暂停、编辑和删除任务——无需 CLI。
 
 :::warning
-Cron 运行的会话不能递归创建更多 cron 任务。Hermes 在 cron 执行内部禁用了 cron 管理工具，以防止失控的调度循环。
+Cron 运行的会话不能递归创建更多 cron 任务。her 在 cron 执行内部禁用了 cron 管理工具，以防止失控的调度循环。
 :::
 
 ## 创建定时任务
@@ -49,13 +49,13 @@ her cron create "every 1h" "Use both skills and combine the result" \
 
 ### 通过自然对话
 
-直接向 Hermes 描述：
+直接向 her 描述：
 
 ```text
 Every morning at 9am, check Hacker News for AI news and send me a summary on Telegram.
 ```
 
-Hermes 会在内部使用统一的 `cronjob` 工具。
+her 会在内部使用统一的 `cronjob` 工具。
 
 ## 附带 skill 的 cron 任务
 
@@ -123,7 +123,7 @@ cronjob(
 
 ## 在指定 profile 中运行 cron 任务
 
-默认情况下，cron 任务继承创建它的 gateway/CLI 所属的 Hermes profile。传入 `--profile <name>`（CLI）或 `profile=`（cronjob 工具）可将任务重定向到不同的 profile——调度器会解析该 profile 的 `HER_HOME`，在运行期间临时切换到该 profile，加载其 `.env` 和 `config.yaml`，并在其中执行任务：
+默认情况下，cron 任务继承创建它的 gateway/CLI 所属的 her profile。传入 `--profile <name>`（CLI）或 `profile=`（cronjob 工具）可将任务重定向到不同的 profile——调度器会解析该 profile 的 `HER_HOME`，在运行期间临时切换到该 profile，加载其 `.env` 和 `config.yaml`，并在其中执行任务：
 
 ```bash
 # 将任务固定到 `night-ops` profile，无论在哪里调度
@@ -142,7 +142,7 @@ cronjob(
 )
 ```
 
-使用 `--profile default` 可显式固定到根 Hermes profile。指定的 profile 必须已存在；调度器不会动态创建 profile。在 `cron edit` 时清除 profile 固定，传入空字符串（`--profile ""` 或 `profile=""`）——任务将恢复在调度器当前所在的 profile 中运行。
+使用 `--profile default` 可显式固定到根 her profile。指定的 profile 必须已存在；调度器不会动态创建 profile。在 `cron edit` 时清除 profile 固定，传入空字符串（`--profile ""` 或 `profile=""`）——任务将恢复在调度器当前所在的 profile 中运行。
 
 如果固定的 profile 后来被删除，调度器会记录警告并回退到在当前 profile 中运行该任务，而不是崩溃——因此过期的 `profile` 引用不会卡住任务。
 
@@ -234,7 +234,7 @@ her cron status
 
 ### Gateway 调度器行为
 
-每次 tick 时，Hermes：
+每次 tick 时，her：
 
 1. 从 `~/.her/cron/jobs.json` 加载任务
 2. 对照当前时间检查 `next_run_at`
@@ -342,7 +342,7 @@ cron:
   script_timeout_seconds: 300   # 5 分钟
 ```
 
-或设置 `HERMES_CRON_SCRIPT_TIMEOUT` 环境变量。解析顺序为：环境变量 → config.yaml → 默认 120 秒。
+或设置 `HER_CRON_SCRIPT_TIMEOUT` 环境变量。解析顺序为：环境变量 → config.yaml → 默认 120 秒。
 
 ## 无 agent 模式（纯脚本任务）
 
@@ -368,13 +368,13 @@ her cron create "every 5m" \
 
 ### Agent 为你设置这些
 
-`cronjob` 工具的 schema 直接向 Hermes 暴露了 `no_agent`，因此你可以在聊天中描述一个看门狗，让 agent 来配置它：
+`cronjob` 工具的 schema 直接向 her 暴露了 `no_agent`，因此你可以在聊天中描述一个看门狗，让 agent 来配置它：
 
 ```text
 Ping me on Telegram if RAM is over 85%, every 5 minutes.
 ```
 
-Hermes 会通过 `write_file` 将检查脚本写入 `~/.her/scripts/`，然后调用：
+her 会通过 `write_file` 将检查脚本写入 `~/.her/scripts/`，然后调用：
 
 ```python
 cronjob(action="create", schedule="every 5m",
@@ -421,7 +421,7 @@ cronjob(
 
 **工作原理：**
 
-- 任务 2 触发时，Hermes 从 `~/.her/cron/output/{job1_id}/*.md` 读取任务 1 的最新输出
+- 任务 2 触发时，her 从 `~/.her/cron/output/{job1_id}/*.md` 读取任务 1 的最新输出
 - 该输出自动前置到任务 2 的 prompt
 - 任务 2 无需硬编码"读取此文件"——它以上下文形式接收内容
 - 链可以是任意长度：任务 1 → 任务 2 → 任务 3 → …
@@ -452,7 +452,7 @@ Cron 任务继承你配置的回退 provider 和凭证池轮换。如果主 API 
 
 ## 调度格式
 
-Agent 的最终响应会自动投递——你**无需**在 cron prompt 中为同一目标包含 `send_message`。如果 cron 运行调用了 `send_message` 且目标与调度器已投递的目标完全相同，Hermes 会跳过该重复发送，并告知模型将面向用户的内容放在最终响应中。仅对额外或不同的目标使用 `send_message`。
+Agent 的最终响应会自动投递——你**无需**在 cron prompt 中为同一目标包含 `send_message`。如果 cron 运行调用了 `send_message` 且目标与调度器已投递的目标完全相同，her 会跳过该重复发送，并告知模型将面向用户的内容放在最终响应中。仅对额外或不同的目标使用 `send_message`。
 
 ### 相对延迟（一次性）
 
@@ -540,11 +540,11 @@ cronjob(action="create", name="weekly-news-summary",
         prompt="Summarize this week's AI news: ...")
 ```
 
-当任务上设置了 `enabled_toolsets` 时，它优先生效；否则 `her tools` 的 cron 平台配置生效；否则 Hermes 回退到内置默认值。这对成本控制很重要：在每个小型"获取新闻"任务中携带 `moa`、`browser`、`delegation` 会在每次 LLM 调用时膨胀工具 schema prompt。
+当任务上设置了 `enabled_toolsets` 时，它优先生效；否则 `her tools` 的 cron 平台配置生效；否则 her 回退到内置默认值。这对成本控制很重要：在每个小型"获取新闻"任务中携带 `moa`、`browser`、`delegation` 会在每次 LLM 调用时膨胀工具 schema prompt。
 
 ### 完全跳过 agent：`wakeAgent`
 
-如果你的 cron 任务附加了预检脚本（通过 `script=`），脚本可以在运行时决定 Hermes 是否应该调用 agent。在 stdout 最后一行输出如下格式：
+如果你的 cron 任务附加了预检脚本（通过 `script=`），脚本可以在运行时决定 her 是否应该调用 agent。在 stdout 最后一行输出如下格式：
 
 ```text
 {"wakeAgent": false}
@@ -641,7 +641,7 @@ cronjob(action="create", name="summarize-new-msgs",
 同样的模式适用于任何可以从脚本查询的数据源——Postgres、HTTP API、你自己的状态存储——无需将 SQL 求值器内置到 cron 子系统中。
 
 :::tip
-Hermes 自身的 `~/.her/state.db` 是内部 schema，会在版本间变更。不要从预运行门控中查询它——指向你自己的数据库或 feed。
+her 自身的 `~/.her/state.db` 是内部 schema，会在版本间变更。不要从预运行门控中查询它——指向你自己的数据库或 feed。
 :::
 
 致谢：此方案集由 @iankar8 在 [#2654](https://github.com/NousResearch/her-agent/pull/2654) 中的探索所启发，该 PR 提议将 sql/file/command 触发器作为并行机制添加。`script` + `wakeAgent` 门控已以零成本覆盖了所有三种情况，因此该工作以文档形式落地。
@@ -663,7 +663,7 @@ cronjob(action="create", name="daily-digest",
 
 任务存储在 `~/.her/cron/jobs.json`。任务运行的输出保存到 `~/.her/cron/output/{job_id}/{timestamp}.md`。
 
-任务可能将 `model` 和 `provider` 存储为 `null`。省略这些字段时，Hermes 在执行时从全局配置中解析它们。只有设置了单任务覆盖时，这些字段才会出现在任务记录中。
+任务可能将 `model` 和 `provider` 存储为 `null`。省略这些字段时，her 在执行时从全局配置中解析它们。只有设置了单任务覆盖时，这些字段才会出现在任务记录中。
 
 存储使用原子文件写入，因此中断的写入不会留下部分写入的任务文件。
 

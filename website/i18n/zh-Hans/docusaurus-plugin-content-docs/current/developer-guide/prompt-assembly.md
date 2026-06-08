@@ -1,12 +1,12 @@
 ---
 sidebar_position: 5
 title: "Prompt 组装"
-description: "Hermes 如何构建系统 prompt、保持缓存稳定性并注入临时层"
+description: "her 如何构建系统 prompt、保持缓存稳定性并注入临时层"
 ---
 
 # Prompt 组装
 
-Hermes 刻意将以下内容分离：
+her 刻意将以下内容分离：
 
 - **已缓存的系统 prompt 状态**
 - **API 调用时临时添加的内容**
@@ -47,7 +47,7 @@ Hermes 刻意将以下内容分离：
 
 ```
 # Layer 1: Agent Identity (from ~/.her/SOUL.md)
-You are Hermes, an AI assistant created by Nous Research.
+You are her, an AI assistant created by Nous Research.
 You are an expert software engineer and researcher.
 You value correctness, clarity, and efficiency.
 ...
@@ -137,7 +137,7 @@ def load_soul_md() -> Optional[str]:
 若 `SOUL.md` 不存在，系统将回退到：
 
 ```
-You are Hermes Agent, an intelligent AI assistant created by Nous Research.
+You are her Agent, an intelligent AI assistant created by Nous Research.
 You are helpful, knowledgeable, and direct. You assist users with a wide
 range of tasks including answering questions, writing and editing code,
 analyzing information, creative work, and executing actions via your tools.
@@ -157,7 +157,7 @@ def build_context_files_prompt(cwd=None, skip_soul=False):
 
     # Priority: first match wins — only ONE project context loaded
     project_context = (
-        _load_her_md(cwd_path)       # 1. .her.md / HERMES.md (walks to git root)
+        _load_her_md(cwd_path)       # 1. .her.md / HER.md (walks to git root)
         or _load_agents_md(cwd_path)    # 2. AGENTS.md (cwd only)
         or _load_claude_md(cwd_path)    # 3. CLAUDE.md (cwd only)
         or _load_cursorrules(cwd_path)  # 4. .cursorrules / .cursor/rules/*.mdc
@@ -188,7 +188,7 @@ def build_context_files_prompt(cwd=None, skip_soul=False):
 
 | 优先级 | 文件 | 搜索范围 | 说明 |
 |--------|------|----------|------|
-| 1 | `.her.md`、`HERMES.md` | 从 CWD 向上至 git 根目录 | Hermes 原生项目配置 |
+| 1 | `.her.md`、`HER.md` | 从 CWD 向上至 git 根目录 | her 原生项目配置 |
 | 2 | `AGENTS.md` | 仅 CWD | 常见 agent 指令文件 |
 | 3 | `CLAUDE.md` | 仅 CWD | Claude Code 兼容性 |
 | 4 | `.cursorrules`、`.cursor/rules/*.mdc` | 仅 CWD | Cursor 兼容性 |
@@ -217,7 +217,7 @@ def build_context_files_prompt(cwd=None, skip_soul=False):
 
 `agent/prompt_builder.py` 使用**优先级系统**扫描并清理项目上下文文件——只加载一种类型（先匹配先赢）：
 
-1. `.her.md` / `HERMES.md`（向上遍历至 git 根目录）
+1. `.her.md` / `HER.md`（向上遍历至 git 根目录）
 2. `AGENTS.md`（启动时的 CWD；子目录在会话期间通过 `agent/subdirectory_hints.py` 逐步发现）
 3. `CLAUDE.md`（仅 CWD）
 4. `.cursorrules` / `.cursor/rules/*.mdc`（仅 CWD）
@@ -232,16 +232,16 @@ def build_context_files_prompt(cwd=None, skip_soul=False):
 
 ## 支持的 prompt 自定义入口
 
-大多数用户应将 `agent/prompt_builder.py` 视为实现代码，而非配置入口。推荐的自定义路径是修改 Hermes 已加载的 prompt 输入，而非直接编辑 Python 模板。
+大多数用户应将 `agent/prompt_builder.py` 视为实现代码，而非配置入口。推荐的自定义路径是修改 her 已加载的 prompt 输入，而非直接编辑 Python 模板。
 
 ### 优先使用这些入口
 
 - `~/.her/SOUL.md` — 用自定义 agent 角色和固定行为替换内置默认身份块。
 - `~/.her/MEMORY.md` 和 `~/.her/USER.md` — 提供应在新会话中快照的持久跨会话事实和用户配置文件数据。
-- 项目上下文文件，如 `.her.md`、`HERMES.md`、`AGENTS.md`、`CLAUDE.md` 或 `.cursorrules` — 注入仓库特定的工作规则。
+- 项目上下文文件，如 `.her.md`、`HER.md`、`AGENTS.md`、`CLAUDE.md` 或 `.cursorrules` — 注入仓库特定的工作规则。
 - Skills — 打包可复用的工作流和参考资料，无需编辑核心 prompt 代码。
-- 可选系统 prompt 配置 / API 覆盖 — 添加部署特定的指令文本，无需 fork Hermes。
-- 临时覆盖层，如 `HERMES_EPHEMERAL_SYSTEM_PROMPT` 或 prefill 消息 — 添加不应成为已缓存 prompt 前缀一部分的轮次级指导。
+- 可选系统 prompt 配置 / API 覆盖 — 添加部署特定的指令文本，无需 fork her。
+- 临时覆盖层，如 `HER_EPHEMERAL_SYSTEM_PROMPT` 或 prefill 消息 — 添加不应成为已缓存 prompt 前缀一部分的轮次级指导。
 
 ### 何时应编辑代码
 
@@ -252,7 +252,7 @@ def build_context_files_prompt(cwd=None, skip_soul=False):
 - 若想要不同的助手身份，编辑 `SOUL.md`
 - 若想要不同的仓库规则，编辑项目上下文文件
 - 若想要可复用的操作流程，添加或修改 skills
-- 若想改变 Hermes 为所有人组装 prompt 的方式，修改 Python 代码并将其视为代码贡献
+- 若想改变 her 为所有人组装 prompt 的方式，修改 Python 代码并将其视为代码贡献
 
 ## Prompt 组装为何如此拆分
 

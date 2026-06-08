@@ -141,8 +141,8 @@ export interface Translations {
     starting: string;
     startedInBackground: string;
     stopped: string;
-    updateHermes: string;
-    updatingHermes: string;
+    updateher: string;
+    updatingher: string;
     waitingForOutput: string;
   };
 

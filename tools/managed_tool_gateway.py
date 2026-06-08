@@ -28,7 +28,7 @@ class ManagedToolGatewayConfig:
 
 
 def auth_json_path():
-    """Return the Hermes auth store path, respecting HER_HOME overrides."""
+    """Return the her auth store path, respecting HER_HOME overrides."""
     return get_her_home() / "auth.json"
 
 

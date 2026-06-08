@@ -4,7 +4,7 @@ Covers three layers:
 
 1. DB: goal_mode / goal_max_turns persist through create_task + from_row,
    and a legacy DB (without the columns) migrates cleanly.
-2. Spawn: _default_spawn sets the HERMES_KANBAN_GOAL_MODE env vars only
+2. Spawn: _default_spawn sets the HER_KANBAN_GOAL_MODE env vars only
    when the card opts in.
 3. Loop: goals.run_kanban_goal_loop continuation / completion / budget
    behaviour, driven entirely through injected callbacks (no live model).
@@ -147,8 +147,8 @@ def test_spawn_sets_goal_env_only_when_enabled(kanban_home, monkeypatch):
 
     kb._default_spawn(task, str(kanban_home))
     env = captured["env"]
-    assert env.get("HERMES_KANBAN_GOAL_MODE") == "1"
-    assert env.get("HERMES_KANBAN_GOAL_MAX_TURNS") == "5"
+    assert env.get("HER_KANBAN_GOAL_MODE") == "1"
+    assert env.get("HER_KANBAN_GOAL_MAX_TURNS") == "5"
 
 
 def test_spawn_no_goal_env_for_plain_task(kanban_home, monkeypatch):
@@ -170,8 +170,8 @@ def test_spawn_no_goal_env_for_plain_task(kanban_home, monkeypatch):
 
     kb._default_spawn(task, str(kanban_home))
     env = captured["env"]
-    assert "HERMES_KANBAN_GOAL_MODE" not in env
-    assert "HERMES_KANBAN_GOAL_MAX_TURNS" not in env
+    assert "HER_KANBAN_GOAL_MODE" not in env
+    assert "HER_KANBAN_GOAL_MAX_TURNS" not in env
 
 
 # ---------------------------------------------------------------------------

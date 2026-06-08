@@ -12,7 +12,7 @@ import {
   getStatus,
   getUsageAnalytics,
   restartGateway,
-  updateHermes
+  updateher
 } from '@/her'
 import type { ActionStatusResponse, AnalyticsResponse, StatusResponse } from '@/her'
 import { useI18n } from '@/i18n'
@@ -228,7 +228,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
       setSystemError('')
 
       try {
-        const started = kind === 'restart' ? await restartGateway() : await updateHermes()
+        const started = kind === 'restart' ? await restartGateway() : await updateher()
         let nextStatus: ActionStatusResponse | null = null
 
         for (let attempt = 0; attempt < 18; attempt += 1) {
@@ -398,7 +398,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
                           {cc.restartMessaging}
                         </Button>
                         <Button onClick={() => void runSystemAction('update')} size="xs" variant="textStrong">
-                          {cc.updateHermes}
+                          {cc.updateher}
                         </Button>
                       </div>
                     </div>

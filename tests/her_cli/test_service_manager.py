@@ -540,7 +540,7 @@ def test_s6_register_creates_service_dir_and_triggers_scan(
     # it, the supervised `gateway run` would re-enter the s6 redirect
     # in `_gateway_command_inner` and recurse. See the matching guard
     # in her_cli/gateway.py::_gateway_command_inner.
-    assert "export HERMES_S6_SUPERVISED_CHILD=1" in run_text
+    assert "export HER_S6_SUPERVISED_CHILD=1" in run_text
 
     log_run = svc_dir / "log" / "run"
     assert log_run.is_file()

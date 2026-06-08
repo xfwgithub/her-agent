@@ -3,7 +3,7 @@
 /**
  * bootstrap-runner.cjs
  *
- * Drives apps/desktop's first-launch install of Hermes Agent by spawning
+ * Drives apps/desktop's first-launch install of her Agent by spawning
  * scripts/install.ps1 stage-by-stage and streaming progress events back to
  * the renderer.
  *
@@ -11,7 +11,7 @@
  *   const { runBootstrap } = require('./bootstrap-runner.cjs')
  *   const result = await runBootstrap({
  *     installStamp,        // INSTALL_STAMP from main.cjs (may be null in dev)
- *     activeRoot,          // ACTIVE_HERMES_ROOT
+ *     activeRoot,          // ACTIVE_HER_ROOT
  *     sourceRepoRoot,      // SOURCE_REPO_ROOT (for dev install.ps1 lookup)
  *     herHome,          // HER_HOME
  *     logRoot,             // HER_HOME/logs

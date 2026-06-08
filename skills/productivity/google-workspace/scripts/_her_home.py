@@ -1,6 +1,6 @@
 """Resolve HER_HOME for standalone skill scripts.
 
-Skill scripts may run outside the Hermes process (e.g. system Python,
+Skill scripts may run outside the her process (e.g. system Python,
 nix env, CI) where ``her_constants`` is not importable.  This module
 provides the same ``get_her_home()`` and ``display_her_home()``
 contracts as ``her_constants`` without requiring it on ``sys.path``.
@@ -25,7 +25,7 @@ try:
 except (ModuleNotFoundError, ImportError):
 
     def get_her_home() -> Path:
-        """Return the Hermes home directory (default: ~/.her).
+        """Return the her home directory (default: ~/.her).
 
         Mirrors ``her_constants.get_her_home()``."""
         val = os.environ.get("HER_HOME", "").strip()

@@ -196,7 +196,7 @@ if [ "$needs_chown" = true ]; then
     # their existing ownership.
     chown her:her "$HER_HOME" 2>/dev/null || \
         echo "[stage2] Warning: chown $HER_HOME failed (rootless container?) — continuing"
-    # Hermes-owned subdirs: recursive chown is safe here because these are
+    # her-owned subdirs: recursive chown is safe here because these are
     # created and managed exclusively by her (see the s6-setuidgid mkdir
     # -p block below for the canonical list).
     for sub in cron sessions logs hooks memories skills skins plans workspace home profiles pairing platforms/pairing; do
@@ -208,7 +208,7 @@ if [ "$needs_chown" = true ]; then
 fi
 
 # --- Fix ownership of build trees under $INSTALL_DIR ---
-# Hermes-owned trees under $INSTALL_DIR must be re-chowned whenever the
+# her-owned trees under $INSTALL_DIR must be re-chowned whenever the
 # runtime her UID no longer owns them — otherwise:
 #   - .venv: lazy_deps.py cannot install platform packages (discord.py,
 #     telegram, slack, etc.) with EACCES (#15012, #21100)
@@ -351,7 +351,7 @@ fi
 # $HER_HOME on the mounted volume. Run the same safe, non-interactive
 # config-schema migrations that `her update` runs for non-Docker installs,
 # after first-boot seeding and before supervised gateway services start.
-# Set HERMES_SKIP_CONFIG_MIGRATION=1 for controlled/manual migrations.
+# Set HER_SKIP_CONFIG_MIGRATION=1 for controlled/manual migrations.
 if [ -f "$HER_HOME/config.yaml" ]; then
     s6-setuidgid her "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/scripts/docker_config_migrate.py" \
         || echo "[stage2] Warning: docker_config_migrate.py failed; continuing"
@@ -360,8 +360,8 @@ fi
 # auth.json: bootstrap from env on first boot only. Same semantics as the
 # pre-s6 entrypoint — the [ ! -f ] guard is critical to avoid clobbering
 # rotated refresh tokens on container restart.
-if [ ! -f "$HER_HOME/auth.json" ] && [ -n "${HERMES_AUTH_JSON_BOOTSTRAP:-}" ]; then
-    printf '%s' "$HERMES_AUTH_JSON_BOOTSTRAP" > "$HER_HOME/auth.json"
+if [ ! -f "$HER_HOME/auth.json" ] && [ -n "${HER_AUTH_JSON_BOOTSTRAP:-}" ]; then
+    printf '%s' "$HER_AUTH_JSON_BOOTSTRAP" > "$HER_HOME/auth.json"
     chown her:her "$HER_HOME/auth.json" 2>/dev/null || true
     chmod 600 "$HER_HOME/auth.json"
 fi
@@ -376,14 +376,14 @@ fi
 # freshly-provisioned container comes up with the gateway down until
 # someone starts it (e.g. from the dashboard). An orchestrator that
 # provisions a fresh volume and wants the gateway running from first boot
-# can set HERMES_GATEWAY_BOOTSTRAP_STATE=running; we seed the state file
+# can set HER_GATEWAY_BOOTSTRAP_STATE=running; we seed the state file
 # here, BEFORE 02-reconcile-profiles runs (cont-init.d scripts run in
 # lexicographic order), so the reconciler sees prior_state=running and
 # brings the supervised slot up on the very first boot.
 #
 # This is a generic container contract, not specific to any host: it seeds
 # the SAME gateway_state.json the reconciler already consults, exactly as
-# HERMES_AUTH_JSON_BOOTSTRAP seeds auth.json. The [ ! -f ] guard is the
+# HER_AUTH_JSON_BOOTSTRAP seeds auth.json. The [ ! -f ] guard is the
 # load-bearing part — on every subsequent boot the persisted state wins,
 # so a gateway the operator deliberately stopped stays stopped across
 # restarts and we never clobber real runtime state.
@@ -392,7 +392,7 @@ fi
 # _AUTOSTART_STATES); any other value is ignored so a typo can't write a
 # bogus state the reconciler would treat as "no prior state" anyway.
 if [ ! -f "$HER_HOME/gateway_state.json" ] && \
-        [ "${HERMES_GATEWAY_BOOTSTRAP_STATE:-}" = "running" ]; then
+        [ "${HER_GATEWAY_BOOTSTRAP_STATE:-}" = "running" ]; then
     printf '{"gateway_state":"running"}\n' > "$HER_HOME/gateway_state.json"
     chown her:her "$HER_HOME/gateway_state.json" 2>/dev/null || true
     chmod 644 "$HER_HOME/gateway_state.json"
@@ -413,7 +413,7 @@ fi
 # The image's Dockerfile runs `npx playwright install chromium`, which
 # populates ``$PLAYWRIGHT_BROWSERS_PATH`` (=/opt/her/.playwright) with
 # a ``chromium_headless_shell-<build>/chrome-headless-shell-linux64/``
-# directory. agent-browser (the runtime CLI Hermes spawns for the
+# directory. agent-browser (the runtime CLI her spawns for the
 # browser tool) doesn't recognise this layout in its own cache scan and
 # fails with "Auto-launch failed: Chrome not found" — even though the
 # binary is right there (#15697).

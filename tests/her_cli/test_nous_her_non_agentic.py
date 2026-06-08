@@ -1,4 +1,4 @@
-"""Tests for the Nous-Hermes-3/4 non-agentic warning detector.
+"""Tests for the Nous-her-3/4 non-agentic warning detector.
 
 Prior to this check, the warning fired on any model whose name contained
 ``"her"`` anywhere (case-insensitive). That false-positived on unrelated
@@ -6,7 +6,7 @@ local Modelfiles such as ``her-brain:qwen3-14b-ctx16k`` — a tool-capable
 Qwen3 wrapper that happens to live under the "her" tag namespace.
 
 ``is_nous_her_non_agentic`` should only match the actual Nous Research
-Hermes-3 / Hermes-4 chat family.
+her-3 / her-4 chat family.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from __future__ import annotations
 import pytest
 
 from her_cli.model_switch import (
-    _HERMES_MODEL_WARNING,
+    _HER_MODEL_WARNING,
     _check_her_model_warning,
     is_nous_her_non_agentic,
 )
@@ -23,24 +23,24 @@ from her_cli.model_switch import (
 @pytest.mark.parametrize(
     "model_name",
     [
-        "NousResearch/Hermes-3-Llama-3.1-70B",
-        "NousResearch/Hermes-3-Llama-3.1-405B",
+        "NousResearch/her-3-Llama-3.1-70B",
+        "NousResearch/her-3-Llama-3.1-405B",
         "her-3",
-        "Hermes-3",
+        "her-3",
         "her-4",
         "her-4-405b",
         "her_4_70b",
         "openrouter/her3:70b",
         "openrouter/nousresearch/her-4-405b",
-        "NousResearch/Hermes3",
+        "NousResearch/her3",
         "her-3.1",
     ],
 )
 def test_matches_real_nous_her_chat_models(model_name: str) -> None:
     assert is_nous_her_non_agentic(model_name), (
-        f"expected {model_name!r} to be flagged as Nous Hermes 3/4"
+        f"expected {model_name!r} to be flagged as Nous her 3/4"
     )
-    assert _check_her_model_warning(model_name) == _HERMES_MODEL_WARNING
+    assert _check_her_model_warning(model_name) == _HER_MODEL_WARNING
 
 
 @pytest.mark.parametrize(
@@ -60,7 +60,7 @@ def test_matches_real_nous_her_chat_models(model_name: str) -> None:
         "openai/gpt-4o",
         "google/gemini-2.5-flash",
         "deepseek-chat",
-        # Non-chat Hermes models we don't warn about
+        # Non-chat her models we don't warn about
         "her-llm-2",
         "her2-pro",
         "nous-her-2-mistral",
@@ -73,7 +73,7 @@ def test_matches_real_nous_her_chat_models(model_name: str) -> None:
 )
 def test_does_not_match_unrelated_models(model_name: str) -> None:
     assert not is_nous_her_non_agentic(model_name), (
-        f"expected {model_name!r} NOT to be flagged as Nous Hermes 3/4"
+        f"expected {model_name!r} NOT to be flagged as Nous her 3/4"
     )
     assert _check_her_model_warning(model_name) == ""
 

@@ -75,9 +75,9 @@ class TestGenerateDeepLink:
         link = generate_deep_link(
             manager_bot="Bot",
             suggested_username="test_bot",
-            suggested_name="Hermes & Friends",
+            suggested_name="her & Friends",
         )
-        assert "Hermes+%26+Friends" in link
+        assert "her+%26+Friends" in link
 
 
 class TestPairingNonce:
@@ -119,27 +119,27 @@ class TestCreatePairing:
             "pairing_id": "abcdefghijklmnop",
             "poll_token": "secret-token",
             "suggested_username": "her_abcdefghijklmnop_bot",
-            "deep_link": "https://t.me/newbot/HermesSetupBot/her_abcdefghijklmnop_bot?name=Hermes+Agent",
-            "qr_payload": "https://t.me/newbot/HermesSetupBot/her_abcdefghijklmnop_bot?name=Hermes+Agent",
+            "deep_link": "https://t.me/newbot/HerSetupBot/her_abcdefghijklmnop_bot?name=her+Agent",
+            "qr_payload": "https://t.me/newbot/HerSetupBot/her_abcdefghijklmnop_bot?name=her+Agent",
             "expires_at": "2026-05-18T00:00:00.000Z",
         }
 
         with patch(
             "her_cli.telegram_managed_bot.httpx.post", return_value=mock_resp
         ) as post:
-            pairing = create_pairing("https://api.example.com", bot_name="Hermes Agent")
+            pairing = create_pairing("https://api.example.com", bot_name="her Agent")
 
         assert pairing == TelegramPairing(
             pairing_id="abcdefghijklmnop",
             poll_token="secret-token",
             suggested_username="her_abcdefghijklmnop_bot",
-            deep_link="https://t.me/newbot/HermesSetupBot/her_abcdefghijklmnop_bot?name=Hermes+Agent",
-            qr_payload="https://t.me/newbot/HermesSetupBot/her_abcdefghijklmnop_bot?name=Hermes+Agent",
+            deep_link="https://t.me/newbot/HerSetupBot/her_abcdefghijklmnop_bot?name=her+Agent",
+            qr_payload="https://t.me/newbot/HerSetupBot/her_abcdefghijklmnop_bot?name=her+Agent",
             expires_at="2026-05-18T00:00:00.000Z",
         )
         post.assert_called_once_with(
             "https://api.example.com/v1/telegram/pairings",
-            json={"bot_name": "Hermes Agent"},
+            json={"bot_name": "her Agent"},
             timeout=10.0,
         )
 
@@ -177,8 +177,8 @@ class TestPollForToken:
             pairing_id="abcdefghijklmnop",
             poll_token="secret-token",
             suggested_username="her_abcdefghijklmnop_bot",
-            deep_link="https://t.me/newbot/HermesSetupBot/her_abcdefghijklmnop_bot",
-            qr_payload="https://t.me/newbot/HermesSetupBot/her_abcdefghijklmnop_bot",
+            deep_link="https://t.me/newbot/HerSetupBot/her_abcdefghijklmnop_bot",
+            qr_payload="https://t.me/newbot/HerSetupBot/her_abcdefghijklmnop_bot",
         )
 
     def test_immediate_success(self):

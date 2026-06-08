@@ -2,7 +2,7 @@
  * backend-probes.cjs
  *
  * Cheap "does this candidate backend actually work" checks used by
- * resolveHermesBackend (main.cjs). The resolver walks a ladder of
+ * resolveherBackend (main.cjs). The resolver walks a ladder of
  * candidates -- bootstrap marker, `her` on PATH, system Python with
  * her_cli installed -- and historically returned the first candidate
  * whose binary existed on disk. That assumption breaks when a user has
@@ -23,7 +23,7 @@
  *   - 5s timeout (a hung interpreter beats forever, but we still give
  *     slow disks / cold caches room to breathe)
  *   - stdio ignored (we only care about exit code; stdout/stderr are
- *     not surfaced to the user, just to recentHermesLog for forensics
+ *     not surfaced to the user, just to recentherLog for forensics
  *     via the caller's catch block if it chooses)
  *   - any throw -> false (never propagate -- resolver wants a boolean)
  *
@@ -40,7 +40,7 @@ const PROBE_TIMEOUT_MS = 5000
  * Return true iff `python -c "import her_cli"` exits 0.
  *
  * Used to gate the "fallback to system Python with her_cli installed"
- * rung of resolveHermesBackend. Without this, a system Python 3.11-3.13
+ * rung of resolveherBackend. Without this, a system Python 3.11-3.13
  * registered in PEP 514 makes findSystemPython() succeed regardless of
  * whether her_cli has actually been pip-installed into its
  * site-packages -- and the resolver returns a backend that immediately
@@ -49,7 +49,7 @@ const PROBE_TIMEOUT_MS = 5000
  * @param {string} pythonPath - Absolute path to a python.exe / python.
  * @returns {boolean}
  */
-function canImportHermesCli(pythonPath) {
+function canImportherCli(pythonPath) {
   if (!pythonPath) return false
   try {
     execFileSync(pythonPath, ['-c', 'import her_cli'], {
@@ -81,10 +81,10 @@ function canImportHermesCli(pythonPath) {
  * @param {boolean} [opts.shell] - Whether to run through a shell. For
  *   .cmd/.bat shims on Windows execFileSync needs shell:true to find
  *   the cmd interpreter; mirrors the same flag isCommandScript() drives
- *   in resolveHermesBackend.
+ *   in resolveherBackend.
  * @returns {boolean}
  */
-function verifyHermesCli(herCommand, opts = {}) {
+function verifyherCli(herCommand, opts = {}) {
   if (!herCommand) return false
   try {
     execFileSync(herCommand, ['--version'], {
@@ -100,7 +100,7 @@ function verifyHermesCli(herCommand, opts = {}) {
 }
 
 module.exports = {
-  canImportHermesCli,
-  verifyHermesCli,
+  canImportherCli,
+  verifyherCli,
   PROBE_TIMEOUT_MS
 }

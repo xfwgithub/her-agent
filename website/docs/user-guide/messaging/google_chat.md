@@ -1,14 +1,14 @@
 ---
 sidebar_position: 12
 title: "Google Chat"
-description: "Set up Hermes Agent as a Google Chat bot using Cloud Pub/Sub"
+description: "Set up her Agent as a Google Chat bot using Cloud Pub/Sub"
 ---
 
 # Google Chat Setup
 
-Connect Hermes Agent to Google Chat as a bot. The integration uses Cloud Pub/Sub
+Connect her Agent to Google Chat as a bot. The integration uses Cloud Pub/Sub
 pull subscriptions for inbound events and the Chat REST API for outbound messages.
-Equivalent ergonomics to Slack Socket Mode or Telegram long-polling: your Hermes
+Equivalent ergonomics to Slack Socket Mode or Telegram long-polling: your her
 process does not need a public URL, a tunnel, or a TLS certificate. It connects,
 authenticates, and listens on a subscription — the same way a Telegram bot listens
 on a token.
@@ -65,7 +65,7 @@ Both are free for the volumes a personal bot generates.
   subscription is all you need — do **NOT** grant project-level Pub/Sub roles.
 
 After creation, open the SA, go to **Keys → Add Key → Create new key → JSON** and
-download the file. Save it somewhere only Hermes can read (e.g.,
+download the file. Save it somewhere only her can read (e.g.,
 `~/.her/google-chat-sa.json`, `chmod 600`).
 
 :::caution There is NO "Chat Bot Caller" role
@@ -112,7 +112,7 @@ On the **subscription**, add your own Service Account as a principal:
 - Principal: `her-chat-bot@<your-project>.iam.gserviceaccount.com`
 - Role: `Pub/Sub Subscriber`
 
-Also grant `Pub/Sub Viewer` on the same subscription — Hermes calls
+Also grant `Pub/Sub Viewer` on the same subscription — her calls
 `subscription.get()` at startup as a reachability check.
 
 ---
@@ -121,7 +121,7 @@ Also grant `Pub/Sub Viewer` on the same subscription — Hermes calls
 
 Go to **APIs & Services → Google Chat API → Configuration**.
 
-- **App name**: whatever you want users to see ("Hermes" is reasonable).
+- **App name**: whatever you want users to see ("her" is reasonable).
 - **Avatar URL**: any public PNG (Google has some defaults).
 - **Description**: a short sentence shown in the app directory.
 - **Functionality**: enable **Receive 1:1 messages** and **Join spaces and group
@@ -139,12 +139,12 @@ Save.
 
 Open Google Chat in a browser. Start a DM with your app by searching for its name
 in the **+ New Chat** menu. The first time you message it, Google sends an
-`ADDED_TO_SPACE` event that Hermes uses to cache the bot's own `users/{id}` for
+`ADDED_TO_SPACE` event that her uses to cache the bot's own `users/{id}` for
 self-message filtering.
 
 ---
 
-## Step 9: Configure Hermes
+## Step 9: Configure her
 
 Add the Google Chat section to `~/.her/.env`:
 
@@ -166,7 +166,7 @@ GOOGLE_CHAT_MAX_BYTES=16777216                  # 16 MiB — cap on in-flight me
 The project ID also falls back to `GOOGLE_CLOUD_PROJECT`, and the SA path falls
 back to `GOOGLE_APPLICATION_CREDENTIALS` — use whichever convention you prefer.
 
-Install the dependencies the Google Chat adapter needs (no Hermes extra is currently published — install them directly):
+Install the dependencies the Google Chat adapter needs (no her extra is currently published — install them directly):
 
 ```bash
 pip install google-cloud-pubsub google-api-python-client google-auth google-auth-oauthlib
@@ -185,7 +185,7 @@ You should see a log line like:
              bot_user_id=users/XXXX, flow_control(msgs=1, bytes=16777216)
 ```
 
-Send "hola" in the test DM. The bot posts a "Hermes is thinking…" marker, then
+Send "hola" in the test DM. The bot posts a "her is thinking…" marker, then
 edits that same message in place with the real response — no "message deleted"
 tombstones.
 
@@ -207,9 +207,9 @@ limits and avoids formatting that won't render.
 Message size limit: 4000 characters per message. Longer agent responses are
 automatically split across multiple messages.
 
-Thread support: when a user replies inside a thread, Hermes detects the
+Thread support: when a user replies inside a thread, her detects the
 `thread.name` and posts its reply in the same thread, so each thread gets a
-separate Hermes session.
+separate her session.
 
 ---
 
@@ -235,8 +235,8 @@ specifically, as the user who asked for the file.
 
 1. Go to **APIs & Services → Credentials** in the same GCP project.
 2. **Create credentials → OAuth client ID → Desktop app**.
-3. Download the JSON. Move it onto the host that runs Hermes.
-4. Register the client with Hermes (run under the profile you want it scoped to):
+3. Download the JSON. Move it onto the host that runs her.
+4. Register the client with her (run under the profile you want it scoped to):
 
 ```bash
 # Default profile:
@@ -248,7 +248,7 @@ her -p <profile> python -m plugins.platforms.google_chat.oauth \
     --client-secret /path/to/client_secret.json
 ```
 
-That writes the client secret into the active profile's Hermes home (e.g.
+That writes the client secret into the active profile's her home (e.g.
 `~/.her/google_chat_user_client_secret.json` for the default profile). The
 client secret is **profile-scoped, not shared across profiles** — each profile
 registers its own. This is deliberate: profiles are isolated auth boundaries, so
@@ -300,7 +300,7 @@ evicts only that user's cache. Users don't disrupt each other.
 **Bot stays silent after sending "hola."**
 
 1. Check the Pub/Sub subscription has undelivered messages in the console.
-   If it does, Hermes isn't authenticated — verify `GOOGLE_CHAT_SERVICE_ACCOUNT_JSON`
+   If it does, her isn't authenticated — verify `GOOGLE_CHAT_SERVICE_ACCOUNT_JSON`
    and that the SA is listed as `Pub/Sub Subscriber` on the subscription.
 2. If the subscription has zero messages, Google Chat isn't publishing.
    Double-check the IAM binding on the **topic**:
@@ -365,7 +365,7 @@ The auth code is single-use and short-lived (typically a few minutes). Send
   IAM should be the actual enforcement — grant your SA the minimum
   (`roles/pubsub.subscriber` + `roles/pubsub.viewer` on the subscription), not
   project-level or org-level Pub/Sub roles.
-- **Attachment download protection**: Hermes will only attach the SA bearer
+- **Attachment download protection**: her will only attach the SA bearer
   token to URLs whose host matches a short allowlist of Google-owned domains
   (`googleapis.com`, `drive.google.com`, `lh[3-6].googleusercontent.com`, and
   a few others). Any other host is rejected before the HTTP request, to

@@ -1,14 +1,14 @@
 ---
 sidebar_position: 12
 title: "Kanban（多 Agent 看板）"
-description: "基于 SQLite 的持久化任务看板，用于协调多个 Hermes 配置文件"
+description: "基于 SQLite 的持久化任务看板，用于协调多个 her 配置文件"
 ---
 
 # Kanban — 多 Agent 配置文件协作
 
 > **想要详细教程？** 请阅读 [Kanban 教程](./kanban-tutorial) —— 包含四个用户故事（独立开发者、批量任务、带重试的角色流水线、熔断器），并附有各场景的仪表盘截图。本页是参考文档，教程是叙述性说明。
 
-Hermes Kanban 是一个持久化任务看板，在所有 Hermes 配置文件之间共享，允许多个具名 agent 协作完成工作，而无需脆弱的进程内子 agent 集群。每个任务都是 `~/.her/kanban.db` 中的一行记录；每次交接都是任何人都可以读写的一行记录；每个 worker 都是拥有独立身份的完整 OS 进程。
+her Kanban 是一个持久化任务看板，在所有 her 配置文件之间共享，允许多个具名 agent 协作完成工作，而无需脆弱的进程内子 agent 集群。每个任务都是 `~/.her/kanban.db` 中的一行记录；每次交接都是任何人都可以读写的一行记录；每个 worker 都是拥有独立身份的完整 OS 进程。
 
 ### 两个操作界面：模型通过工具交互，你通过 CLI 交互
 
@@ -163,7 +163,7 @@ kanban:
   dispatch_interval_seconds: 60    # 默认
 ```
 
-通过 `HERMES_KANBAN_DISPATCH_IN_GATEWAY=0` 在运行时覆盖配置标志以进行调试。标准 gateway 监督适用：直接运行 `her gateway start`，或将 gateway 配置为 systemd 用户单元（参见 gateway 文档）。没有运行中的 gateway，`ready` 任务会保持原状，直到 gateway 启动 —— `her kanban create` 在创建时会对此发出警告。
+通过 `HER_KANBAN_DISPATCH_IN_GATEWAY=0` 在运行时覆盖配置标志以进行调试。标准 gateway 监督适用：直接运行 `her gateway start`，或将 gateway 配置为 systemd 用户单元（参见 gateway 文档）。没有运行中的 gateway，`ready` 任务会保持原状，直到 gateway 启动 —— `her kanban create` 在创建时会对此发出警告。
 
 将 `her kanban daemon` 作为单独进程运行已**弃用**；请使用 gateway。如果你确实无法运行 gateway（无头主机策略禁止长期运行的服务等），`--force` 逃生舱口在一个发布周期内保持旧的独立守护进程可用，但同时运行 gateway 内嵌调度器和针对同一 `kanban.db` 的独立守护进程会导致认领竞争，不受支持。
 
@@ -285,7 +285,7 @@ kanban_complete(summary="decomposed into 2 research tasks + 1 writer; linked dep
 任何应该能够处理 kanban 任务的配置文件都必须加载 `kanban-worker` skill。它通过**工具调用**（而非 CLI 命令）教导 worker 完整的生命周期：
 
 1. 启动时，调用 `kanban_show()` 读取标题 + 正文 + 父级交接 + 先前尝试 + 完整评论线程。
-2. 通过终端工具执行 `cd $HERMES_KANBAN_WORKSPACE`，在那里完成工作。
+2. 通过终端工具执行 `cd $HER_KANBAN_WORKSPACE`，在那里完成工作。
 3. 在长时间操作期间每隔几分钟调用一次 `kanban_heartbeat(note="...")`。**如果你的工作可能运行超过 1 小时，请至少每小时调用一次 `kanban_heartbeat`** —— 调度器会回收运行时间超过 `kanban.dispatch_stale_timeout_seconds`（默认 4 小时）且最近一小时内没有心跳的任务，认为 worker 在没有清理的情况下崩溃了。回收是无害的（任务返回 `ready` 重新调度，不增加失败计数器），但你会失去当前运行的进度。
 4. 以 `kanban_complete(summary="...", metadata={...})` 完成，或在卡住时以 `kanban_block(reason="...")` 完成。
 
@@ -381,7 +381,7 @@ her -p orchestrator skills reset kanban-orchestrator --restore
 
 ## 仪表盘（GUI）
 
-`/kanban` CLI 和斜杠命令足以无头运行看板，但可视化看板通常是人工介入的正确界面：分诊、跨配置文件监督、阅读评论线程以及在列之间拖动卡片。Hermes 将此作为**内置仪表盘插件**在 `plugins/kanban/` 中提供 —— 不是核心功能，不是单独的服务 —— 遵循[扩展仪表盘](./extending-the-dashboard)中描述的模型。
+`/kanban` CLI 和斜杠命令足以无头运行看板，但可视化看板通常是人工介入的正确界面：分诊、跨配置文件监督、阅读评论线程以及在列之间拖动卡片。her 将此作为**内置仪表盘插件**在 `plugins/kanban/` 中提供 —— 不是核心功能，不是单独的服务 —— 遵循[扩展仪表盘](./extending-the-dashboard)中描述的模型。
 
 使用以下命令打开：
 
@@ -523,7 +523,7 @@ WebSocket 额外增加了一步：它要求仪表盘的临时会话 token 作为
 
 ### 扩展
 
-插件使用标准的 Hermes 仪表盘插件契约 —— 完整的 manifest 参考、shell 槽、页面范围槽和 Plugin SDK，请参阅[扩展仪表盘](./extending-the-dashboard)。额外的列、自定义卡片样式、租户过滤布局或完整的 `tab.override` 替换都可以表达，无需 fork 此插件。
+插件使用标准的 her 仪表盘插件契约 —— 完整的 manifest 参考、shell 槽、页面范围槽和 Plugin SDK，请参阅[扩展仪表盘](./extending-the-dashboard)。额外的列、自定义卡片样式、租户过滤布局或完整的 `tab.override` 替换都可以表达，无需 fork 此插件。
 
 要禁用而不删除：在 `config.yaml` 中添加 `dashboard.plugins.kanban.enabled: false`（或删除 `plugins/kanban/dashboard/manifest.json`）。
 
@@ -669,7 +669,7 @@ her kanban create "monthly report" \
     --workspace dir:~/tenants/business-a/data/
 ```
 
-Worker 接收 `$HERMES_TENANT` 并按前缀命名空间化其内存写入。看板、调度器和配置文件定义都是共享的；只有数据是有范围的。
+Worker 接收 `$HER_TENANT` 并按前缀命名空间化其内存写入。看板、调度器和配置文件定义都是共享的；只有数据是有范围的。
 
 ## Gateway 通知
 

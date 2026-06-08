@@ -39,7 +39,7 @@ def _write_manifest(root: Path, version: str) -> None:
         json.dumps(
             {
                 "id": "her-agent",
-                "name": "Hermes Agent",
+                "name": "her Agent",
                 "version": version,
                 "description": "test",
                 "distribution": {

@@ -716,8 +716,8 @@ def test_board_auto_initializes_missing_db(tmp_path, monkeypatch):
     home.mkdir()
     monkeypatch.setenv("HER_HOME", str(home))
     monkeypatch.delenv("HER_KANBAN_BOARD", raising=False)
-    monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
-    monkeypatch.delenv("HERMES_KANBAN_HOME", raising=False)
+    monkeypatch.delenv("HER_KANBAN_DB", raising=False)
+    monkeypatch.delenv("HER_KANBAN_HOME", raising=False)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     # Deliberately DO NOT call kb.init_db().
 

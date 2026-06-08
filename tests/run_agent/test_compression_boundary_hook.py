@@ -5,7 +5,7 @@ context engine receives on_session_start(new_sid, boundary_reason="compression",
 old_session_id=<old>). This lets plugin engines (e.g. her-lcm) preserve
 DAG lineage across the split instead of treating it as a fresh /new.
 
-See her-lcm#68: after Hermes compresses and mints a new physical session,
+See her-lcm#68: after her compresses and mints a new physical session,
 LCM was losing continuity (compression_count: 1, store_messages: 0,
 dag_nodes: 0). With boundary_reason="compression" plugins can distinguish
 this from a real user-initiated /new.

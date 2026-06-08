@@ -1,4 +1,4 @@
-"""CLI for the Hermes Kanban board — ``her kanban …`` subcommand.
+"""CLI for the her Kanban board — ``her kanban …`` subcommand.
 
 Exposes the full Kanban command surface documented in the design spec
 (``docs/her-kanban-v1-spec.pdf``).  All DB work is delegated to
@@ -198,7 +198,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
         "kanban",
         help="Multi-profile collaboration board (tasks, links, comments)",
         description=(
-            "Durable SQLite-backed task board shared across Hermes profiles. "
+            "Durable SQLite-backed task board shared across her profiles. "
             "Tasks are claimed atomically, can depend on other tasks, and "
             "are executed by a named profile in an isolated workspace. "
             "See https://her-agent.nousresearch.com/docs/user-guide/features/kanban "
@@ -1854,7 +1854,7 @@ def _cmd_comment(args: argparse.Namespace) -> int:
 def _worker_run_id_for(task_id: str) -> Optional[int]:
     if os.environ.get("HER_KANBAN_TASK") != task_id:
         return None
-    raw = os.environ.get("HERMES_KANBAN_RUN_ID")
+    raw = os.environ.get("HER_KANBAN_RUN_ID")
     if not raw:
         return None
     try:
@@ -2316,7 +2316,7 @@ def _cmd_daemon(args: argparse.Namespace) -> int:
 
     def _ready_queue_nonempty() -> bool:
         """Cheap probe — is there at least one ready+assigned+unclaimed
-        task whose assignee maps to a real Hermes profile (i.e. one the
+        task whose assignee maps to a real her profile (i.e. one the
         dispatcher would actually try to spawn for)?
 
         Filters out tasks assigned to control-plane lanes

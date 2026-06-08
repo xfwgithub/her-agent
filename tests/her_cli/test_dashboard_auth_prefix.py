@@ -5,7 +5,7 @@ prefix (e.g. ``mission-control.tilos.com/her/*`` -> local Caddy ->
 :9119), injecting ``X-Forwarded-Prefix: /her`` on every request.
 
 The dashboard already honours this for the SPA bundle (rewriting asset
-URLs and the bootstrap ``__HERMES_BASE_PATH__``). The OAuth gate must
+URLs and the bootstrap ``__HER_BASE_PATH__``). The OAuth gate must
 honour it too:
 
   1. The gate's ``Location:`` redirect to /login (in
@@ -204,13 +204,13 @@ class TestOAuthRedirectUriRespectsPrefix:
 
 
 # ---------------------------------------------------------------------------
-# HERMES_DASHBOARD_PUBLIC_URL / dashboard.public_url override
+# HER_DASHBOARD_PUBLIC_URL / dashboard.public_url override
 # ---------------------------------------------------------------------------
 
 
 class TestPublicUrlOverride:
     """``dashboard.public_url`` (env override:
-    ``HERMES_DASHBOARD_PUBLIC_URL``) lets an operator force the absolute
+    ``HER_DASHBOARD_PUBLIC_URL``) lets an operator force the absolute
     base URL the OAuth ``redirect_uri`` is built from.
 
     When set, it is the *complete authority* — scheme + host + optional
@@ -263,12 +263,12 @@ class TestPublicUrlOverride:
     def test_public_url_env_overrides_request_reconstruction(
         self, gated_app_direct, patch_config, monkeypatch
     ):
-        """``HERMES_DASHBOARD_PUBLIC_URL`` wins over the URL the
+        """``HER_DASHBOARD_PUBLIC_URL`` wins over the URL the
         request would otherwise reconstruct to. Critical for deploys
         whose proxy headers don't match the public URL."""
         patch_config(None)
         monkeypatch.setenv(
-            "HERMES_DASHBOARD_PUBLIC_URL", "https://custom.example",
+            "HER_DASHBOARD_PUBLIC_URL", "https://custom.example",
         )
         redirect_uri = self._redirect_uri(gated_app_direct)
         assert redirect_uri == "https://custom.example/auth/callback", (
@@ -279,7 +279,7 @@ class TestPublicUrlOverride:
     def test_public_url_config_yaml_used_when_env_unset(
         self, gated_app_direct, patch_config, monkeypatch
     ):
-        monkeypatch.delenv("HERMES_DASHBOARD_PUBLIC_URL", raising=False)
+        monkeypatch.delenv("HER_DASHBOARD_PUBLIC_URL", raising=False)
         patch_config("https://from-config.example")
         redirect_uri = self._redirect_uri(gated_app_direct)
         assert redirect_uri == "https://from-config.example/auth/callback"
@@ -290,7 +290,7 @@ class TestPublicUrlOverride:
         """Precedence pin — env wins over config.yaml. Fly.io / CI
         secret injection depends on this ordering."""
         monkeypatch.setenv(
-            "HERMES_DASHBOARD_PUBLIC_URL", "https://from-env.example",
+            "HER_DASHBOARD_PUBLIC_URL", "https://from-env.example",
         )
         patch_config("https://from-config.example")
         redirect_uri = self._redirect_uri(gated_app_direct)
@@ -308,7 +308,7 @@ class TestPublicUrlOverride:
         whole authority; we trust them."""
         patch_config(None)
         monkeypatch.setenv(
-            "HERMES_DASHBOARD_PUBLIC_URL", "https://example.com/her",
+            "HER_DASHBOARD_PUBLIC_URL", "https://example.com/her",
         )
         redirect_uri = self._redirect_uri(gated_app_direct)
         assert redirect_uri == "https://example.com/her/auth/callback"
@@ -322,7 +322,7 @@ class TestPublicUrlOverride:
         the operator already baked their prefix into public_url."""
         patch_config(None)
         monkeypatch.setenv(
-            "HERMES_DASHBOARD_PUBLIC_URL", "https://example.com/already-prefixed",
+            "HER_DASHBOARD_PUBLIC_URL", "https://example.com/already-prefixed",
         )
         redirect_uri = self._redirect_uri(
             gated_app_proxied,
@@ -342,7 +342,7 @@ class TestPublicUrlOverride:
         produce identical results — no ``//auth/callback`` double slash."""
         patch_config(None)
         monkeypatch.setenv(
-            "HERMES_DASHBOARD_PUBLIC_URL", "https://example.com/",
+            "HER_DASHBOARD_PUBLIC_URL", "https://example.com/",
         )
         redirect_uri = self._redirect_uri(gated_app_direct)
         assert redirect_uri == "https://example.com/auth/callback"
@@ -365,7 +365,7 @@ class TestPublicUrlOverride:
             'https://example.com/"injected',       # quote char
             "https://example.com/\nhttps://evil",  # CRLF injection
         ]:
-            monkeypatch.setenv("HERMES_DASHBOARD_PUBLIC_URL", bad)
+            monkeypatch.setenv("HER_DASHBOARD_PUBLIC_URL", bad)
             redirect_uri = self._redirect_uri(gated_app_direct)
             # Fell through to request reconstruction — netloc is the
             # bound host, NOT the hostile value.
@@ -382,7 +382,7 @@ class TestPublicUrlOverride:
         """Same defensive behaviour as the other env vars in this
         plugin — an empty env var doesn't shadow a valid config.yaml
         entry."""
-        monkeypatch.setenv("HERMES_DASHBOARD_PUBLIC_URL", "")
+        monkeypatch.setenv("HER_DASHBOARD_PUBLIC_URL", "")
         patch_config("https://from-config.example")
         redirect_uri = self._redirect_uri(gated_app_direct)
         assert redirect_uri == "https://from-config.example/auth/callback"

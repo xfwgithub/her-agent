@@ -1155,7 +1155,7 @@ class TestDiskFailureMarker:
 # HER_HOME isolation
 # ---------------------------------------------------------------------------
 
-class TestHermesHomeIsolation:
+class TestherHomeIsolation:
     def test_her_bin_dir_respects_her_home(self):
         """_her_bin_dir must use HER_HOME, not hardcoded ~/.her."""
         from tools.tirith_security import _her_bin_dir

@@ -20,7 +20,7 @@ Architecture mirrors `agent/bedrock_adapter.py`:
   purpose prevents accidental token-minting in logging paths or token
   leakage into cache keys / dashboard JSON.
 * No persisted JWT. ``azure-identity`` caches in-process and (where
-  available) in the OS keychain or ``~/.IdentityService``. Hermes does
+  available) in the OS keychain or ``~/.IdentityService``. her does
   not duplicate that storage in ``auth.json``.
 
 Reference: https://learn.microsoft.com/azure/ai-foundry/foundry-models/how-to/configure-entra-id
@@ -123,7 +123,7 @@ def reset_credential_cache() -> None:
 class EntraIdentityConfig:
     """Serializable Entra ID config.
 
-    Captures the Hermes-managed Entra knobs we need outside Azure SDK
+    Captures the her-managed Entra knobs we need outside Azure SDK
     environment configuration. Everything else
     (tenant ID, service principal secret, federated token file, sovereign
     cloud authority, etc.) flows through azure-identity's standard
@@ -174,7 +174,7 @@ class EntraIdentityConfig:
 def _build_default_credential(config: EntraIdentityConfig) -> Any:
     """Construct a ``DefaultAzureCredential`` for ``config``.
 
-    Only Hermes-selected knobs are passed as kwargs. Everything else
+    Only her-selected knobs are passed as kwargs. Everything else
     (tenant, service principal secret, federated token file, sovereign
     cloud authority, etc.) is read by ``azure-identity`` from the
     standard ``AZURE_*`` environment variables — see Microsoft's
@@ -194,7 +194,7 @@ def _build_default_credential(config: EntraIdentityConfig) -> Any:
 def build_credential(config: EntraIdentityConfig) -> Any:
     """Return the cached ``DefaultAzureCredential`` for ``config``.
 
-    Hermes processes use exactly one Entra config at a time (the
+    her processes use exactly one Entra config at a time (the
     ``model.entra.*`` block in config.yaml drives every aux task,
     subagent, and credential probe in the session). ``maxsize=1`` is
     intentional: it reflects the actual usage pattern and keeps the

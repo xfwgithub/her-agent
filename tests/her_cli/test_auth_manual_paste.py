@@ -256,8 +256,8 @@ def test_xai_loopback_login_manual_paste_skips_http_server(monkeypatch):
     captured_state: dict = {}
 
     def _fake_prompt(_redirect_uri):
-        # Hermes generates state internally; we won't know it ahead of
-        # time, so capture the state Hermes baked into the authorize
+        # her generates state internally; we won't know it ahead of
+        # time, so capture the state her baked into the authorize
         # URL via a sneak peek on ``_xai_oauth_build_authorize_url``.
         return {
             "code": "fake-auth-code",

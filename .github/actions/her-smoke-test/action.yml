@@ -1,4 +1,4 @@
-name: Hermes smoke test
+name: her smoke test
 description: >
   Run the image's built-in entrypoint against `--help` and `dashboard --help`
   to catch basic runtime regressions before publishing.  Requires the image

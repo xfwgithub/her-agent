@@ -1,6 +1,6 @@
 """Tests for her_bootstrap — Windows UTF-8 stdio shim.
 
-The bootstrap module is imported at the top of every Hermes entry point
+The bootstrap module is imported at the top of every her entry point
 (her, her-agent, her-acp, gateway, batch_runner, cli.py).  It
 fixes Python's Windows UTF-8 defaults so print("café") doesn't crash and
 subprocess children inherit UTF-8 mode.
@@ -12,7 +12,7 @@ Key invariants covered by these tests:
   3. Idempotent: safe to call multiple times
   4. Respects user opt-out: if the user explicitly sets PYTHONUTF8=0 or
      PYTHONIOENCODING=something-else, we leave those alone
-  5. Load order: every Hermes entry point imports her_bootstrap as its
+  5. Load order: every her entry point imports her_bootstrap as its
      first non-docstring import (before anything that might do file I/O
      or print to stdout)
 """
@@ -64,7 +64,7 @@ class TestWindowsBehavior:
         reason="Windows-specific behavior",
     )
     def test_stdout_reconfigured_to_utf8_on_windows(self):
-        # The live process's stdout should now be UTF-8 (the Hermes CLI
+        # The live process's stdout should now be UTF-8 (the her CLI
         # runs on Windows with a pytest console that's cp1252 by default).
         # If reconfigure succeeded, sys.stdout.encoding is 'utf-8'.
         _fresh_import()
@@ -232,12 +232,12 @@ class TestStdioReconfigureErrorHandling:
 
 
 class TestEntryPointsImportBootstrap:
-    """Every Hermes entry point must import her_bootstrap as its
+    """Every her entry point must import her_bootstrap as its
     first non-docstring import.  We check this by scanning source files
     rather than invoking the entry points (which would require a full
     agent context)."""
 
-    # Entry points that invoke Hermes as a process.  Each one must
+    # Entry points that invoke her as a process.  Each one must
     # import her_bootstrap before doing any file I/O or stdout writes.
     ENTRY_POINTS = [
         "her_cli/main.py",   # her CLI (console_script)

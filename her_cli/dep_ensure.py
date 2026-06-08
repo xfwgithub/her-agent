@@ -141,7 +141,7 @@ def ensure_dependency(
             "-ExecutionPolicy", "Bypass",
             "-File", str(script),
             "-Ensure", dep,
-            "-HermesHome", str(get_her_home()),
+            "-HerHome", str(get_her_home()),
         ]
     else:
         cmd = ["bash", str(script), "--ensure", dep]

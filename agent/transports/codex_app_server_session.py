@@ -1,6 +1,6 @@
 """Session adapter for codex app-server runtime.
 
-Owns one Codex thread per Hermes session. Drives `turn/start`, consumes
+Owns one Codex thread per her session. Drives `turn/start`, consumes
 streaming notifications via CodexEventProjector, handles server-initiated
 approval requests (apply_patch, exec command), translates cancellation,
 and returns a clean turn result that AIAgent.run_conversation() can splice
@@ -50,9 +50,9 @@ _STDERR_TAIL_LINES = 12
 
 
 # Permission profile mapping mirrors the docstring in PR proposal:
-# Hermes' tools.terminal.security_mode → Codex's permissions profile id.
+# her' tools.terminal.security_mode → Codex's permissions profile id.
 # Defaults if config is missing → workspace-write (matches Codex's own default).
-_HERMES_TO_CODEX_PERMISSION_PROFILE = {
+_HER_TO_CODEX_PERMISSION_PROFILE = {
     "auto": "workspace-write",
     "approval-required": "read-only-with-approval",
     "unrestricted": "full-access",
@@ -89,7 +89,7 @@ _TURN_ABORTED_MARKERS = ("<turn_aborted>", "<turn_aborted/>")
 
 
 def _coerce_turn_input_text(user_input: Any) -> str:
-    """Collapse Hermes/OpenAI rich content into app-server text input.
+    """Collapse her/OpenAI rich content into app-server text input.
 
     The current `turn/start` path sends text items only. TUI image attachment
     can hand us OpenAI-style content parts, so keep the text/path hints and
@@ -186,7 +186,7 @@ class _ServerRequestRouting:
 
 
 class CodexAppServerSession:
-    """One Codex thread per Hermes session, lifetime owned by AIAgent.
+    """One Codex thread per her session, lifetime owned by AIAgent.
 
     Not thread-safe — one caller drives it at a time, matching how AIAgent's
     run_conversation() loop is structured today. The codex client itself can
@@ -210,8 +210,8 @@ class CodexAppServerSession:
         self._codex_bin = codex_bin
         self._codex_home = codex_home
         self._permission_profile = (
-            permission_profile or _HERMES_TO_CODEX_PERMISSION_PROFILE.get(
-                os.environ.get("HERMES_TERMINAL_SECURITY_MODE", "auto"),
+            permission_profile or _HER_TO_CODEX_PERMISSION_PROFILE.get(
+                os.environ.get("HER_TERMINAL_SECURITY_MODE", "auto"),
                 "workspace-write",
             )
         )
@@ -245,7 +245,7 @@ class CodexAppServerSession:
             )
         self._client.initialize(
             client_name="her",
-            client_title="Hermes Agent",
+            client_title="her Agent",
             client_version=_get_her_version(),
         )
         # Permission selection is intentionally NOT sent on thread/start.
@@ -369,7 +369,7 @@ class CodexAppServerSession:
     ) -> TurnResult:
         """Send a user message and block until turn/completed, while
         forwarding server-initiated approval requests and projecting items
-        into Hermes' messages shape.
+        into her' messages shape.
 
         post_tool_quiet_timeout: if codex emits a tool completion and then
         goes quiet for this many seconds without emitting another item or
@@ -402,7 +402,7 @@ class CodexAppServerSession:
         user_input_text = _coerce_turn_input_text(user_input)
 
         # Send turn/start with the user input. Text-only for now (codex
-        # supports rich content but Hermes' text path is the common case).
+        # supports rich content but her' text path is the common case).
         try:
             ts = self._client.request(
                 "turn/start",
@@ -631,7 +631,7 @@ class CodexAppServerSession:
             logger.warning("turn/interrupt timed out")
 
     def _handle_server_request(self, req: dict) -> None:
-        """Translate a codex server request (approval) into Hermes' approval
+        """Translate a codex server request (approval) into her' approval
         flow, then send the response.
 
         Method names verified live against codex 0.130.0 (Apr 2026):
@@ -664,7 +664,7 @@ class CodexAppServerSession:
             # Codex's MCP layer asks the user for structured input on
             # behalf of an MCP server (e.g. tool-call confirmation,
             # OAuth, form data). For our own her-tools callback we
-            # auto-accept — the user already approved Hermes' tools
+            # auto-accept — the user already approved her' tools
             # by enabling the runtime, and we never expose anything
             # codex's built-in shell can't already do. For other MCP
             # servers we decline so the user explicitly opts in via
@@ -803,10 +803,10 @@ class CodexAppServerSession:
 
 
 def _approval_choice_to_codex_decision(choice: str) -> str:
-    """Map Hermes approval choices onto codex's CommandExecutionApprovalDecision
+    """Map her approval choices onto codex's CommandExecutionApprovalDecision
     / FileChangeApprovalDecision wire values.
 
-    Hermes returns 'once', 'session', 'always', or 'deny'.
+    her returns 'once', 'session', 'always', or 'deny'.
     Codex expects 'accept', 'acceptForSession', 'decline', or 'cancel'
     (verified against codex-rs/app-server-protocol/src/protocol/v2/item.rs
     on codex 0.130.0).
@@ -837,7 +837,7 @@ def _has_turn_aborted_marker(text: str) -> bool:
 
 
 def _get_her_version() -> str:
-    """Best-effort Hermes version string for codex's userAgent line."""
+    """Best-effort her version string for codex's userAgent line."""
     try:
         from importlib.metadata import version
 

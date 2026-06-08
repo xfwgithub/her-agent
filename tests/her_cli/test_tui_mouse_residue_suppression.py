@@ -1,7 +1,7 @@
 """Tests for the TUI-hot-path mouse-residue suppression.
 
 The Python launcher (`her --tui …`) has a ~100–300ms cold-start window
-where stdin is still in cooked + echo mode. If a previous Hermes session
+where stdin is still in cooked + echo mode. If a previous her session
 left DEC mouse-tracking asserted, any mouse motion during that window
 echoes literal ``^[[<…M`` text into the user's scrollback.
 

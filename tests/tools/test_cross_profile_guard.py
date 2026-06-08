@@ -20,7 +20,7 @@ import pytest
 
 @pytest.fixture
 def fake_her(tmp_path, monkeypatch):
-    """Build a two-profile Hermes layout and point HER_HOME at
+    """Build a two-profile her layout and point HER_HOME at
     the her-security profile (matching the original-incident shape).
     """
     root = tmp_path / "fake-her"
@@ -250,9 +250,9 @@ class TestSystemPromptActiveProfile:
         # explicit user direction.
         from pathlib import Path
         src = Path("agent/system_prompt.py").read_text()
-        assert "Active Hermes profile" in src
+        assert "Active her profile" in src
         assert "cross_profile=True" in src
         assert "~/.her/profiles/" in src
         # Both branches present (default and named profile).
-        assert "Active Hermes profile: default" in src
-        assert "Active Hermes profile: {active_profile}" in src
+        assert "Active her profile: default" in src
+        assert "Active her profile: {active_profile}" in src

@@ -124,7 +124,7 @@ export interface ThemeComponentStyles {
  *  `--series-input-token` / `--series-output-token` CSS vars consumed
  *  inline by pages that render input-vs-output token flows. Themes can
  *  omit either field to inherit the default token defined in
- *  `index.css` (Hermes-teal `#ffe6cb` for input, `#34d399` for output).
+ *  `index.css` (her-teal `#ffe6cb` for input, `#34d399` for output).
  *
  *  Inverted-lens themes (e.g. Nous Blue) must pre-invert these hex
  *  values so they read as their intended visual color after the FG

@@ -1,4 +1,4 @@
-"""``her debug`` debug tools for Hermes Agent.
+"""``her debug`` debug tools for her Agent.
 
 Currently supports:
     her debug share    Upload debug report (system info + logs) to a
@@ -189,7 +189,7 @@ def _best_effort_sweep_expired_pastes() -> None:
 
 _PRIVACY_NOTICE = """\
 ⚠️  This will upload the following to a public paste service:
-  • System info (OS, Python version, Hermes version, provider, which API keys
+  • System info (OS, Python version, her version, provider, which API keys
     are configured — NOT the actual keys)
   • Recent log lines (agent.log, errors.log, gateway.log, desktop.log — may
     contain conversation fragments and file paths)
@@ -283,7 +283,7 @@ def _upload_dpaste_com(content: str, expiry_days: int = 7) -> str:
 
     dpaste.com uses multipart form data.
     """
-    boundary = "----HermesDebugBoundary9f3c"
+    boundary = "----HerDebugBoundary9f3c"
 
     def _field(name: str, value: str) -> str:
         return (
@@ -770,7 +770,7 @@ def run_debug_share(args):
     # Manual delete fallback
     print(f"To delete now:  her debug delete <url>")
 
-    print(f"\nShare these links with the Hermes team for support.")
+    print(f"\nShare these links with the her team for support.")
 
 
 def run_debug_delete(args):

@@ -1,6 +1,6 @@
 # Computer Use (macOS)
 
-Hermes Agent can drive your Mac's desktop — clicking, typing, scrolling,
+her Agent can drive your Mac's desktop — clicking, typing, scrolling,
 dragging — in the **background**. Your cursor doesn't move, keyboard focus
 doesn't change, and macOS doesn't switch Spaces on you. You and the agent
 co-work on the same machine.
@@ -48,7 +48,7 @@ After installing, regardless of which path you took:
 
 3. Grant macOS permissions when prompted:
    - **System Settings → Privacy & Security → Accessibility** → allow the
-     terminal (or Hermes app).
+     terminal (or her app).
    - **System Settings → Privacy & Security → Screen Recording** → allow
      the same.
 4. Start a session with the toolset enabled:
@@ -60,10 +60,10 @@ After installing, regardless of which path you took:
 ## Keeping cua-driver up to date
 
 The cua-driver project ships fixes regularly (e.g. v0.1.6 fixed a Safari
-window-focus bug for UTM workflows). Hermes refreshes the binary in two
+window-focus bug for UTM workflows). her refreshes the binary in two
 places so you don't get stuck on a stale release:
 
-- **`her update`** — when you update Hermes itself, if `cua-driver` is
+- **`her update`** — when you update her itself, if `cua-driver` is
   on PATH the upstream installer re-runs at the end of the update.
   No-op for non-macOS users and for users without cua-driver installed.
 - **`her computer-use install --upgrade`** — manual force-refresh.
@@ -109,7 +109,7 @@ image blocks.
 
 ## Safety
 
-Hermes applies multi-layer guardrails:
+her applies multi-layer guardrails:
 
 - Destructive actions (click, type, drag, scroll, key, focus_app) require
   approval — either interactively via the CLI dialog or via the
@@ -126,7 +126,7 @@ Pair with `approvals.mode: manual` in `~/.her/config.yaml` if you want every act
 
 ## Token efficiency
 
-Screenshots are expensive. Hermes applies four layers of optimisation:
+Screenshots are expensive. her applies four layers of optimisation:
 
 - **Screenshot eviction** — the Anthropic adapter keeps only the 3 most
   recent screenshots in context; older ones become `[screenshot removed
@@ -148,7 +148,7 @@ of screenshot context, not ~600K.
   Linux or Windows. For cross-platform GUI automation, use the `browser`
   toolset.
 - **Private SPI risk.** Apple can change SkyLight's symbol surface in any
-  OS update. Pin the driver version with the `HERMES_CUA_DRIVER_VERSION`
+  OS update. Pin the driver version with the `HER_CUA_DRIVER_VERSION`
   env var if you want reproducibility across a macOS bump.
 - **Performance.** Background mode is slower than foreground —
   SkyLight-routed events take ~5-20ms vs direct HID posting. Not
@@ -162,14 +162,14 @@ of screenshot context, not ~600K.
 Override the driver binary path (tests / CI):
 
 ```
-HERMES_CUA_DRIVER_CMD=/opt/homebrew/bin/cua-driver
-HERMES_CUA_DRIVER_VERSION=0.5.0    # optional pin
+HER_CUA_DRIVER_CMD=/opt/homebrew/bin/cua-driver
+HER_CUA_DRIVER_VERSION=0.5.0    # optional pin
 ```
 
 Swap the backend entirely (for testing):
 
 ```
-HERMES_COMPUTER_USE_BACKEND=noop   # records calls, no side effects
+HER_COMPUTER_USE_BACKEND=noop   # records calls, no side effects
 ```
 
 ## Troubleshooting

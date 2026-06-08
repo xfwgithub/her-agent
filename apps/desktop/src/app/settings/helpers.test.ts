@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { HermesConfigRecord } from '@/types/her'
+import type { HerConfigRecord } from '@/types/her'
 
 import { defineFieldCopy, fieldCopyForSchemaKey, schemaKeyToFieldCopyKey } from './field-copy'
 import { getNested, providerGroup, setNested, stripToolsetLabel, toolsetDisplayLabel } from './helpers'
@@ -77,7 +77,7 @@ describe('settings helpers', () => {
   })
 
   it('reads and writes nested config paths', () => {
-    const config: HermesConfigRecord = { display: { theme: 'mono' } }
+    const config: HerConfigRecord = { display: { theme: 'mono' } }
     const next = setNested(config, 'display.theme', 'slate')
 
     expect(getNested(next, 'display.theme')).toBe('slate')
@@ -85,7 +85,7 @@ describe('settings helpers', () => {
   })
 
   it('rejects prototype-polluting config paths', () => {
-    const config: HermesConfigRecord = {}
+    const config: HerConfigRecord = {}
 
     expect(() => setNested(config, '__proto__.polluted', true)).toThrow('Unsafe config path')
     expect(() => setNested(config, 'constructor.prototype.polluted', true)).toThrow('Unsafe config path')
@@ -126,9 +126,9 @@ describe('settings helpers', () => {
       // KIMI_CN_ likewise must beat KIMI_.
       expect(providerGroup('KIMI_CN_API_KEY')).toBe('Kimi (China)')
       expect(providerGroup('KIMI_API_KEY')).toBe('Kimi / Moonshot')
-      // HERMES_QWEN_ and HERMES_GEMINI_ both share the HERMES_ stem.
-      expect(providerGroup('HERMES_QWEN_BASE_URL')).toBe('DashScope (Qwen)')
-      expect(providerGroup('HERMES_GEMINI_CLIENT_ID')).toBe('Gemini')
+      // HER_QWEN_ and HER_GEMINI_ both share the HER_ stem.
+      expect(providerGroup('HER_QWEN_BASE_URL')).toBe('DashScope (Qwen)')
+      expect(providerGroup('HER_GEMINI_CLIENT_ID')).toBe('Gemini')
     })
 
     it('falls back to "Other" for un-grouped env vars', () => {

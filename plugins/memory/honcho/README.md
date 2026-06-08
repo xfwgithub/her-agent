@@ -109,11 +109,11 @@ Config is read from the first file that exists:
 
 | Priority | Path | Scope |
 |----------|------|-------|
-| 1 | `$HER_HOME/honcho.json` | Profile-local (isolated Hermes instances) |
+| 1 | `$HER_HOME/honcho.json` | Profile-local (isolated her instances) |
 | 2 | `~/.her/honcho.json` | Default profile (shared host blocks) |
 | 3 | `~/.honcho/config.json` | Global (cross-app interop) |
 
-Host key is derived from the active Hermes profile: `her` (default) or `her_<profile>`.
+Host key is derived from the active her profile: `her` (default) or `her_<profile>`.
 
 For every key, resolution order is: **host block > root > env var > default**.
 
@@ -160,7 +160,7 @@ In gateway deployments (Telegram, Discord, Slack, etc.) each user arrives with a
 
 **Deployment shapes** (`her memory setup honcho` asks one prompt to set these):
 
-- **Single-operator** — `pinUserPeer: true`. All gateway users → `peerName`. Recommended for personal use where you connect Hermes to your own Telegram/Discord/etc.
+- **Single-operator** — `pinUserPeer: true`. All gateway users → `peerName`. Recommended for personal use where you connect her to your own Telegram/Discord/etc.
 - **Multi-user gateway** — `pinUserPeer: false`, optional `runtimePeerPrefix`. Each runtime user → own peer. Recommended for bots serving many humans.
 - **Hybrid** — `pinUserPeer: false`, `userPeerAliases` mapping the operator's runtime IDs to `peerName`. Multi-user gateway where YOU are routed but others stay distinct.
 
@@ -198,7 +198,7 @@ The Honcho session name determines which conversation bucket memory lands in. Re
 | 1 | Manual map (`sessions` config) | `"myproject-main"` |
 | 2 | `/title` command (mid-session rename) | `"refactor-auth"` |
 | 3 | Gateway session key (Telegram, Discord, etc.) | `"agent-main-telegram-dm-8439114563"` |
-| 4 | `per-session` strategy | Hermes session ID (`20260415_a3f2b1`) |
+| 4 | `per-session` strategy | her session ID (`20260415_a3f2b1`) |
 | 5 | `per-repo` strategy | Git root directory name (`her-agent`) |
 | 6 | `per-directory` strategy | Current directory basename (`src`) |
 | 7 | `global` strategy | Workspace name (`her`) |
@@ -211,12 +211,12 @@ If `sessionPeerPrefix` is `true`, the peer name is prepended: `eri-her-agent`.
 
 - **`per-directory`** — basename of `$PWD`. Opening her in `~/code/myapp` and `~/code/other` gives two separate sessions. Same directory = same session across runs.
 - **`per-repo`** — git root directory name. All subdirectories within a repo share one session. Falls back to `per-directory` if not inside a git repo.
-- **`per-session`** — Hermes session ID (timestamp + hex). Every `her` invocation starts a fresh Honcho session. Falls back to `per-directory` if no session ID is available.
+- **`per-session`** — her session ID (timestamp + hex). Every `her` invocation starts a fresh Honcho session. Falls back to `per-directory` if no session ID is available.
 - **`global`** — workspace name. One session for everything. Memory accumulates across all directories and runs.
 
 ### Multi-Profile Pattern
 
-Multiple Hermes profiles can share one workspace while maintaining separate AI identities. Config resolution is **host block > root > env var > default** — host blocks inherit from root, so shared settings only need to be declared once:
+Multiple her profiles can share one workspace while maintaining separate AI identities. Config resolution is **host block > root > env var > default** — host blocks inherit from root, so shared settings only need to be declared once:
 
 ```json
 {
@@ -240,7 +240,7 @@ Multiple Hermes profiles can share one workspace while maintaining separate AI i
 
 Both profiles see the same user (`yourname`) in the same shared environment (`her`), but each AI peer builds its own observations, conclusions, and behavior patterns. The coder's memory stays code-oriented; the main agent's stays broad.
 
-Host key is derived from the active Hermes profile: `her` (default) or `her_<profile>` (e.g. `her -p coder` -> host key `her_coder`). Older `her.<profile>` host blocks are still read for compatibility and are migrated when the CLI writes profile-scoped Honcho config.
+Host key is derived from the active her profile: `her` (default) or `her_<profile>` (e.g. `her -p coder` -> host key `her_coder`). Older `her.<profile>` host blocks are still read for compatibility and are migrated when the CLI writes profile-scoped Honcho config.
 
 ### Dialectic & Reasoning
 
@@ -305,7 +305,7 @@ Presets:
 | `HONCHO_API_KEY` | `apiKey` |
 | `HONCHO_BASE_URL` | `baseUrl` |
 | `HONCHO_ENVIRONMENT` | `environment` |
-| `HERMES_HONCHO_HOST` | Host key override |
+| `HER_HONCHO_HOST` | Host key override |
 
 ## CLI Commands
 
@@ -321,7 +321,7 @@ Presets:
 | `her honcho tokens --context <N>` | Set context token budget |
 | `her honcho tokens --dialectic <N>` | Set dialectic max chars |
 | `her honcho map <name>` | Map current directory to a session name |
-| `her honcho sync` | Create host blocks for all Hermes profiles |
+| `her honcho sync` | Create host blocks for all her profiles |
 
 ## Example Config
 

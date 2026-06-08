@@ -136,8 +136,8 @@ PROVIDER_ENV_VARS = (
     "GMI_API_KEY", "GMI_BASE_URL",
     "DASHSCOPE_API_KEY", "OPENCODE_ZEN_API_KEY", "OPENCODE_GO_API_KEY",
     "NOUS_API_KEY", "GITHUB_TOKEN", "GH_TOKEN",
-    "OPENAI_BASE_URL", "HERMES_COPILOT_ACP_COMMAND", "COPILOT_CLI_PATH",
-    "HERMES_COPILOT_ACP_ARGS", "COPILOT_ACP_BASE_URL",
+    "OPENAI_BASE_URL", "HER_COPILOT_ACP_COMMAND", "COPILOT_CLI_PATH",
+    "HER_COPILOT_ACP_ARGS", "COPILOT_ACP_BASE_URL",
 )
 
 
@@ -663,7 +663,7 @@ class TestHasAnyProviderConfigured:
         assert _has_any_provider_configured() is True
 
     def test_claude_code_creds_ignored_on_fresh_install(self, monkeypatch, tmp_path):
-        """Claude Code credentials should NOT skip the wizard when Hermes is unconfigured."""
+        """Claude Code credentials should NOT skip the wizard when her is unconfigured."""
         from her_cli import config as config_module
         from her_cli.auth import PROVIDER_REGISTRY
         her_home = tmp_path / ".her"
@@ -779,7 +779,7 @@ class TestHasAnyProviderConfigured:
         assert _has_any_provider_configured() is False
 
     def test_claude_code_creds_counted_when_her_configured(self, monkeypatch, tmp_path):
-        """Claude Code credentials should count when Hermes has been explicitly configured."""
+        """Claude Code credentials should count when her has been explicitly configured."""
         import yaml
         from her_cli import config as config_module
         her_home = tmp_path / ".her"

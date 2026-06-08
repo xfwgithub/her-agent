@@ -23,9 +23,9 @@ def config_home(tmp_path, monkeypatch):
     env_file.write_text("")
     monkeypatch.setenv("HER_HOME", str(home))
     # Clear env vars that could interfere
-    monkeypatch.delenv("HERMES_MODEL", raising=False)
+    monkeypatch.delenv("HER_MODEL", raising=False)
     monkeypatch.delenv("LLM_MODEL", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_PROVIDER", raising=False)
+    monkeypatch.delenv("HER_INFERENCE_PROVIDER", raising=False)
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.delenv("GH_TOKEN", raising=False)
     monkeypatch.delenv("OPENAI_BASE_URL", raising=False)

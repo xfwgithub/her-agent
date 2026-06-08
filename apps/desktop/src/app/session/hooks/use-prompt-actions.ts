@@ -570,7 +570,7 @@ export function usePromptActions({
         // `session.title` RPC — the same path the TUI uses — NOT the REST
         // renameSession endpoint and NOT the slash worker.
         //
-        // Why not the slash worker: it's a separate HermesCLI subprocess whose
+        // Why not the slash worker: it's a separate HerCLI subprocess whose
         // SQLite write to the shared state.db can silently fail (notably on
         // Windows), and it never refreshes the sidebar.
         //

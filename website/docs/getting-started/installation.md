@@ -1,19 +1,19 @@
 ---
 sidebar_position: 2
 title: "Installation"
-description: "Install Hermes Agent on Linux, macOS, WSL2, native Windows, or Android via Termux"
+description: "Install her Agent on Linux, macOS, WSL2, native Windows, or Android via Termux"
 ---
 
 # Installation
 
-Get Hermes Agent up and running in under two minutes!
+Get her Agent up and running in under two minutes!
 
 ## Quick Install
-### With the Hermes Desktop installer on macOS or Windows (recommended)
-To easily install the command-line and desktop applications, [download the Hermes Desktop installer](https://her-agent.nousresearch.com/desktop) from our website and run it.
+### With the her Desktop installer on macOS or Windows (recommended)
+To easily install the command-line and desktop applications, [download the her Desktop installer](https://her-agent.nousresearch.com/desktop) from our website and run it.
 
-### Without Hermes Desktop:
-For a command-line only install without Hermes Desktop, run:
+### Without her Desktop:
+For a command-line only install without her Desktop, run:
 
 #### Linux / macOS / WSL2 / Android (Termux)
 ```bash
@@ -27,7 +27,7 @@ Run in powershell:
 iex (irm https://her-agent.nousresearch.com/install.ps1) 
 ```
 
-If you want to install & run Hermes Desktop after a command-line only install, simply run
+If you want to install & run her Desktop after a command-line only install, simply run
 ```bash
 her desktop
 ```
@@ -107,7 +107,7 @@ If you want to clone the repo and install from source — for contributing, runn
 
 ## Non-Sudo / System Service User Installs
 
-Running Hermes as a dedicated unprivileged user (e.g. a `her` systemd service account, or any user without `sudo` access) is supported. The only thing on the install path that genuinely needs root is Playwright's `--with-deps` step, which `apt`-installs shared libraries (`libnss3`, `libxkbcommon`, etc.) used by Chromium. The installer detects whether sudo is available and gracefully degrades when it isn't — it will install the Chromium binary into the service user's own Playwright cache and print the exact command an administrator needs to run separately.
+Running her as a dedicated unprivileged user (e.g. a `her` systemd service account, or any user without `sudo` access) is supported. The only thing on the install path that genuinely needs root is Playwright's `--with-deps` step, which `apt`-installs shared libraries (`libnss3`, `libxkbcommon`, etc.) used by Chromium. The installer detects whether sudo is available and gracefully degrades when it isn't — it will install the Chromium binary into the service user's own Playwright cache and print the exact command an administrator needs to run separately.
 
 **Recommended split (Debian/Ubuntu):**
 
@@ -154,4 +154,4 @@ For more diagnostics, run `her doctor` — it will tell you exactly what's missi
 
 ## Install method auto-detection
 
-Hermes auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `her update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.her/her-agent/`, Homebrew prefix, or Nix store path). `her doctor` also surfaces the detected method under its environment summary.
+her auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `her update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.her/her-agent/`, Homebrew prefix, or Nix store path). `her doctor` also surfaces the detected method under its environment summary.

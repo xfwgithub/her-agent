@@ -28,7 +28,7 @@ from typing import List, Dict, Any, Set, Optional
 
 # Shared tool list for CLI and all messaging platform toolsets.
 # Edit this once to update all platforms simultaneously.
-_HERMES_CORE_TOOLS = [
+_HER_CORE_TOOLS = [
     # Web
     "web_search", "web_extract",
     # Terminal + process management
@@ -75,7 +75,7 @@ _HERMES_CORE_TOOLS = [
 # Webhook events may originate from untrusted third-party content (for example,
 # public PR titles/comments). Keep the default webhook toolset intentionally
 # constrained to avoid local file/system execution by prompt injection.
-_HERMES_WEBHOOK_SAFE_TOOLS = [
+_HER_WEBHOOK_SAFE_TOOLS = [
     "web_search",
     "web_extract",
     "vision_analyze",
@@ -293,7 +293,7 @@ TOOLSETS = {
     },
     
     # ==========================================================================
-    # Full Hermes toolsets (CLI + messaging platforms)
+    # Full her toolsets (CLI + messaging platforms)
     #
     # All platforms share the same core tools (including send_message,
     # which is gated on gateway running via its check_fn).
@@ -351,7 +351,7 @@ TOOLSETS = {
     
     "her-cli": {
         "description": "Full interactive CLI toolset - all default tools plus cronjob management",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _HER_CORE_TOOLS,
         "includes": []
     },
 
@@ -362,19 +362,19 @@ TOOLSETS = {
         # homeassistant) are excluded by _get_platform_tools() unless
         # the user explicitly enables them.
         "description": "Default cron toolset - same core tools as her-cli; gated by `her tools`",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _HER_CORE_TOOLS,
         "includes": []
     },
 
     "her-telegram": {
         "description": "Telegram bot toolset - full access for personal use (terminal has safety checks)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _HER_CORE_TOOLS,
         "includes": []
     },
     
     "her-webhook": {
         "description": "Webhook toolset - receive and process external webhook events",
-        "tools": _HERMES_WEBHOOK_SAFE_TOOLS,
+        "tools": _HER_WEBHOOK_SAFE_TOOLS,
         "includes": []
     },
 
@@ -477,14 +477,14 @@ def resolve_toolset(name: str, visited: Set[str] = None) -> List[str]:
     toolset = get_toolset(name)
     if not toolset:
         # Auto-generate a toolset for plugin platforms (her-<name>).
-        # Gives them _HERMES_CORE_TOOLS plus any tools the plugin registered
+        # Gives them _HER_CORE_TOOLS plus any tools the plugin registered
         # into a toolset matching the platform name.
         if name.startswith("her-"):
             platform_name = name[len("her-"):]
             try:
                 from gateway.platform_registry import platform_registry
                 if platform_registry.is_registered(platform_name):
-                    plugin_tools = set(_HERMES_CORE_TOOLS)
+                    plugin_tools = set(_HER_CORE_TOOLS)
                     try:
                         from tools.registry import registry
                         plugin_tools.update(

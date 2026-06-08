@@ -550,7 +550,7 @@ def test_legacy_gateway_run_env_no_supervise_does_not_seed_s6_state(
 ) -> None:
     """Env opt-out matches the CLI `--no-supervise` flag."""
     scandir = tmp_path / "run-service"; scandir.mkdir()
-    monkeypatch.setenv("HERMES_GATEWAY_NO_SUPERVISE", "1")
+    monkeypatch.setenv("HER_GATEWAY_NO_SUPERVISE", "1")
 
     actions = reconcile_profile_gateways(
         her_home=tmp_path,

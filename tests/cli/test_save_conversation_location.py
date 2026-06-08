@@ -61,7 +61,7 @@ def test_save_conversation_writes_under_her_home(her_home, tmp_path, monkeypatch
     ])
 
     # Call the unbound method against our stub.
-    cli.HermesCLI.save_conversation(stub)
+    cli.HerCLI.save_conversation(stub)
 
     # File must NOT be in CWD
     cwd_leak = list(work.glob("her_conversation_*.json"))
@@ -93,7 +93,7 @@ def test_save_conversation_empty_history_does_nothing(her_home, capsys):
     import cli
 
     stub = _make_stub_cli([])
-    cli.HermesCLI.save_conversation(stub)
+    cli.HerCLI.save_conversation(stub)
 
     saved_dir = her_home / "sessions" / "saved"
     assert not saved_dir.exists() or not list(saved_dir.iterdir())

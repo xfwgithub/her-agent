@@ -1,5 +1,5 @@
 #
-# docker-compose.yml for Hermes Agent
+# docker-compose.yml for her Agent
 #
 # Usage:
 #   HER_UID=$(id -u) HER_GID=$(id -g) docker compose up -d

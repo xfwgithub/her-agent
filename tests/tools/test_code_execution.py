@@ -78,7 +78,7 @@ class TestSandboxRequirements(unittest.TestCase):
         self.assertIn("code", EXECUTE_CODE_SCHEMA["parameters"]["required"])
 
 
-class TestHermesToolsGeneration(unittest.TestCase):
+class TestherToolsGeneration(unittest.TestCase):
     def test_generates_all_allowed_tools(self):
         src = generate_her_tools_module(list(SANDBOX_ALLOWED_TOOLS))
         for tool in SANDBOX_ALLOWED_TOOLS:
@@ -102,7 +102,7 @@ class TestHermesToolsGeneration(unittest.TestCase):
 
     def test_rpc_infrastructure_present(self):
         src = generate_her_tools_module(["terminal"])
-        self.assertIn("HERMES_RPC_SOCKET", src)
+        self.assertIn("HER_RPC_SOCKET", src)
         self.assertIn("AF_UNIX", src)
         self.assertIn("def _connect(", src)
         self.assertIn("def _call(", src)
@@ -119,7 +119,7 @@ class TestHermesToolsGeneration(unittest.TestCase):
         src = generate_her_tools_module(["terminal"], transport="file")
         self.assertIn("import json, os, shlex, tempfile, threading, time", src)
         self.assertIn("os.path.join(tempfile.gettempdir(), \"her_rpc\")", src)
-        self.assertNotIn('os.environ.get("HERMES_RPC_DIR", "/tmp/her_rpc")', src)
+        self.assertNotIn('os.environ.get("HER_RPC_DIR", "/tmp/her_rpc")', src)
 
     def test_uds_transport_serializes_concurrent_calls(self):
         """Regression: UDS _call() must hold a lock across send+recv so that
@@ -169,7 +169,7 @@ class TestExecuteCodeRemoteTempDir(unittest.TestCase):
         run_cmd = next(cmd for cmd, _, _ in env.commands if "python3 script.py" in cmd)
         cleanup_cmd = env.commands[-1][0]
         self.assertIn("mkdir -p /data/data/com.termux/files/usr/tmp/her_exec_", mkdir_cmd)
-        self.assertIn("HERMES_RPC_DIR=/data/data/com.termux/files/usr/tmp/her_exec_", run_cmd)
+        self.assertIn("HER_RPC_DIR=/data/data/com.termux/files/usr/tmp/her_exec_", run_cmd)
         self.assertIn("rm -rf /data/data/com.termux/files/usr/tmp/her_exec_", cleanup_cmd)
         self.assertNotIn("mkdir -p /tmp/her_exec_", mkdir_cmd)
 
@@ -738,7 +738,7 @@ class TestEnvVarFiltering(unittest.TestCase):
 
     def test_her_rpc_socket_injected(self):
         child_env = self._get_child_env()
-        self.assertIn("HERMES_RPC_SOCKET", child_env)
+        self.assertIn("HER_RPC_SOCKET", child_env)
 
     def test_pythondontwritebytecode_set(self):
         child_env = self._get_child_env()
@@ -747,7 +747,7 @@ class TestEnvVarFiltering(unittest.TestCase):
     def test_timezone_injected_when_set(self):
         env_backup = os.environ.copy()
         try:
-            os.environ["HERMES_TIMEZONE"] = "America/New_York"
+            os.environ["HER_TIMEZONE"] = "America/New_York"
             child_env = self._get_child_env()
             self.assertEqual(child_env.get("TZ"), "America/New_York")
         finally:
@@ -757,7 +757,7 @@ class TestEnvVarFiltering(unittest.TestCase):
     def test_timezone_not_set_when_empty(self):
         env_backup = os.environ.copy()
         try:
-            os.environ.pop("HERMES_TIMEZONE", None)
+            os.environ.pop("HER_TIMEZONE", None)
             child_env = self._get_child_env()
             if "TZ" in child_env:
                 self.assertNotEqual(child_env["TZ"], "")

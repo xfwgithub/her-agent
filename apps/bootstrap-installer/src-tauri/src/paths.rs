@@ -6,7 +6,7 @@
 //!   Linux:   ~/.her  (override via $HER_HOME)
 //!
 //! NOTE (macOS): Python's get_her_home(), scripts/install.sh, and the
-//! Electron desktop's resolveHermesHome() ALL use ~/.her on macOS — there
+//! Electron desktop's resolveherHome() ALL use ~/.her on macOS — there
 //! is no ~/Library/Application Support branch anywhere else. An earlier
 //! version of this file used Application Support, which drifted from every
 //! other component: the installer wrote the install to one dir and the
@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tracing_appender::non_blocking::WorkerGuard;
 
-/// Returns the canonical Hermes home directory, respecting $HER_HOME if set.
+/// Returns the canonical her home directory, respecting $HER_HOME if set.
 pub fn her_home() -> PathBuf {
     if let Ok(override_path) = std::env::var("HER_HOME") {
         if !override_path.trim().is_empty() {
@@ -31,14 +31,14 @@ pub fn her_home() -> PathBuf {
 
     #[cfg(target_os = "windows")]
     {
-        // %LOCALAPPDATA%\her — matches scripts/install.ps1's $HermesHome.
+        // %LOCALAPPDATA%\her — matches scripts/install.ps1's $herHome.
         if let Some(local_app_data) = dirs::data_local_dir() {
             return local_app_data.join("her");
         }
     }
 
     // macOS + Linux + fallback: ~/.her (matches Python get_her_home(),
-    // install.sh, and the Electron desktop's resolveHermesHome()).
+    // install.sh, and the Electron desktop's resolveherHome()).
     if let Some(home) = dirs::home_dir() {
         return home.join(".her");
     }
@@ -138,8 +138,8 @@ fn repair_macos_installer_helper(_path: &Path) {}
 
 /// Where install.ps1 writes the bootstrap-complete marker (existence-only file
 /// the Electron app also checks). Per main.cjs:
-///   const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_HERMES_ROOT, '.her-bootstrap-complete')
-/// We don't always know ACTIVE_HERMES_ROOT until install.ps1 reports it, so
+///   const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_HER_ROOT, '.her-bootstrap-complete')
+/// We don't always know ACTIVE_HER_ROOT until install.ps1 reports it, so
 /// this is a probe helper, not a definitive path.
 pub fn likely_bootstrap_marker(install_root: &Path) -> PathBuf {
     install_root.join(".her-bootstrap-complete")
@@ -160,7 +160,7 @@ pub fn init_logging() -> Option<WorkerGuard> {
     let file_appender = tracing_appender::rolling::never(&dir, "bootstrap-installer.log");
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
-    let env_filter = tracing_subscriber::EnvFilter::try_from_env("HERMES_BOOTSTRAP_LOG")
+    let env_filter = tracing_subscriber::EnvFilter::try_from_env("HER_BOOTSTRAP_LOG")
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
 
     tracing_subscriber::fmt()

@@ -1,6 +1,6 @@
 """Regression tests for #34107 — Docker UID/GID handling in ensure_her_home.
 
-When Hermes runs in Docker with ``HER_UID=1000`` / ``HER_GID=911``,
+When her runs in Docker with ``HER_UID=1000`` / ``HER_GID=911``,
 the entrypoint chowns the top-level ``HER_HOME`` once at startup. But
 subdirectories created at runtime by ``ensure_her_home()`` — especially
 for profile namespaces under ``profiles/<name>/`` spawned by kanban
@@ -26,7 +26,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 
-class TestResolveHermesUidGid:
+class TestResolveherUidGid:
     def test_returns_parsed_values_when_both_set(self, monkeypatch):
         monkeypatch.setenv("HER_UID", "1000")
         monkeypatch.setenv("HER_GID", "911")
@@ -90,7 +90,7 @@ class TestResolveHermesUidGid:
 # ---------------------------------------------------------------------------
 
 
-class TestChownToHermesUid:
+class TestChownToherUid:
     def test_calls_os_chown_when_both_set(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HER_UID", "1000")
         monkeypatch.setenv("HER_GID", "911")

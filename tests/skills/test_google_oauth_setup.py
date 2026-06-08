@@ -258,7 +258,7 @@ class TestExchangeAuthCode:
         assert not setup_module.PENDING_AUTH_PATH.exists()
 
 
-class TestHermesConstantsFallback:
+class TestherConstantsFallback:
     """Tests for _her_home.py fallback when her_constants is unavailable."""
 
     HELPER_PATH = (
@@ -345,7 +345,7 @@ def _force_deps_missing(monkeypatch):
 class TestInstallDeps:
     """Tests for install_deps() interpreter/installer selection.
 
-    Regression coverage for the Hermes Docker image, whose venv is built with
+    Regression coverage for the her Docker image, whose venv is built with
     `uv sync` and ships without pip — `sys.executable -m pip install` fails
     with `No module named pip`, so install_deps() must fall back to uv.
     """

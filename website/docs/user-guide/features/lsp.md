@@ -6,7 +6,7 @@ description: "Real language servers (pyright, gopls, rust-analyzer, …) wired i
 
 # Language Server Protocol (LSP)
 
-Hermes runs full language servers — pyright, gopls, rust-analyzer,
+her runs full language servers — pyright, gopls, rust-analyzer,
 typescript-language-server, clangd, and ~20 more — as background
 subprocesses and feeds their semantic diagnostics into the post-write
 lint check used by `write_file` and `patch`. When the agent edits a
@@ -14,7 +14,7 @@ file, it sees exactly the errors that edit introduced — not just
 syntax errors, but **type errors, undefined names, missing imports,
 and project-wide semantic issues** the language server detects.
 
-This is the same architecture top-tier coding agents use. Hermes
+This is the same architecture top-tier coding agents use. her
 ships it self-contained: no editor host required, no plugins to
 install, no separate daemon to manage.
 
@@ -33,7 +33,7 @@ falls back silently to the syntax-only result.
 
 Concretely, on every successful `write_file` or `patch`:
 
-1. Hermes captures a baseline of current diagnostics for the file.
+1. her captures a baseline of current diagnostics for the file.
 2. Performs the write.
 3. Re-queries the language server, filters out diagnostics that were
    already in the baseline, and surfaces only the new ones.
@@ -89,13 +89,13 @@ agent sees a syntax-clean file with semantic problems as
 
 For "manual" entries, install the server through whatever toolchain
 manager makes sense for that language (rustup, ghcup, opam, brew,
-…). Hermes auto-detects the binary on PATH or in
+…). her auto-detects the binary on PATH or in
 `<HER_HOME>/lsp/bin/`.
 
 A few servers are installed alongside a peer dependency that npm
 won't auto-pull. The current case is `typescript-language-server`,
 which requires the `typescript` SDK importable from the same
-`node_modules` tree — Hermes installs both packages together when you
+`node_modules` tree — her installs both packages together when you
 run `her lsp install typescript` or auto-install fires on first
 use.
 
@@ -162,14 +162,14 @@ lsp:
 
 ## Installation locations
 
-When `install_strategy: auto`, Hermes installs binaries into
+When `install_strategy: auto`, her installs binaries into
 `<HER_HOME>/lsp/bin/`. NPM packages land in
 `<HER_HOME>/lsp/node_modules/` with bin symlinks one level up.
 Go binaries come from `go install` with `GOBIN` pointed at the
 staging dir.
 
 Nothing is ever installed to `/usr/local/`, `~/.local/`, or any other
-shared location — the staging dir is fully Hermes-owned and is
+shared location — the staging dir is fully her-owned and is
 removed when you reset the profile.
 
 ## Performance characteristics
@@ -186,7 +186,7 @@ budget is `wait_timeout` seconds — typically the server responds in
 tens of milliseconds for pyright/tsserver and a few seconds for
 rust-analyzer mid-indexing.
 
-Servers are kept alive for the life of the Hermes process. There's
+Servers are kept alive for the life of the her process. There's
 no idle-timeout reaper — the cost of restarting the server's index
 on every write would be far higher than holding the daemon.
 

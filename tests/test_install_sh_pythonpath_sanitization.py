@@ -27,4 +27,4 @@ def test_her_launcher_wrapper_clears_python_env_before_exec() -> None:
     assert 'cat > "$command_link_dir/her" <<EOF' in text
     assert 'unset PYTHONPATH' in text
     assert 'unset PYTHONHOME' in text
-    assert 'exec "$HERMES_BIN" "\\$@"' in text
+    assert 'exec "$HER_BIN" "\\$@"' in text

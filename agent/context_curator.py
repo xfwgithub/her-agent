@@ -300,7 +300,7 @@ def _system_prompt_text() -> str:
     except Exception:
         # Fallback so the curator never crashes the main turn on import hiccups.
         return (
-            "You are the Hermes context curator. Your only job is to write a "
+            "You are the her context curator. Your only job is to write a "
             "compact, structured summary of the conversation that helps the "
             "main model focus on the user's latest message. Do not answer the "
             "user. Do not call tools. Produce the sectioned summary as the "

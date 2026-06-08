@@ -121,7 +121,7 @@ def test_shared_nous_store_writes_0o600_with_0o700_parent(tmp_path, monkeypatch)
     # home" reference — which currently tracks HER_HOME via
     # get_default_her_root() — can't collide with our override and
     # falsely claim we're writing to the real user's shared store.
-    monkeypatch.setenv("HERMES_SHARED_AUTH_DIR", str(tmp_path / "shared_override"))
+    monkeypatch.setenv("HER_SHARED_AUTH_DIR", str(tmp_path / "shared_override"))
     old_umask = os.umask(0o022)
     try:
         from her_cli import auth as auth_mod

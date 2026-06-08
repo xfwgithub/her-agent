@@ -40,9 +40,9 @@ def _make_packaged_executable(root: Path, monkeypatch, platform: str = "darwin")
     monkeypatch.setattr(cli_main.sys, "platform", platform)
     desktop_dir = root / "apps" / "desktop"
     if platform == "darwin":
-        exe = desktop_dir / "release" / "mac-arm64" / "Hermes.app" / "Contents" / "MacOS" / "Hermes"
+        exe = desktop_dir / "release" / "mac-arm64" / "her.app" / "Contents" / "MacOS" / "her"
     elif platform == "win32":
-        exe = desktop_dir / "release" / "win-unpacked" / "Hermes.exe"
+        exe = desktop_dir / "release" / "win-unpacked" / "her.exe"
     else:
         exe = desktop_dir / "release" / "linux-unpacked" / "her"
     exe.parent.mkdir(parents=True)
@@ -103,10 +103,10 @@ def test_gui_forwards_desktop_environment_overrides(tmp_path, monkeypatch):
         ))
 
     launch_env = mock_run.call_args_list[1].kwargs["env"]
-    assert launch_env["HERMES_DESKTOP_BOOT_FAKE"] == "1"
-    assert launch_env["HERMES_DESKTOP_IGNORE_EXISTING"] == "1"
-    assert launch_env["HERMES_DESKTOP_HERMES_ROOT"] == str(her_root)
-    assert launch_env["HERMES_DESKTOP_CWD"] == str(cwd)
+    assert launch_env["HER_DESKTOP_BOOT_FAKE"] == "1"
+    assert launch_env["HER_DESKTOP_IGNORE_EXISTING"] == "1"
+    assert launch_env["HER_DESKTOP_HER_ROOT"] == str(her_root)
+    assert launch_env["HER_DESKTOP_CWD"] == str(cwd)
 
 
 def test_gui_exits_when_npm_missing(tmp_path, monkeypatch, capsys):

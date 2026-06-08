@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from cli import HermesCLI
+from cli import HerCLI
 from her_cli.commands import GATEWAY_KNOWN_COMMANDS, resolve_command
 
 
@@ -20,7 +20,7 @@ def test_version_is_gateway_known():
 
 
 def test_process_command_version_prints_version_info():
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    cli_obj = HerCLI.__new__(HerCLI)
 
     with patch("her_cli.main._print_version_info") as mock_print:
         assert cli_obj.process_command("/version") is True

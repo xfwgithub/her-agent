@@ -69,7 +69,7 @@ def test_x_search_posts_responses_request(monkeypatch):
 
     tool_def = captured["json"]["tools"][0]
     assert captured["url"] == "https://api.x.ai/v1/responses"
-    assert captured["headers"]["User-Agent"] == f"Hermes-Agent/{__version__}"
+    assert captured["headers"]["User-Agent"] == f"her-Agent/{__version__}"
     assert captured["json"]["model"] == "grok-4.20-reasoning"
     assert captured["json"]["store"] is False
     assert tool_def["type"] == "x_search"
@@ -231,7 +231,7 @@ def test_x_search_retries_5xx_then_succeeds(monkeypatch):
 
 def _no_xai_env(monkeypatch):
     """Strip any XAI_* env vars so the resolver doesn't see a leaked dev key."""
-    for var in ("XAI_API_KEY", "XAI_BASE_URL", "HERMES_XAI_BASE_URL"):
+    for var in ("XAI_API_KEY", "XAI_BASE_URL", "HER_XAI_BASE_URL"):
         monkeypatch.delenv(var, raising=False)
 
 

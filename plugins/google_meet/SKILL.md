@@ -63,7 +63,7 @@ pip install playwright websockets && python -m playwright install chromium
 #   Linux:  sudo apt install pulseaudio-utils
 #   macOS:  brew install blackhole-2ch ffmpeg
 #           → System Settings → Sound → Input → BlackHole 2ch
-#   Then set OPENAI_API_KEY or HERMES_MEET_REALTIME_KEY in ~/.her/.env
+#   Then set OPENAI_API_KEY or HER_MEET_REALTIME_KEY in ~/.her/.env
 ```
 
 For a remote node:
@@ -84,7 +84,7 @@ Run `her meet setup` to preflight local prereqs.
 ## Flow
 
 1. **Join** — call `meet_join(url=..., mode=..., node=...)`. Returns immediately.
-2. **Announce yourself** — no auto-consent. Say (in whatever channel the user is watching): "A Hermes agent bot is in this call taking notes."
+2. **Announce yourself** — no auto-consent. Say (in whatever channel the user is watching): "A her agent bot is in this call taking notes."
 3. **Poll** — `meet_status()` for liveness, `meet_transcript(last=20)` for recent captions. Don't re-read the whole transcript every turn.
 4. **Speak (realtime only)** — `meet_say(text="...")` queues text for TTS. The speech lags by ~2s. Don't spam it.
 5. **Leave** — `meet_leave()` when done, or set `duration="30m"` on `meet_join` for auto-leave.
@@ -106,7 +106,7 @@ Run `her meet setup` to preflight local prereqs.
 
 - Captions are only as good as Google Meet's live captions. English-biased, lossy on overlapping speakers.
 - Guest mode sits in the lobby until a host admits. Warn the user; `her meet auth` avoids this.
-- **Lobby timeout**: if the host doesn't admit the bot within 5 minutes (configurable via `HERMES_MEET_LOBBY_TIMEOUT` env), the bot leaves and `meet_status` reports `leaveReason: "lobby_timeout"`.
+- **Lobby timeout**: if the host doesn't admit the bot within 5 minutes (configurable via `HER_MEET_LOBBY_TIMEOUT` env), the bot leaves and `meet_status` reports `leaveReason: "lobby_timeout"`.
 - **One active meeting per install per location.** A second `meet_join` leaves the first.
 - **Windows not supported.**
 - Realtime mode needs a virtual audio device. If the audio bridge setup fails, the bot falls back to transcribe mode and flags it in `meet_status().error`.

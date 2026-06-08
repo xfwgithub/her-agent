@@ -1,4 +1,4 @@
-# Hermes Achievements Implementation Spec (Detailed)
+# her Achievements Implementation Spec (Detailed)
 
 This document is implementation-facing detail to execute the performance refactor later.
 

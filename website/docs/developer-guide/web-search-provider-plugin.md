@@ -1,7 +1,7 @@
 ---
 sidebar_position: 12
 title: "Web Search Provider Plugins"
-description: "How to build a web-search/extract/crawl backend plugin for Hermes Agent"
+description: "How to build a web-search/extract/crawl backend plugin for her Agent"
 ---
 
 # Building a Web Search Provider Plugin
@@ -9,12 +9,12 @@ description: "How to build a web-search/extract/crawl backend plugin for Hermes 
 Web-search provider plugins register a backend that services `web_search`, `web_extract`, and (optionally) deep-crawl tool calls. Built-in providers — Firecrawl, SearXNG, Tavily, Exa, Parallel, Brave Search (free tier), xAI, and DDGS — all ship as plugins under `plugins/web/<name>/`. You can add a new one, or override a bundled one, by dropping a directory next to them.
 
 :::tip
-Web search is one of several **backend plugins** Hermes supports. The others (with their own ABCs) are [Image Generation Provider Plugins](/developer-guide/image-gen-provider-plugin), [Video Generation Provider Plugins](/developer-guide/video-gen-provider-plugin), [Memory Provider Plugins](/developer-guide/memory-provider-plugin), [Context Engine Plugins](/developer-guide/context-engine-plugin), and [Model Provider Plugins](/developer-guide/model-provider-plugin). General tool/hook/CLI plugins live in [Build a Hermes Plugin](/guides/build-a-her-plugin).
+Web search is one of several **backend plugins** her supports. The others (with their own ABCs) are [Image Generation Provider Plugins](/developer-guide/image-gen-provider-plugin), [Video Generation Provider Plugins](/developer-guide/video-gen-provider-plugin), [Memory Provider Plugins](/developer-guide/memory-provider-plugin), [Context Engine Plugins](/developer-guide/context-engine-plugin), and [Model Provider Plugins](/developer-guide/model-provider-plugin). General tool/hook/CLI plugins live in [Build a her Plugin](/guides/build-a-her-plugin).
 :::
 
 ## How discovery works
 
-Hermes scans for web-search backends in three places:
+her scans for web-search backends in three places:
 
 1. **Bundled** — `<repo>/plugins/web/<name>/` (auto-loaded with `kind: backend`, always available)
 2. **User** — `~/.her/plugins/web/<name>/` (opt-in via `plugins.enabled` or `her plugins enable <name>`)
@@ -28,7 +28,7 @@ Each plugin's `register(ctx)` function calls `ctx.register_web_search_provider(.
 | `web_extract` | `web.extract_backend` | `web.backend` |
 | Deep crawl modes inside `web_extract` | `web.extract_backend` | `web.backend` |
 
-When neither key is set, Hermes auto-detects the backend from whichever API key/URL is present in the environment. `her tools` walks users through selection.
+When neither key is set, her auto-detects the backend from whichever API key/URL is present in the environment. `her tools` walks users through selection.
 
 ## Directory structure
 
@@ -141,7 +141,7 @@ requires_env:
 |---|---|
 | `kind: backend` | Routes the plugin through the backend-loading path |
 | `provides_web_providers` | List of provider `name`s this plugin registers — used by the loader to advertise the plugin in `her tools` even before `register()` runs |
-| `requires_env` | Interactive credential prompt during `her plugins install` (see [Build a Hermes Plugin](/guides/build-a-her-plugin#gate-on-environment-variables) for the rich format) |
+| `requires_env` | Interactive credential prompt during `her plugins install` (see [Build a her Plugin](/guides/build-a-her-plugin#gate-on-environment-variables) for the rich format) |
 
 ## ABC reference
 
@@ -206,7 +206,7 @@ Both `search()` and `extract()` may be `async def` — the dispatcher detects co
 
 ## Capability flags
 
-Hermes routes calls to the right provider based on the `supports_*` flags. A common multi-provider setup:
+her routes calls to the right provider based on the `supports_*` flags. A common multi-provider setup:
 
 ```yaml
 # ~/.her/config.yaml
@@ -215,11 +215,11 @@ web:
   extract_backend: "firecrawl"     # extract + crawl, paid quota
 ```
 
-When `web.search_backend` or `web.extract_backend` aren't set, both fall through to `web.backend`. When that's also unset, Hermes picks the first available provider that supports the requested capability based on env-var presence.
+When `web.search_backend` or `web.extract_backend` aren't set, both fall through to `web.backend`. When that's also unset, her picks the first available provider that supports the requested capability based on env-var presence.
 
 If your provider only supports one capability, leave the other flags at their default (`False`) and the registry will skip it for that tool — users won't see misleading "provider X failed" errors when they're using X only for search and asking the agent to extract.
 
-## How Hermes wires it into the tools
+## How her wires it into the tools
 
 The `web_search` and `web_extract` tools live in `tools/web_tools.py`. At call time they:
 
@@ -233,7 +233,7 @@ Errors surface as the tool result; the LLM decides how to explain them. If no pr
 
 ## Lazy-installing optional dependencies
 
-If your provider wraps a third-party SDK (like DDGS does with the `ddgs` package), don't `import` it at module top level. Use `tools.lazy_deps.ensure(...)` inside `is_available()` or `search()` — Hermes will install the package on first use, gated by `security.allow_lazy_installs`. See [Build a Hermes Plugin → Lazy-install](/guides/build-a-her-plugin#lazy-install-optional-python-dependencies) for the security model.
+If your provider wraps a third-party SDK (like DDGS does with the `ddgs` package), don't `import` it at module top level. Use `tools.lazy_deps.ensure(...)` inside `is_available()` or `search()` — her will install the package on first use, gated by `security.allow_lazy_installs`. See [Build a her Plugin → Lazy-install](/guides/build-a-her-plugin#lazy-install-optional-python-dependencies) for the security model.
 
 ## Reference implementations
 
@@ -257,4 +257,4 @@ my-backend-web = "my_backend_web_package"
 
 - [Web Search](/user-guide/features/web-search) — user-facing feature documentation and per-backend configuration
 - [Plugins overview](/user-guide/features/plugins) — all plugin types at a glance
-- [Build a Hermes Plugin](/guides/build-a-her-plugin) — general tools/hooks/slash commands guide
+- [Build a her Plugin](/guides/build-a-her-plugin) — general tools/hooks/slash commands guide

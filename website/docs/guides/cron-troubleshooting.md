@@ -1,7 +1,7 @@
 ---
 sidebar_position: 12
 title: "Cron Troubleshooting"
-description: "Diagnose and fix common Hermes cron issues — jobs not firing, delivery failures, skill loading errors, and performance problems"
+description: "Diagnose and fix common her cron issues — jobs not firing, delivery failures, skill loading errors, and performance problems"
 ---
 
 # Cron Troubleshooting
@@ -144,7 +144,7 @@ If a job ran and failed, you may see error context in:
 ### Check 2: Common error patterns
 
 **"No such file or directory" for scripts**
-The `script` path must be an absolute path (or relative to the Hermes config directory). Verify:
+The `script` path must be an absolute path (or relative to the her config directory). Verify:
 ```bash
 ls ~/.her/scripts/your-script.py   # Must exist
 her cron edit <job_id> --script ~/.her/scripts/your-script.py
@@ -157,7 +157,7 @@ The skill must be installed on the machine running the scheduler. If you move be
 Likely a delivery target issue (see Delivery Failures above) or a silently suppressed response (`[SILENT]`).
 
 **Job hangs or times out**
-The scheduler uses an inactivity-based timeout (default 600s, configurable via `HERMES_CRON_TIMEOUT` env var, `0` for unlimited). The agent can run as long as it's actively calling tools — the timer only fires after sustained inactivity. Long-running jobs should use scripts to handle data collection and deliver only the result.
+The scheduler uses an inactivity-based timeout (default 600s, configurable via `HER_CRON_TIMEOUT` env var, `0` for unlimited). The agent can run as long as it's actively calling tools — the timer only fires after sustained inactivity. Long-running jobs should use scripts to handle data collection and deliver only the result.
 
 ### Check 3: Lock contention
 
@@ -202,7 +202,7 @@ Scripts that dump megabytes of output will slow down the agent and may hit token
 her cron list                    # Show all jobs, states, next_run times
 her cron run <job_id>            # Schedule for next tick (for testing)
 her cron edit <job_id>           # Fix configuration issues
-her logs                         # View recent Hermes logs
+her logs                         # View recent her logs
 her skills list                  # Verify installed skills
 ```
 

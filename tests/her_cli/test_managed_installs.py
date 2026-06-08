@@ -11,23 +11,23 @@ from tools.skills_hub import OptionalSkillSource
 
 
 def test_get_managed_system_homebrew(monkeypatch):
-    monkeypatch.setenv("HERMES_MANAGED", "homebrew")
+    monkeypatch.setenv("HER_MANAGED", "homebrew")
 
     assert get_managed_system() == "Homebrew"
     assert recommended_update_command() == "brew upgrade her-agent"
 
 
 def test_format_managed_message_homebrew(monkeypatch):
-    monkeypatch.setenv("HERMES_MANAGED", "homebrew")
+    monkeypatch.setenv("HER_MANAGED", "homebrew")
 
-    message = format_managed_message("update Hermes Agent")
+    message = format_managed_message("update her Agent")
 
     assert "managed by Homebrew" in message
     assert "brew upgrade her-agent" in message
 
 
 def test_recommended_update_command_defaults_to_her_update(monkeypatch):
-    monkeypatch.delenv("HERMES_MANAGED", raising=False)
+    monkeypatch.delenv("HER_MANAGED", raising=False)
 
     # Also short-circuit the .managed marker path — CI runners may have an
     # ambient ~/.her/.managed if a prior test left HER_HOME pointing
@@ -40,7 +40,7 @@ def test_recommended_update_command_defaults_to_her_update(monkeypatch):
 
 
 def test_cmd_update_blocks_managed_homebrew(monkeypatch, capsys):
-    monkeypatch.setenv("HERMES_MANAGED", "homebrew")
+    monkeypatch.setenv("HER_MANAGED", "homebrew")
 
     with patch("her_cli.main.subprocess.run") as mock_run:
         cmd_update(SimpleNamespace())
@@ -54,7 +54,7 @@ def test_cmd_update_blocks_managed_homebrew(monkeypatch, capsys):
 def test_optional_skill_source_honors_env_override(monkeypatch, tmp_path):
     optional_dir = tmp_path / "optional-skills"
     optional_dir.mkdir()
-    monkeypatch.setenv("HERMES_OPTIONAL_SKILLS", str(optional_dir))
+    monkeypatch.setenv("HER_OPTIONAL_SKILLS", str(optional_dir))
 
     source = OptionalSkillSource()
 

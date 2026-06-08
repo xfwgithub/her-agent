@@ -5,7 +5,7 @@ exists to prevent the auth.json ownership-mismatch bug where
 `docker exec <c> her login` would write /opt/data/auth.json as
 root:root mode 0600, leaving the supervised gateway (UID 10000) unable
 to read its own credentials and returning "Provider authentication
-failed: Hermes is not logged into Nous Portal" on every message.
+failed: her is not logged into Nous Portal" on every message.
 
 These tests verify:
 
@@ -15,7 +15,7 @@ These tests verify:
    circuits and doesn't try to drop again.
 3. Files written under $HER_HOME from a ``docker exec`` session land
    as her:her — the actual user-visible invariant.
-4. The HERMES_DOCKER_EXEC_AS_ROOT opt-out lets diagnostic sessions keep
+4. The HER_DOCKER_EXEC_AS_ROOT opt-out lets diagnostic sessions keep
    running as root deliberately.
 5. The main CMD path (``docker run <image> …``) is unaffected by the
    PATH-shim ordering — no recursion, no behavior change.
@@ -148,7 +148,7 @@ def test_shim_short_circuits_for_non_root_exec(sleep_container: str) -> None:
 
 
 def test_shim_opt_out_keeps_root(sleep_container: str) -> None:
-    """HERMES_DOCKER_EXEC_AS_ROOT=1 should suppress the privilege drop.
+    """HER_DOCKER_EXEC_AS_ROOT=1 should suppress the privilege drop.
 
     Reserved for diagnostic sessions where the operator deliberately
     wants root semantics. Verified by writing a file and checking its
@@ -162,7 +162,7 @@ def test_shim_opt_out_keeps_root(sleep_container: str) -> None:
 
     r = subprocess.run(
         ["docker", "exec",
-         "-e", "HERMES_DOCKER_EXEC_AS_ROOT=1",
+         "-e", "HER_DOCKER_EXEC_AS_ROOT=1",
          sleep_container,
          "her", "config", "set", "_test.opt_out", "1"],
         capture_output=True, text=True, timeout=30,
@@ -175,7 +175,7 @@ def test_shim_opt_out_keeps_root(sleep_container: str) -> None:
         capture_output=True, text=True, timeout=10,
     )
     assert r.stdout.strip() == "root:root", (
-        f"With HERMES_DOCKER_EXEC_AS_ROOT=1, expected root:root, "
+        f"With HER_DOCKER_EXEC_AS_ROOT=1, expected root:root, "
         f"got {r.stdout.strip()!r}"
     )
 
@@ -186,9 +186,9 @@ def test_shim_opt_out_strict_truthiness(
 ) -> None:
     """Anything other than 1/true/yes (case-insensitive) does NOT opt out.
 
-    Strict truthiness so a typo (``HERMES_DOCKER_EXEC_AS_ROOT=0``) doesn't
+    Strict truthiness so a typo (``HER_DOCKER_EXEC_AS_ROOT=0``) doesn't
     silently keep the user as root. Mirrors the policy used by
-    ``HERMES_GATEWAY_NO_SUPERVISE`` in #33583.
+    ``HER_GATEWAY_NO_SUPERVISE`` in #33583.
     """
     subprocess.run(
         ["docker", "exec", "--user", "root", sleep_container,
@@ -198,7 +198,7 @@ def test_shim_opt_out_strict_truthiness(
 
     r = subprocess.run(
         ["docker", "exec",
-         "-e", f"HERMES_DOCKER_EXEC_AS_ROOT={falsy_value}",
+         "-e", f"HER_DOCKER_EXEC_AS_ROOT={falsy_value}",
          sleep_container,
          "her", "config", "set", "_test.falsy", "1"],
         capture_output=True, text=True, timeout=30,
@@ -247,7 +247,7 @@ def test_e2e_login_then_supervised_gateway_can_read_auth(
     /opt/data/auth.json as root:root 0600. The supervised gateway (UID
     10000) couldn't read it, _load_auth_store swallowed PermissionError
     as a parse failure, and resolve_nous_runtime_credentials raised
-    "Hermes is not logged into Nous Portal" on every message.
+    "her is not logged into Nous Portal" on every message.
 
     We can't do a real OAuth login in a unit test, but we can stand in
     for it by writing the same file shape via `her config set`-style

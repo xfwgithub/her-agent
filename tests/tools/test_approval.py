@@ -149,7 +149,7 @@ class TestSessionKeyContext:
     def test_context_session_key_overrides_process_env(self):
         token = approval_module.set_current_session_key("alice")
         try:
-            with mock_patch.dict("os.environ", {"HERMES_SESSION_KEY": "bob"}, clear=False):
+            with mock_patch.dict("os.environ", {"HER_SESSION_KEY": "bob"}, clear=False):
                 assert approval_module.get_current_session_key() == "alice"
         finally:
             approval_module.reset_current_session_key(token)
@@ -389,7 +389,7 @@ class TestTeePattern:
         assert key is None
 
 
-class TestHermesConfigWriteProtection:
+class TestherConfigWriteProtection:
     """Terminal-side pairing for the file_tools write_file/patch deny on
     ~/.her/config.yaml (#14639). config.yaml IS the security policy
     (approvals.mode/yolo live there, mtime-keyed cache reloads mid-session),
@@ -479,7 +479,7 @@ class TestHermesConfigWriteProtection:
         assert dangerous is False
 
     def test_normal_yaml_write_safe(self):
-        # A non-Hermes config.yaml in a project dir is handled by the project
+        # A non-her config.yaml in a project dir is handled by the project
         # patterns, but a plain temp write must not false-positive.
         dangerous, key, desc = detect_dangerous_command("echo data > /tmp/scratch.txt")
         assert dangerous is False
@@ -1440,18 +1440,18 @@ class TestApprovalTimeoutIsNotConsent:
 
         self._saved_env = {
             k: os.environ.get(k)
-            for k in ("HERMES_GATEWAY_SESSION", "HERMES_CRON_SESSION",
-                      "HERMES_YOLO_MODE",
-                      "HERMES_SESSION_KEY", "HERMES_INTERACTIVE")
+            for k in ("HER_GATEWAY_SESSION", "HER_CRON_SESSION",
+                      "HER_YOLO_MODE",
+                      "HER_SESSION_KEY", "HER_INTERACTIVE")
         }
-        os.environ.pop("HERMES_YOLO_MODE", None)
-        os.environ.pop("HERMES_INTERACTIVE", None)
-        # HERMES_CRON_SESSION takes priority over HERMES_GATEWAY_SESSION in
+        os.environ.pop("HER_YOLO_MODE", None)
+        os.environ.pop("HER_INTERACTIVE", None)
+        # HER_CRON_SESSION takes priority over HER_GATEWAY_SESSION in
         # _is_gateway_approval_context(); a leaked value from a parent cron
         # process would force the cron path and break these gateway tests.
-        os.environ.pop("HERMES_CRON_SESSION", None)
-        os.environ["HERMES_GATEWAY_SESSION"] = "1"
-        os.environ["HERMES_SESSION_KEY"] = self.SESSION_KEY
+        os.environ.pop("HER_CRON_SESSION", None)
+        os.environ["HER_GATEWAY_SESSION"] = "1"
+        os.environ["HER_SESSION_KEY"] = self.SESSION_KEY
 
     def teardown_method(self):
         from tools import approval as mod

@@ -319,8 +319,8 @@ def test_termux_fast_cli_launch_bare_defers_agent_startup(monkeypatch, main_mod)
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
     monkeypatch.delenv("HER_TUI", raising=False)
-    monkeypatch.delenv("HERMES_DEFER_AGENT_STARTUP", raising=False)
-    monkeypatch.delenv("HERMES_FAST_STARTUP_BANNER", raising=False)
+    monkeypatch.delenv("HER_DEFER_AGENT_STARTUP", raising=False)
+    monkeypatch.delenv("HER_FAST_STARTUP_BANNER", raising=False)
     monkeypatch.setattr(sys, "argv", ["her"])
     monkeypatch.setattr(
         main_mod, "_prepare_agent_startup", lambda args: prepared.append(args.command)
@@ -340,8 +340,8 @@ def test_termux_fast_cli_launch_bare_defers_agent_startup(monkeypatch, main_mod)
     assert main_mod._try_termux_fast_cli_launch() is True
     assert prepared == []
     assert captured == {"query": None, "command": None, "compact": True}
-    assert os.environ["HERMES_DEFER_AGENT_STARTUP"] == "1"
-    assert os.environ["HERMES_FAST_STARTUP_BANNER"] == "1"
+    assert os.environ["HER_DEFER_AGENT_STARTUP"] == "1"
+    assert os.environ["HER_FAST_STARTUP_BANNER"] == "1"
 
 
 def test_termux_fast_cli_launch_oneshot_uses_light_parser(monkeypatch, main_mod):
@@ -400,13 +400,13 @@ def test_termux_ultrafast_version_runs_before_heavy_startup(
     monkeypatch, capsys, main_mod
 ):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TERMUX_DISABLE_FAST_CLI", raising=False)
+    monkeypatch.delenv("HER_TERMUX_DISABLE_FAST_CLI", raising=False)
     monkeypatch.setattr(sys, "argv", ["her", "--version"])
 
     assert main_mod._try_termux_ultrafast_version() is True
 
     out = capsys.readouterr().out
-    assert "Hermes Agent v" in out
+    assert "her Agent v" in out
     assert "Project:" in out
     assert "Python:" in out
     assert "OpenAI SDK:" in out
@@ -434,7 +434,7 @@ def test_termux_fast_cli_launch_skips_help(monkeypatch, main_mod):
 
 def test_termux_fast_cli_launch_can_be_disabled(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setenv("HERMES_TERMUX_DISABLE_FAST_CLI", "1")
+    monkeypatch.setenv("HER_TERMUX_DISABLE_FAST_CLI", "1")
     monkeypatch.delenv("HER_TUI", raising=False)
     monkeypatch.setattr(sys, "argv", ["her", "version"])
 
@@ -450,7 +450,7 @@ def test_termux_bundled_skills_stamp_controls_sync(monkeypatch, tmp_path, main_m
     main_mod._mark_termux_bundled_skills_synced()
     assert main_mod._termux_bundled_skills_sync_needed() is False
 
-    monkeypatch.setenv("HERMES_TERMUX_FORCE_SKILLS_SYNC", "1")
+    monkeypatch.setenv("HER_TERMUX_FORCE_SKILLS_SYNC", "1")
     assert main_mod._termux_bundled_skills_sync_needed() is True
 
 
@@ -475,7 +475,7 @@ def test_termux_forced_bundled_skill_sync_runs(monkeypatch, tmp_path, main_mod):
     calls = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setenv("HERMES_TERMUX_FORCE_SKILLS_SYNC", "1")
+    monkeypatch.setenv("HER_TERMUX_FORCE_SKILLS_SYNC", "1")
     monkeypatch.setattr(main_mod, "get_her_home", lambda: tmp_path)
     monkeypatch.setattr(main_mod, "_termux_bundled_skills_fingerprint", lambda: "fp1")
     monkeypatch.setitem(
@@ -793,7 +793,7 @@ def test_oneshot_distinguishes_disabled_mcp_from_unknown(monkeypatch, capsys):
 
 
 def test_oneshot_wires_session_db_for_recall(monkeypatch):
-    """her -z bypasses HermesCLI, but recall still needs SessionDB."""
+    """her -z bypasses HerCLI, but recall still needs SessionDB."""
     from her_cli.oneshot import _run_agent
 
     captured = {}
@@ -883,10 +883,10 @@ def test_launch_tui_exports_model_provider_and_toolsets(monkeypatch, main_mod):
         )
 
     env = captured["env"]
-    assert env["HERMES_MODEL"] == "nous/her-test"
-    assert env["HERMES_INFERENCE_MODEL"] == "nous/her-test"
+    assert env["HER_MODEL"] == "nous/her-test"
+    assert env["HER_INFERENCE_MODEL"] == "nous/her-test"
     assert env["HER_TUI_PROVIDER"] == "nous"
-    assert env["HERMES_INFERENCE_PROVIDER"] == "nous"
+    assert env["HER_INFERENCE_PROVIDER"] == "nous"
     assert env["HER_TUI_TOOLSETS"] == "web,terminal"
     active_path = Path(env["HER_TUI_ACTIVE_SESSION_FILE"])
     assert active_path.name.startswith("her-tui-active-session-")

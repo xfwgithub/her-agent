@@ -59,7 +59,7 @@ def test_check_for_updates_invalidates_on_version_change(tmp_path, monkeypatch):
     )
 
     monkeypatch.setenv("HER_HOME", str(tmp_path))
-    monkeypatch.delenv("HERMES_REVISION", raising=False)
+    monkeypatch.delenv("HER_REVISION", raising=False)
     with patch("her_cli.banner.subprocess.run") as mock_run, \
          patch("her_cli.banner.check_via_pypi", return_value=0) as mock_pypi:
         result = banner.check_for_updates()
@@ -135,7 +135,7 @@ def test_check_for_updates_docker_returns_none(tmp_path, monkeypatch):
     """Inside the Docker image, check_for_updates() must short-circuit to None.
 
     Regression: the published image excludes .git (.dockerignore) and sets no
-    HERMES_REVISION (nix-only), so without a docker guard check_for_updates()
+    HER_REVISION (nix-only), so without a docker guard check_for_updates()
     falls through to check_via_pypi(), whose version-mismatch flag (1) gets
     rendered by both the Rich banner and the Ink TUI badge as a phantom
     "1 commit behind" — despite there being no git repo or commit math in the
@@ -175,7 +175,7 @@ def test_check_for_updates_non_docker_still_checks(tmp_path, monkeypatch):
     fake_banner.touch()
     monkeypatch.setattr(banner, "__file__", str(fake_banner))
     monkeypatch.setenv("HER_HOME", str(tmp_path))
-    monkeypatch.delenv("HERMES_REVISION", raising=False)
+    monkeypatch.delenv("HER_REVISION", raising=False)
 
     with patch("her_cli.config.detect_install_method", return_value="pip"), \
          patch("her_cli.banner.subprocess.run") as mock_run, \

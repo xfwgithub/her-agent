@@ -1,5 +1,5 @@
 name: "🔧 Setup / Installation Help"
-description: Having trouble installing or configuring Hermes? Ask here.
+description: Having trouble installing or configuring her? Ask here.
 title: "[Setup]: "
 labels: ["setup"]
 body:
@@ -70,7 +70,7 @@ body:
   - type: input
     id: her-version
     attributes:
-      label: Hermes Version
+      label: her Version
       description: Output of `her version` (if install got that far)
       placeholder: "2.1.0"
 

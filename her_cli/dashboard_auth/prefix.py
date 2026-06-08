@@ -6,7 +6,7 @@ prefix (e.g. ``mission-control.tilos.com/her/*`` -> dashboard on
 reconstruct prefixed URLs (Location: headers, OAuth redirect_uri,
 cookie Path attributes, SPA asset URLs).
 
-This module is also the home of the ``HERMES_DASHBOARD_PUBLIC_URL`` /
+This module is also the home of the ``HER_DASHBOARD_PUBLIC_URL`` /
 ``dashboard.public_url`` resolution — when the operator declares a
 complete public URL (scheme + host + optional path prefix), we use
 that directly for the OAuth ``redirect_uri`` and skip the
@@ -68,7 +68,7 @@ def prefix_from_request(request) -> str:
 
 
 # ---------------------------------------------------------------------------
-# HERMES_DASHBOARD_PUBLIC_URL / dashboard.public_url
+# HER_DASHBOARD_PUBLIC_URL / dashboard.public_url
 # ---------------------------------------------------------------------------
 
 
@@ -137,7 +137,7 @@ def resolve_public_url() -> str:
 
     Precedence (mirrors ``dashboard.oauth.client_id``):
 
-      1. ``HERMES_DASHBOARD_PUBLIC_URL`` env var (when non-empty after
+      1. ``HER_DASHBOARD_PUBLIC_URL`` env var (when non-empty after
          strip — empty values are treated as unset so a provisioned-but-
          not-populated Fly secret can't shadow a valid config.yaml entry).
       2. ``dashboard.public_url`` in ``config.yaml``.
@@ -149,7 +149,7 @@ def resolve_public_url() -> str:
     malformed config entry falls through to ``""``. This means a typo
     in one surface doesn't prevent the other from working.
     """
-    env_raw = os.environ.get("HERMES_DASHBOARD_PUBLIC_URL", "")
+    env_raw = os.environ.get("HER_DASHBOARD_PUBLIC_URL", "")
     env_clean = _normalise_public_url(env_raw)
     if env_clean:
         return env_clean

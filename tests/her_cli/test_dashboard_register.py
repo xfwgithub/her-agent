@@ -123,7 +123,7 @@ class TestHappyPath:
         assert "custom_redirect_uri" not in captured["body"]
 
         # env write: client_id present, portal URL NOT written (default portal)
-        assert saved["HERMES_DASHBOARD_OAUTH_CLIENT_ID"] == "agent:selfhost-1"
+        assert saved["HER_DASHBOARD_OAUTH_CLIENT_ID"] == "agent:selfhost-1"
         assert "HER_DASHBOARD_PORTAL_URL" not in saved
 
         out = capsys.readouterr().out

@@ -1,5 +1,5 @@
 """
-Hermes CLI - Unified command-line interface for Hermes Agent.
+her CLI - Unified command-line interface for her Agent.
 
 Provides subcommands for:
 - her chat          - Interactive chat (same as ./her)

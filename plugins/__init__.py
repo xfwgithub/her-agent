@@ -1,1 +1,1 @@
-# Hermes plugins package
+# her plugins package

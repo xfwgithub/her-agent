@@ -25,7 +25,7 @@ from her_cli.config import (
 )
 
 
-class TestGetHermesHome:
+class TestGetherHome:
     def test_default_path(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("HER_HOME", None)
@@ -38,7 +38,7 @@ class TestGetHermesHome:
             assert home == Path("/custom/path")
 
 
-class TestEnsureHermesHome:
+class TestEnsureherHome:
     def test_creates_subdirs(self, tmp_path):
         with patch.dict(os.environ, {"HER_HOME": str(tmp_path)}):
             ensure_her_home()
@@ -552,16 +552,16 @@ class TestOptionalEnvVarsRegistry:
         assert "TAVILY_API_KEY" in all_vars
 
     def test_max_iterations_not_offered_as_env_var(self):
-        """HERMES_MAX_ITERATIONS must NOT be in OPTIONAL_ENV_VARS (issue #17534).
+        """HER_MAX_ITERATIONS must NOT be in OPTIONAL_ENV_VARS (issue #17534).
 
         Offering it as an editable env var (dashboard, `her setup`) lets a
         user write it to .env, recreating the stale ghost that shadows
         config.yaml's agent.max_turns. The iteration budget is configured ONLY
-        via config.yaml; HERMES_MAX_ITERATIONS remains a read-only backward-compat
+        via config.yaml; HER_MAX_ITERATIONS remains a read-only backward-compat
         fallback in the gateway/CLI, never a promoted write target.
         """
         from her_cli.config import OPTIONAL_ENV_VARS
-        assert "HERMES_MAX_ITERATIONS" not in OPTIONAL_ENV_VARS
+        assert "HER_MAX_ITERATIONS" not in OPTIONAL_ENV_VARS
 
 
 class TestConfigMigrationSecretPrompts:
@@ -945,13 +945,13 @@ class TestUserMessagePreviewConfig:
 class TestEnvWriteDenylist:
     """``save_env_value`` refuses to persist env-var names that
     influence how subprocesses execute — ``LD_PRELOAD``, ``PYTHONPATH``,
-    ``PATH``, ``EDITOR``, etc. — or any ``HERMES_*`` runtime flag.
+    ``PATH``, ``EDITOR``, etc. — or any ``HER_*`` runtime flag.
 
     The dashboard exposes ``PUT /api/env`` to any authed caller (and
     the session token lives in the SPA's HTML where any future plugin
     XSS or local process could exfiltrate it). Without this gate, an
     attacker who steals the token could plant
-    ``LD_PRELOAD=/tmp/evil.so`` in ``.env`` and own the next Hermes
+    ``LD_PRELOAD=/tmp/evil.so`` in ``.env`` and own the next her
     process on next startup via the dotenv → ``os.environ`` chain in
     ``her_cli/env_loader.py``.
 
@@ -987,8 +987,8 @@ class TestEnvWriteDenylist:
             "GIT_EXEC_PATH",
             "HER_HOME",
             "HER_PROFILE",
-            "HERMES_CONFIG",
-            "HERMES_ENV",
+            "HER_CONFIG",
+            "HER_ENV",
         ],
     )
     def test_denylisted_keys_rejected(self, denied_key):
@@ -1004,17 +1004,17 @@ class TestEnvWriteDenylist:
     @pytest.mark.parametrize(
         "allowed_key",
         [
-            "HERMES_GEMINI_CLIENT_ID",
-            "HERMES_LANGFUSE_PUBLIC_KEY",
-            "HERMES_SPOTIFY_CLIENT_ID",
-            "HERMES_QWEN_BASE_URL",
-            "HERMES_MAX_ITERATIONS",
+            "HER_GEMINI_CLIENT_ID",
+            "HER_LANGFUSE_PUBLIC_KEY",
+            "HER_SPOTIFY_CLIENT_ID",
+            "HER_QWEN_BASE_URL",
+            "HER_MAX_ITERATIONS",
         ],
     )
     def test_her_integration_keys_still_writable(self, allowed_key):
-        """``HERMES_*`` overall is NOT blocked — only the four runtime
+        """``HER_*`` overall is NOT blocked — only the four runtime
         location names (HOME/PROFILE/CONFIG/ENV) are. Integration
-        credentials following the ``HERMES_*`` convention must keep
+        credentials following the ``HER_*`` convention must keep
         working or we'd regress every provider setup wizard that
         currently writes one of these (auth.py, Spotify, Langfuse, …)."""
         save_env_value(allowed_key, "test-value-123")
@@ -1029,7 +1029,7 @@ class TestEnvWriteDenylist:
 
     def test_arbitrary_user_key_still_works(self):
         """Plugin / user-defined env vars (anything outside the
-        denylist and outside ``HERMES_*``) keep working. The denylist
+        denylist and outside ``HER_*``) keep working. The denylist
         is narrow on purpose."""
         save_env_value("MY_PLUGIN_TOKEN", "plugin-secret-123")
         env = load_env()

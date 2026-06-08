@@ -41,7 +41,7 @@ def cron_env(tmp_path, monkeypatch):
     (her_home / "cron").mkdir()
     (her_home / "cron" / "output").mkdir()
     monkeypatch.setenv("HER_HOME", str(her_home))
-    monkeypatch.setenv("HERMES_BUNDLES_DIR", str(her_home / "skill-bundles"))
+    monkeypatch.setenv("HER_BUNDLES_DIR", str(her_home / "skill-bundles"))
 
     # Patch the module-level SKILLS_DIR snapshots that `skill_view()`
     # uses. Without this, the tool resolves against the real

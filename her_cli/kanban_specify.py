@@ -40,15 +40,15 @@ from typing import Optional
 
 from her_cli import kanban_db as kb
 
-HERMES_KANBAN_SPECIFY_MAX_TOKENS = max(
+HER_KANBAN_SPECIFY_MAX_TOKENS = max(
     1500,
-    int(os.getenv("HERMES_KANBAN_SPECIFY_MAX_TOKENS", "6000")),
+    int(os.getenv("HER_KANBAN_SPECIFY_MAX_TOKENS", "6000")),
 )
 
 logger = logging.getLogger(__name__)
 
 
-_SYSTEM_PROMPT = """You are the Kanban triage specifier for the Hermes Agent board.
+_SYSTEM_PROMPT = """You are the Kanban triage specifier for the her Agent board.
 A user dropped a rough idea into the Triage column. Your job is to turn it
 into a concrete, actionable task spec that an autonomous worker can pick up
 and execute without further clarification.
@@ -190,7 +190,7 @@ def specify_task(
                 {"role": "user", "content": user_msg},
             ],
             temperature=0.3,
-            max_tokens=HERMES_KANBAN_SPECIFY_MAX_TOKENS,
+            max_tokens=HER_KANBAN_SPECIFY_MAX_TOKENS,
             timeout=timeout or 120,
             extra_body=get_auxiliary_extra_body() or None,
         )

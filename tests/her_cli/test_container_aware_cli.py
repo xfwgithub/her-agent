@@ -27,7 +27,7 @@ def container_env(tmp_path, monkeypatch):
     her_home = tmp_path / ".her"
     her_home.mkdir()
     monkeypatch.setenv("HER_HOME", str(her_home))
-    monkeypatch.delenv("HERMES_DEV", raising=False)
+    monkeypatch.delenv("HER_DEV", raising=False)
 
     container_mode = her_home / ".container-mode"
     container_mode.write_text(
@@ -65,7 +65,7 @@ def test_get_container_exec_info_none_without_file(tmp_path, monkeypatch):
     her_home = tmp_path / ".her"
     her_home.mkdir()
     monkeypatch.setenv("HER_HOME", str(her_home))
-    monkeypatch.delenv("HERMES_DEV", raising=False)
+    monkeypatch.delenv("HER_DEV", raising=False)
 
     with patch("her_constants.is_container", return_value=False):
         info = get_container_exec_info()
@@ -74,8 +74,8 @@ def test_get_container_exec_info_none_without_file(tmp_path, monkeypatch):
 
 
 def test_get_container_exec_info_skipped_when_her_dev(container_env, monkeypatch):
-    """Returns None when HERMES_DEV=1 is set (dev mode bypass)."""
-    monkeypatch.setenv("HERMES_DEV", "1")
+    """Returns None when HER_DEV=1 is set (dev mode bypass)."""
+    monkeypatch.setenv("HER_DEV", "1")
 
     with patch("her_constants.is_container", return_value=False):
         info = get_container_exec_info()
@@ -84,8 +84,8 @@ def test_get_container_exec_info_skipped_when_her_dev(container_env, monkeypatch
 
 
 def test_get_container_exec_info_not_skipped_when_her_dev_zero(container_env, monkeypatch):
-    """HERMES_DEV=0 does NOT trigger bypass — only '1' does."""
-    monkeypatch.setenv("HERMES_DEV", "0")
+    """HER_DEV=0 does NOT trigger bypass — only '1' does."""
+    monkeypatch.setenv("HER_DEV", "0")
 
     with patch("her_constants.is_container", return_value=False):
         info = get_container_exec_info()
@@ -107,7 +107,7 @@ def test_get_container_exec_info_defaults():
         with patch("her_constants.is_container", return_value=False), \
              patch.dict(get_container_exec_info.__globals__, {"get_her_home": lambda: her_home}), \
              patch.dict(os.environ, {}, clear=False):
-            os.environ.pop("HERMES_DEV", None)
+            os.environ.pop("HER_DEV", None)
             info = get_container_exec_info()
 
         assert info is not None

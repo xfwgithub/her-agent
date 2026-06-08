@@ -1,6 +1,6 @@
 # disk-cleanup
 
-Auto-tracks and cleans up ephemeral files created during Hermes Agent
+Auto-tracks and cleans up ephemeral files created during her Agent
 sessions — test scripts, temp outputs, cron logs, stale chrome profiles.
 Scoped strictly to `$HER_HOME` and `/tmp/her-*`.
 

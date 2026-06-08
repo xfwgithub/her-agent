@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# Hermes Agent Setup Script
+# her Agent Setup Script
 # ============================================================================
 # Quick setup for developers who cloned the repo manually.
 # Uses uv for desktop/server setup and Python's stdlib venv + pip on Termux.
@@ -56,7 +56,7 @@ get_command_link_display_dir() {
 }
 
 echo ""
-echo -e "${CYAN}⚕ Hermes Agent Setup${NC}"
+echo -e "${CYAN}⚕ her Agent Setup${NC}"
 echo ""
 
 # ============================================================================
@@ -347,11 +347,11 @@ fi
 
 echo -e "${CYAN}→${NC} Setting up her command..."
 
-HERMES_BIN="$SCRIPT_DIR/venv/bin/her"
+HER_BIN="$SCRIPT_DIR/venv/bin/her"
 COMMAND_LINK_DIR="$(get_command_link_dir)"
 COMMAND_LINK_DISPLAY_DIR="$(get_command_link_display_dir)"
 mkdir -p "$COMMAND_LINK_DIR"
-ln -sf "$HERMES_BIN" "$COMMAND_LINK_DIR/her"
+ln -sf "$HER_BIN" "$COMMAND_LINK_DIR/her"
 echo -e "${GREEN}✓${NC} Symlinked her → $COMMAND_LINK_DISPLAY_DIR/her"
 
 if is_termux; then
@@ -383,7 +383,7 @@ else
         if ! echo "$PATH" | tr ':' '\n' | grep -q "^$HOME/.local/bin$"; then
             if ! grep -q '\.local/bin' "$SHELL_CONFIG" 2>/dev/null; then
                 echo "" >> "$SHELL_CONFIG"
-                echo "# Hermes Agent — ensure ~/.local/bin is on PATH" >> "$SHELL_CONFIG"
+                echo "# her Agent — ensure ~/.local/bin is on PATH" >> "$SHELL_CONFIG"
                 echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL_CONFIG"
                 echo -e "${GREEN}✓${NC} Added ~/.local/bin to PATH in $SHELL_CONFIG"
             else
@@ -399,8 +399,8 @@ fi
 # Seed bundled skills into ~/.her/skills/
 # ============================================================================
 
-HERMES_SKILLS_DIR="${HER_HOME:-$HOME/.her}/skills"
-mkdir -p "$HERMES_SKILLS_DIR"
+HER_SKILLS_DIR="${HER_HOME:-$HOME/.her}/skills"
+mkdir -p "$HER_SKILLS_DIR"
 
 echo ""
 echo "Syncing bundled skills to ~/.her/skills/ ..."
@@ -409,7 +409,7 @@ if "$SCRIPT_DIR/venv/bin/python" "$SCRIPT_DIR/tools/skills_sync.py" 2>/dev/null;
 else
     # Fallback: copy if sync script fails (missing deps, etc.)
     if [ -d "$SCRIPT_DIR/skills" ]; then
-        cp -rn "$SCRIPT_DIR/skills/"* "$HERMES_SKILLS_DIR/" 2>/dev/null || true
+        cp -rn "$SCRIPT_DIR/skills/"* "$HER_SKILLS_DIR/" 2>/dev/null || true
         echo -e "${GREEN}✓${NC} Skills copied"
     fi
 fi

@@ -3,7 +3,7 @@
 Background: ``.dockerignore`` excludes ``.git``, so ``git rev-parse HEAD``
 fails inside the published image and ``her dump`` used to report
 ``version: ... [(unknown)]``.  The Dockerfile now writes the build-time
-``$HERMES_GIT_SHA`` build-arg to ``/opt/her/.her_build_sha`` and
+``$HER_GIT_SHA`` build-arg to ``/opt/her/.her_build_sha`` and
 ``her_cli/build_info.py`` reads it as a fallback.
 
 CI (``.github/workflows/docker-publish.yml``) always sets the build-arg
@@ -65,7 +65,7 @@ def _read_baked_sha_from_image(image: str) -> str | None:
 
 
 def test_dump_reports_baked_sha_when_present(built_image: str) -> None:
-    """When the image was built with ``HERMES_GIT_SHA``, dump must surface it.
+    """When the image was built with ``HER_GIT_SHA``, dump must surface it.
 
     Together with the smoke-test action (which exercises ``--help``), this
     closes the regression loop for the missing-sha bug: any future change

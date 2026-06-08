@@ -7,7 +7,7 @@ import pytest
 from her_cli import relaunch as relaunch_mod
 
 
-class TestResolveHermesBin:
+class TestResolveherBin:
     def test_prefers_absolute_argv0_when_executable(self, monkeypatch):
         fake = "/nix/store/abc/bin/her"
         monkeypatch.setattr(sys, "argv", [fake])
@@ -232,7 +232,7 @@ class TestRelaunch:
         assert "open a new terminal" in err.lower() or "path" in err.lower()
 
 
-class TestResolveHermesBinWindowsPyGuard:
+class TestResolveherBinWindowsPyGuard:
     """On Windows, resolve_her_bin MUST NOT return a .py path.
     os.access(x, os.X_OK) returns True for .py files on Windows because
     PATHEXT includes .py when the Python launcher is installed — but

@@ -3,7 +3,7 @@
 Automates what a user otherwise does by hand: open the Nous Portal
 ``/local-dashboards`` page in a browser, click "register", copy the
 resulting ``agent:{id}`` OAuth client ID, and paste it into ``~/.her/.env``
-as ``HERMES_DASHBOARD_OAUTH_CLIENT_ID``.
+as ``HER_DASHBOARD_OAUTH_CLIENT_ID``.
 
 This command:
   1. Resolves a fresh Nous Portal access token from the existing login
@@ -12,7 +12,7 @@ This command:
   2. POSTs to ``{portal}/api/oauth/self-hosted-client`` with that bearer
      token, which creates a SELF_HOSTED agent client owned by the caller's
      org and returns the fully-formed ``agent:{id}`` client_id.
-  3. Writes ``HERMES_DASHBOARD_OAUTH_CLIENT_ID`` and (if absent)
+  3. Writes ``HER_DASHBOARD_OAUTH_CLIENT_ID`` and (if absent)
      ``HER_DASHBOARD_PORTAL_URL`` into ``~/.her/.env`` idempotently.
   4. Prints a post-register hint explaining that the OAuth gate only engages
      on a non-loopback bind.
@@ -172,7 +172,7 @@ def _print_post_register_hint(
     env_path = get_env_path()
     print()
     print(f"  Wrote to {env_path}:")
-    print(f"    HERMES_DASHBOARD_OAUTH_CLIENT_ID={client_id}")
+    print(f"    HER_DASHBOARD_OAUTH_CLIENT_ID={client_id}")
     if wrote_portal_url:
         print(f"    HER_DASHBOARD_PORTAL_URL={portal_base_url}")
     print()
@@ -212,7 +212,7 @@ def cmd_dashboard_register(args) -> None:
     from her_cli.config import get_env_value, is_managed, save_env_value
 
     # Managed (Docker/hosted) installs get their dashboard OAuth client_id
-    # stamped in by the orchestrator (NAS sets HERMES_DASHBOARD_OAUTH_CLIENT_ID
+    # stamped in by the orchestrator (NAS sets HER_DASHBOARD_OAUTH_CLIENT_ID
     # via buildContainerEnvVars). Registering from inside such a container is a
     # mistake — and save_env_value refuses to write anyway.
     if is_managed():
@@ -270,10 +270,10 @@ def cmd_dashboard_register(args) -> None:
     #    from the production default, so we don't clutter .env for the common case
     #    but DO persist a non-default portal (e.g. a preview deploy used in dev).
     try:
-        save_env_value("HERMES_DASHBOARD_OAUTH_CLIENT_ID", client_id)
+        save_env_value("HER_DASHBOARD_OAUTH_CLIENT_ID", client_id)
     except Exception as exc:
-        print(f"✗ Failed to write HERMES_DASHBOARD_OAUTH_CLIENT_ID to .env: {exc}")
-        print(f"  Set it manually:  HERMES_DASHBOARD_OAUTH_CLIENT_ID={client_id}")
+        print(f"✗ Failed to write HER_DASHBOARD_OAUTH_CLIENT_ID to .env: {exc}")
+        print(f"  Set it manually:  HER_DASHBOARD_OAUTH_CLIENT_ID={client_id}")
         sys.exit(1)
 
     wrote_portal_url = False

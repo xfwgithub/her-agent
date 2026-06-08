@@ -58,7 +58,7 @@ export HOME=/opt/data
 # Save the Docker -w (or default) working directory before init
 # scripts cd to /opt/data, so the container starts in the
 # directory the user requested.
-_her_orig_cwd="${HERMES_ORIG_CWD:-$PWD}"
+_her_orig_cwd="${HER_ORIG_CWD:-$PWD}"
 
 cd /opt/data
 # shellcheck disable=SC1091
@@ -78,5 +78,5 @@ if command -v "$1" >/dev/null 2>&1; then
     drop "$@"
 fi
 
-# Hermes subcommand pass-through.
+# her subcommand pass-through.
 drop her "$@"

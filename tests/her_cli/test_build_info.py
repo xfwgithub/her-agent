@@ -1,6 +1,6 @@
 """Tests for her_cli.build_info — baked-in build SHA resolution.
 
-The build SHA is written by the Dockerfile's ``HERMES_GIT_SHA`` build-arg
+The build SHA is written by the Dockerfile's ``HER_GIT_SHA`` build-arg
 into ``<project_root>/.her_build_sha``.  These tests cover the read-side
 helper: missing file, malformed file, truncation, and error tolerance.
 """

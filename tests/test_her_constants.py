@@ -16,7 +16,7 @@ from her_constants import (
 )
 
 
-class TestGetDefaultHermesRoot:
+class TestGetDefaultherRoot:
     """Tests for get_default_her_root() — Docker/custom deployment awareness."""
 
     def test_no_her_home_returns_native(self, tmp_path, monkeypatch):
@@ -90,7 +90,7 @@ class TestGetDefaultHermesRoot:
         assert get_default_her_root() == home / "AppData" / "Local" / "her"
 
 
-class TestGetHermesHome:
+class TestGetherHome:
     """Tests for get_her_home() platform-aware fallback."""
 
     def test_windows_fallback_uses_localappdata(self, tmp_path, monkeypatch):

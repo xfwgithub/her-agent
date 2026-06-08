@@ -49,7 +49,7 @@ class TestHandleUpdateCommand:
     async def test_managed_install_returns_package_manager_guidance(self, monkeypatch):
         runner = _make_runner()
         event = _make_event()
-        monkeypatch.setenv("HERMES_MANAGED", "homebrew")
+        monkeypatch.setenv("HER_MANAGED", "homebrew")
 
         result = await runner._handle_update_command(event)
 
@@ -144,7 +144,7 @@ class TestHandleUpdateCommand:
              patch("subprocess.Popen", mock_popen):
             result = await runner._handle_update_command(event)
 
-        assert "Starting Hermes update" in result
+        assert "Starting her update" in result
         call_args = mock_popen.call_args[0][0]
         # The update_cmd uses sys.executable -m her_cli.main
         joined = " ".join(call_args) if isinstance(call_args, list) else call_args
@@ -273,7 +273,7 @@ class TestHandleUpdateCommand:
         assert call_args[0] == "/usr/bin/setsid"
         assert call_args[1] == "bash"
         assert ".update_exit_code" in call_args[-1]
-        assert "Starting Hermes update" in result
+        assert "Starting her update" in result
 
     @pytest.mark.asyncio
     async def test_fallback_when_no_setsid(self, tmp_path):
@@ -313,7 +313,7 @@ class TestHandleUpdateCommand:
         # start_new_session=True should be in kwargs
         call_kwargs = mock_popen.call_args[1]
         assert call_kwargs.get("start_new_session") is True
-        assert "Starting Hermes update" in result
+        assert "Starting her update" in result
 
     @pytest.mark.asyncio
     async def test_popen_failure_cleans_up(self, tmp_path):
@@ -388,7 +388,7 @@ class TestUpdateCommandPlatformGate:
         # Stop _handle_update_command from progressing further if the gate
         # somehow lets the event through — the assertion on the returned
         # string is the real test.
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("HER_MANAGED", "")
 
         result = await runner._handle_update_command(event)
 
@@ -403,7 +403,7 @@ class TestUpdateCommandPlatformGate:
         """
         runner = _make_runner()
         event = _make_event(platform=Platform.API_SERVER)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("HER_MANAGED", "")
 
         result = await runner._handle_update_command(event)
 
@@ -434,13 +434,13 @@ class TestUpdateCommandPlatformGate:
 
         runner = _make_runner()
         event = _make_event(platform=Platform.DISCORD)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("HER_MANAGED", "")
 
         result = await runner._handle_update_command(event)
 
         # The gate must NOT have rejected us — anything other than the
         # ``platform_not_messaging`` rejection string is acceptable here.
-        # Later steps may legitimately return success ("Starting Hermes
+        # Later steps may legitimately return success ("Starting her
         # update…") or fail for environment reasons.
         assert "only available from messaging platforms" not in result
 
@@ -462,7 +462,7 @@ class TestUpdateCommandPlatformGate:
 
         runner = _make_runner()
         event = _make_event(platform=Platform.MATTERMOST)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("HER_MANAGED", "")
 
         result = await runner._handle_update_command(event)
 
@@ -487,7 +487,7 @@ class TestUpdateCommandPlatformGate:
 
         runner = _make_runner()
         event = _make_event(platform=Platform.HOMEASSISTANT)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("HER_MANAGED", "")
 
         result = await runner._handle_update_command(event)
 
@@ -504,7 +504,7 @@ class TestUpdateCommandPlatformGate:
 
         runner = _make_runner()
         event = _make_event(platform=Platform.TELEGRAM)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("HER_MANAGED", "")
 
         result = await runner._handle_update_command(event)
 

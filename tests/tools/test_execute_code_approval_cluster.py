@@ -9,7 +9,7 @@ Covers the canonical fix for issues #4146, #27303, #30882, #33057:
   3. tools.approval.check_execute_code_guard — the entry-point guard decision
      matrix (isolated backends, yolo/off, cron-deny, headless-local,
      gateway approve/deny/timeout/missing-notify, smart mode).
-  4. tools.code_execution_tool._scrub_child_env — broad HERMES_ prefix dropped,
+  4. tools.code_execution_tool._scrub_child_env — broad HER_ prefix dropped,
      operational allowlist kept, DSN/WEBHOOK blocked, passthrough precedence.
 """
 
@@ -105,12 +105,12 @@ def test_both_rpc_threads_use_propagation_helper():
 
 @pytest.fixture
 def gw_session(monkeypatch):
-    """A clean gateway session: HERMES_GATEWAY_SESSION set, a bound session
+    """A clean gateway session: HER_GATEWAY_SESSION set, a bound session
     key, and isolated gateway queues/callbacks. Yields the session_key."""
-    monkeypatch.setenv("HERMES_GATEWAY_SESSION", "1")
-    monkeypatch.delenv("HERMES_INTERACTIVE", raising=False)
-    monkeypatch.delenv("HERMES_CRON_SESSION", raising=False)
-    monkeypatch.delenv("HERMES_EXEC_ASK", raising=False)
+    monkeypatch.setenv("HER_GATEWAY_SESSION", "1")
+    monkeypatch.delenv("HER_INTERACTIVE", raising=False)
+    monkeypatch.delenv("HER_CRON_SESSION", raising=False)
+    monkeypatch.delenv("HER_EXEC_ASK", raising=False)
     # Force manual mode regardless of host config.
     monkeypatch.setattr(A, "_get_approval_mode", lambda: "manual")
 
@@ -149,17 +149,17 @@ def test_guard_isolated_backend_approved():
 
 def test_guard_headless_local_approved(monkeypatch):
     # Documented #30882 limitation: no approval surface → preserve auto-run.
-    monkeypatch.delenv("HERMES_GATEWAY_SESSION", raising=False)
-    monkeypatch.delenv("HERMES_INTERACTIVE", raising=False)
-    monkeypatch.delenv("HERMES_CRON_SESSION", raising=False)
-    monkeypatch.delenv("HERMES_EXEC_ASK", raising=False)
+    monkeypatch.delenv("HER_GATEWAY_SESSION", raising=False)
+    monkeypatch.delenv("HER_INTERACTIVE", raising=False)
+    monkeypatch.delenv("HER_CRON_SESSION", raising=False)
+    monkeypatch.delenv("HER_EXEC_ASK", raising=False)
     monkeypatch.setattr(A, "_get_approval_mode", lambda: "manual")
     assert A.check_execute_code_guard("import os", "local")["approved"] is True
 
 
 def test_guard_cron_deny_blocks(monkeypatch):
-    monkeypatch.setenv("HERMES_CRON_SESSION", "1")
-    monkeypatch.delenv("HERMES_GATEWAY_SESSION", raising=False)
+    monkeypatch.setenv("HER_CRON_SESSION", "1")
+    monkeypatch.delenv("HER_GATEWAY_SESSION", raising=False)
     monkeypatch.setattr(A, "_get_approval_mode", lambda: "manual")
     monkeypatch.setattr(A, "_get_cron_approval_mode", lambda: "deny")
     res = A.check_execute_code_guard("import os", "local")
@@ -286,10 +286,10 @@ def test_env_scrub_her_allowlist_and_secret_blocks():
     env = {
         # operational allowlist → kept
         "HER_HOME": "/h", "HER_PROFILE": "p",
-        "HERMES_CONFIG": "/c.yaml", "HERMES_ENV": "/e",
-        # other HERMES_* → dropped (broad prefix removed)
-        "HERMES_BASE_URL": "https://x", "HERMES_INTERACTIVE": "1",
-        "HERMES_KANBAN_DB": "postgres://u:p@h/db",
+        "HER_CONFIG": "/c.yaml", "HER_ENV": "/e",
+        # other HER_* → dropped (broad prefix removed)
+        "HER_BASE_URL": "https://x", "HER_INTERACTIVE": "1",
+        "HER_KANBAN_DB": "postgres://u:p@h/db",
         # secret substrings (incl. new DSN/WEBHOOK) → dropped
         "SENTRY_DSN": "https://a@s.io/1", "SLACK_WEBHOOK": "https://h/x",
         "OPENAI_API_KEY": "sk", "GITHUB_TOKEN": "ghp",
@@ -298,10 +298,10 @@ def test_env_scrub_her_allowlist_and_secret_blocks():
     }
     out = _scrub_child_env(env, is_passthrough=lambda _: False, is_windows=False)
 
-    for kept in ("HER_HOME", "HER_PROFILE", "HERMES_CONFIG", "HERMES_ENV", "PATH"):
+    for kept in ("HER_HOME", "HER_PROFILE", "HER_CONFIG", "HER_ENV", "PATH"):
         assert kept in out, f"{kept} should be kept"
     for dropped in (
-        "HERMES_BASE_URL", "HERMES_INTERACTIVE", "HERMES_KANBAN_DB",
+        "HER_BASE_URL", "HER_INTERACTIVE", "HER_KANBAN_DB",
         "SENTRY_DSN", "SLACK_WEBHOOK", "OPENAI_API_KEY", "GITHUB_TOKEN",
         "RANDOM_X",
     ):
@@ -333,9 +333,9 @@ def test_execute_code_entry_blocks_before_spawn_when_guard_denies(monkeypatch, t
     from tools import terminal_tool as TT
 
     marker = tmp_path / "child-ran.marker"
-    monkeypatch.setenv("HERMES_CRON_SESSION", "1")
-    monkeypatch.delenv("HERMES_GATEWAY_SESSION", raising=False)
-    monkeypatch.delenv("HERMES_INTERACTIVE", raising=False)
+    monkeypatch.setenv("HER_CRON_SESSION", "1")
+    monkeypatch.delenv("HER_GATEWAY_SESSION", raising=False)
+    monkeypatch.delenv("HER_INTERACTIVE", raising=False)
     monkeypatch.setattr(A, "_get_approval_mode", lambda: "manual")
     monkeypatch.setattr(A, "_get_cron_approval_mode", lambda: "deny")
     monkeypatch.setattr(TT, "_get_env_config", lambda: {"env_type": "local"})
@@ -353,36 +353,36 @@ def test_execute_code_entry_blocks_before_spawn_when_guard_denies(monkeypatch, t
 # ---------------------------------------------------------------------------
 
 def test_env_scrub_logs_dropped_her_vars(caplog):
-    """Dropping a non-allowlisted, non-secret HERMES_* var must be diagnosable:
+    """Dropping a non-allowlisted, non-secret HER_* var must be diagnosable:
     the scrub emits a one-shot debug log naming the dropped vars and pointing at
     the env_passthrough opt-in, so the silent behavior change (#27303) doesn't
-    leave users guessing why a sandbox script sees an unset HERMES_* var."""
+    leave users guessing why a sandbox script sees an unset HER_* var."""
     import logging
 
     from tools.code_execution_tool import _scrub_child_env
 
     env = {
         "HER_HOME": "/h",          # allowlisted → kept, not logged
-        "HERMES_BASE_URL": "https://x",   # dropped → logged
-        "HERMES_KANBAN_DB": "postgres://u:p@h/db",  # dropped → logged
-        "HERMES_API_KEY": "sk",       # secret → dropped silently (not logged)
+        "HER_BASE_URL": "https://x",   # dropped → logged
+        "HER_KANBAN_DB": "postgres://u:p@h/db",  # dropped → logged
+        "HER_API_KEY": "sk",       # secret → dropped silently (not logged)
         "PATH": "/usr/bin",           # safe prefix → kept
     }
     with caplog.at_level(logging.DEBUG, logger="tools.code_execution_tool"):
         out = _scrub_child_env(env, is_passthrough=lambda _: False, is_windows=False)
 
     assert "HER_HOME" in out and "PATH" in out
-    assert "HERMES_BASE_URL" not in out and "HERMES_KANBAN_DB" not in out
+    assert "HER_BASE_URL" not in out and "HER_KANBAN_DB" not in out
 
     msgs = "\n".join(r.getMessage() for r in caplog.records)
-    assert "HERMES_BASE_URL" in msgs and "HERMES_KANBAN_DB" in msgs
+    assert "HER_BASE_URL" in msgs and "HER_KANBAN_DB" in msgs
     assert "env_passthrough" in msgs
     # Secret vars are dropped but must NOT be named in the diagnostic log.
-    assert "HERMES_API_KEY" not in msgs
+    assert "HER_API_KEY" not in msgs
 
 
 def test_env_scrub_no_log_when_nothing_dropped(caplog):
-    """No diagnostic noise when there are no dropped HERMES_* vars."""
+    """No diagnostic noise when there are no dropped HER_* vars."""
     import logging
 
     from tools.code_execution_tool import _scrub_child_env

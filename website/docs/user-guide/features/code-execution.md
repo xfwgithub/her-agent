@@ -6,14 +6,14 @@ description: "Programmatic Python execution with RPC tool access — collapse mu
 
 # Code Execution (Programmatic Tool Calling)
 
-The `execute_code` tool lets the agent write Python scripts that call Hermes tools programmatically, collapsing multi-step workflows into a single LLM turn. The script runs in a child process on the agent host, communicating with Hermes over a Unix domain socket RPC.
+The `execute_code` tool lets the agent write Python scripts that call her tools programmatically, collapsing multi-step workflows into a single LLM turn. The script runs in a child process on the agent host, communicating with her over a Unix domain socket RPC.
 
 ## How It Works
 
 1. The agent writes a Python script using `from her_tools import ...`
-2. Hermes generates a `her_tools.py` stub module with RPC functions
-3. Hermes opens a Unix domain socket and starts an RPC listener thread
-4. The script runs in a child process — tool calls travel over the socket back to Hermes
+2. her generates a `her_tools.py` stub module with RPC functions
+3. her opens a Unix domain socket and starts an RPC listener thread
+4. The script runs in a child process — tool calls travel over the socket back to her
 5. Only the script's `print()` output is returned to the LLM; intermediate tool results never enter the context window
 
 ```python
@@ -132,8 +132,8 @@ print(json.dumps(report, indent=2))
 
 | Mode | Working directory | Python interpreter |
 |------|-------------------|--------------------|
-| **`project`** (default) | The session's working directory (same as `terminal()`) | Active `VIRTUAL_ENV` / `CONDA_PREFIX` python, falling back to Hermes's own python |
-| `strict` | A temp staging directory isolated from the user's project | `sys.executable` (Hermes's own python) |
+| **`project`** (default) | The session's working directory (same as `terminal()`) | Active `VIRTUAL_ENV` / `CONDA_PREFIX` python, falling back to her's own python |
+| `strict` | A temp staging directory isolated from the user's project | `sys.executable` (her's own python) |
 
 **When to leave it on `project`:** you want `import pandas`, `from my_project import foo`, or relative paths like `open(".env")` to work the same way they do in `terminal()`. This is almost always what you want.
 
@@ -219,35 +219,35 @@ terminal:
 
 See the [Security guide](/user-guide/security#environment-variable-passthrough) for full details.
 
-### `HERMES_*` variables in the child
+### `HER_*` variables in the child
 
-The child process receives only a small, fixed set of operational `HERMES_*`
+The child process receives only a small, fixed set of operational `HER_*`
 variables by exact name:
 
 - `HER_HOME`
 - `HER_PROFILE`
-- `HERMES_CONFIG`
-- `HERMES_ENV`
+- `HER_CONFIG`
+- `HER_ENV`
 
-(plus `HERMES_RPC_DIR` / `HERMES_RPC_SOCKET` / `TZ` / `HOME`, which Hermes
+(plus `HER_RPC_DIR` / `HER_RPC_SOCKET` / `TZ` / `HOME`, which her
 injects explicitly so the RPC channel works).
 
 :::note Behavior change
-Earlier versions passed **any** variable whose name began with `HERMES_`
+Earlier versions passed **any** variable whose name began with `HER_`
 through to the child. That broad prefix was removed for security hardening: it
-could leak `HERMES_*`-named configuration that doesn't match a secret substring
-(for example `HERMES_BASE_URL`, `HERMES_KANBAN_DB`, or a `HERMES_*_WEBHOOK`
+could leak `HER_*`-named configuration that doesn't match a secret substring
+(for example `HER_BASE_URL`, `HER_KANBAN_DB`, or a `HER_*_WEBHOOK`
 endpoint) into arbitrary sandboxed code.
 
 If an `execute_code` script — or a repo/plugin module it imports at import time
-— relied on a `HERMES_*` variable outside the four operational names above, it
+— relied on a `HER_*` variable outside the four operational names above, it
 will now find that variable **unset** in the child. The drop is intentional,
 not a bug.
 :::
 
 **Workaround — opt the variable back in explicitly.** Both routes pass the
 variable through `execute_code` *and* `terminal` children, and neither weakens
-the secret-stripping guarantee (Hermes-managed provider credentials can never
+the secret-stripping guarantee (her-managed provider credentials can never
 be re-allowed this way):
 
 1. **Per-machine, in `config.yaml`** — add the exact variable name to the
@@ -256,8 +256,8 @@ be re-allowed this way):
    ```yaml
    terminal:
      env_passthrough:
-       - HERMES_KANBAN_DB
-       - HERMES_BASE_URL
+       - HER_KANBAN_DB
+       - HER_BASE_URL
    ```
 
 2. **Per-skill, in the skill's frontmatter** — declare it so it is registered
@@ -265,17 +265,17 @@ be re-allowed this way):
 
    ```yaml
    required_environment_variables:
-     - HERMES_KANBAN_DB
+     - HER_KANBAN_DB
    ```
 
-**Diagnosing it.** When the child drops one or more non-allowlisted `HERMES_*`
-variables, Hermes emits a one-line `debug` log naming them and pointing at the
+**Diagnosing it.** When the child drops one or more non-allowlisted `HER_*`
+variables, her emits a one-line `debug` log naming them and pointing at the
 `env_passthrough` escape hatch. Run with debug logging (`her logs --level
 DEBUG`, or check `~/.her/logs/agent.log`) and look for
-`execute_code: dropped N non-allowlisted HERMES_* var(s)` if a script behaves
-as though a `HERMES_*` variable is missing.
+`execute_code: dropped N non-allowlisted HER_* var(s)` if a script behaves
+as though a `HER_*` variable is missing.
 
-Hermes always writes the script and the auto-generated `her_tools.py` RPC stub into a temp staging directory that is cleaned up after execution. In `strict` mode the script also *runs* there; in `project` mode it runs in the session's working directory (the staging directory stays on `PYTHONPATH` so imports still resolve). The child process runs in its own process group so it can be cleanly killed on timeout or interruption.
+her always writes the script and the auto-generated `her_tools.py` RPC stub into a temp staging directory that is cleaned up after execution. In `strict` mode the script also *runs* there; in `project` mode it runs in the session's working directory (the staging directory stays on `PYTHONPATH` so imports still resolve). The child process runs in its own process group so it can be cleanly killed on timeout or interruption.
 
 ## execute_code vs terminal
 
@@ -289,7 +289,7 @@ Hermes always writes the script and the auto-generated `her_tools.py` RPC stub i
 | Interactive/background processes | ❌ | ✅ |
 | Needs API keys in environment | ⚠️ Only via [passthrough](/user-guide/security#environment-variable-passthrough) | ✅ (most pass through) |
 
-**Rule of thumb:** Use `execute_code` when you need to call Hermes tools programmatically with logic between calls. Use `terminal` for running shell commands, builds, and processes.
+**Rule of thumb:** Use `execute_code` when you need to call her tools programmatically with logic between calls. Use `terminal` for running shell commands, builds, and processes.
 
 ## Platform Support
 

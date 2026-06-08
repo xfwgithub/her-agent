@@ -1,4 +1,4 @@
-# Hermes Achievements Performance Spec (Post-Hackathon)
+# her Achievements Performance Spec (Post-Hackathon)
 
 Status: Draft (no code changes yet)
 Owner: her-achievements plugin

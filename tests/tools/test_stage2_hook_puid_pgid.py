@@ -107,4 +107,4 @@ def test_stage2_hook_runs_config_migration_as_her(stage2_text: str) -> None:
 
 
 def test_stage2_hook_documents_config_migration_opt_out(stage2_text: str) -> None:
-    assert "HERMES_SKIP_CONFIG_MIGRATION" in stage2_text
+    assert "HER_SKIP_CONFIG_MIGRATION" in stage2_text

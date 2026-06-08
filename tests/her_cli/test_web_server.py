@@ -44,7 +44,7 @@ def _install_example_plugin(_isolate_her_home):
     isolated ``HER_HOME``.
 
     The user-plugin source is preferred over a transient
-    ``HERMES_BUNDLED_PLUGINS`` override because the bundled dir is
+    ``HER_BUNDLED_PLUGINS`` override because the bundled dir is
     resolved per-call (other tests in the suite implicitly rely on the
     real bundled plugins — kanban, her-achievements, model providers
     — being available, and globally swapping that root would yank them
@@ -139,7 +139,7 @@ class TestReloadEnv:
         os.environ.pop("TEST_RELOAD_VAR", None)
 
     def test_removes_deleted_known_vars(self, tmp_path):
-        """reload_env() removes known Hermes vars not present in .env."""
+        """reload_env() removes known her vars not present in .env."""
         env_file = tmp_path / ".env"
         env_file.write_text("")  # empty .env
         # Pick a known key from OPTIONAL_ENV_VARS
@@ -151,7 +151,7 @@ class TestReloadEnv:
             assert count >= 1
 
     def test_does_not_remove_unknown_vars(self, tmp_path):
-        """reload_env() preserves non-Hermes env vars even when absent from .env."""
+        """reload_env() preserves non-her env vars even when absent from .env."""
         env_file = tmp_path / ".env"
         env_file.write_text("")
         with patch.dict(reload_env.__globals__, {"get_env_path": lambda: env_file}):
@@ -182,7 +182,7 @@ class TestRedactKey:
 
 
 class TestSessionTokenInjection:
-    """The desktop shell mints HERMES_DASHBOARD_SESSION_TOKEN and signs its
+    """The desktop shell mints HER_DASHBOARD_SESSION_TOKEN and signs its
     /api + /api/ws calls with it. The backend must adopt that token, else every
     desktop request 401s ("gateway is offline"). A main-merge once silently
     dropped this read — this guards the contract, not a literal value.
@@ -192,19 +192,19 @@ class TestSessionTokenInjection:
         import importlib
         import her_cli.web_server as ws
 
-        monkeypatch.setenv("HERMES_DASHBOARD_SESSION_TOKEN", "desktop-seeded-token")
+        monkeypatch.setenv("HER_DASHBOARD_SESSION_TOKEN", "desktop-seeded-token")
         try:
             importlib.reload(ws)
             assert ws._SESSION_TOKEN == "desktop-seeded-token"
         finally:
-            monkeypatch.delenv("HERMES_DASHBOARD_SESSION_TOKEN", raising=False)
+            monkeypatch.delenv("HER_DASHBOARD_SESSION_TOKEN", raising=False)
             importlib.reload(ws)
 
     def test_falls_back_to_random_token(self, monkeypatch):
         import importlib
         import her_cli.web_server as ws
 
-        monkeypatch.delenv("HERMES_DASHBOARD_SESSION_TOKEN", raising=False)
+        monkeypatch.delenv("HER_DASHBOARD_SESSION_TOKEN", raising=False)
         importlib.reload(ws)
 
         assert ws._SESSION_TOKEN and len(ws._SESSION_TOKEN) >= 32
@@ -1034,8 +1034,8 @@ class TestWebServerEndpoints:
                 "pairing_id": "pair123",
                 "poll_token": "poll-secret",
                 "suggested_username": "her_pair123_bot",
-                "deep_link": "https://t.me/newbot/HermesSetupBot/her_pair123_bot",
-                "qr_payload": "https://t.me/newbot/HermesSetupBot/her_pair123_bot",
+                "deep_link": "https://t.me/newbot/HerSetupBot/her_pair123_bot",
+                "qr_payload": "https://t.me/newbot/HerSetupBot/her_pair123_bot",
                 "expires_at": "2027-05-18T00:00:00.000Z",
             }
 
@@ -1043,7 +1043,7 @@ class TestWebServerEndpoints:
 
         resp = self.client.post(
             "/api/messaging/telegram/onboarding/start",
-            json={"bot_name": "Hosted Hermes"},
+            json={"bot_name": "Hosted her"},
         )
 
         assert resp.status_code == 200
@@ -1054,7 +1054,7 @@ class TestWebServerEndpoints:
             (
                 "POST",
                 "/v1/telegram/pairings",
-                {"bot_name": "Hosted Hermes"},
+                {"bot_name": "Hosted her"},
                 None,
             )
         ]
@@ -1072,8 +1072,8 @@ class TestWebServerEndpoints:
                     "pairing_id": "pair-ready",
                     "poll_token": "poll-secret",
                     "suggested_username": "her_pair_ready_bot",
-                    "deep_link": "https://t.me/newbot/HermesSetupBot/her_pair_ready_bot",
-                    "qr_payload": "https://t.me/newbot/HermesSetupBot/her_pair_ready_bot",
+                    "deep_link": "https://t.me/newbot/HerSetupBot/her_pair_ready_bot",
+                    "qr_payload": "https://t.me/newbot/HerSetupBot/her_pair_ready_bot",
                     "expires_at": "2027-05-18T00:00:00.000Z",
                 }
             assert method == "GET"
@@ -1126,8 +1126,8 @@ class TestWebServerEndpoints:
                 "pairing_id": "pair-waiting",
                 "poll_token": "poll-secret",
                 "suggested_username": "her_pair_waiting_bot",
-                "deep_link": "https://t.me/newbot/HermesSetupBot/her_pair_waiting_bot",
-                "qr_payload": "https://t.me/newbot/HermesSetupBot/her_pair_waiting_bot",
+                "deep_link": "https://t.me/newbot/HerSetupBot/her_pair_waiting_bot",
+                "qr_payload": "https://t.me/newbot/HerSetupBot/her_pair_waiting_bot",
                 "expires_at": "2027-05-18T00:00:00.000Z",
             }
 
@@ -1155,8 +1155,8 @@ class TestWebServerEndpoints:
                 "pairing_id": "pair-cancel",
                 "poll_token": "poll-secret",
                 "suggested_username": "her_pair_cancel_bot",
-                "deep_link": "https://t.me/newbot/HermesSetupBot/her_pair_cancel_bot",
-                "qr_payload": "https://t.me/newbot/HermesSetupBot/her_pair_cancel_bot",
+                "deep_link": "https://t.me/newbot/HerSetupBot/her_pair_cancel_bot",
+                "qr_payload": "https://t.me/newbot/HerSetupBot/her_pair_cancel_bot",
                 "expires_at": "2027-05-18T00:00:00.000Z",
             }
 
@@ -4284,10 +4284,10 @@ class TestDesktopCronTicker:
 
         called = threading.Event()
         monkeypatch.setattr(sched, "tick", lambda *a, **k: called.set())
-        monkeypatch.setenv("HERMES_DESKTOP", "1")
+        monkeypatch.setenv("HER_DESKTOP", "1")
 
         with self._client():
-            assert called.wait(3.0), "expected cron tick under HERMES_DESKTOP=1"
+            assert called.wait(3.0), "expected cron tick under HER_DESKTOP=1"
 
     def test_ticker_skipped_without_desktop(self, monkeypatch, _isolate_her_home):
         import threading
@@ -4295,7 +4295,7 @@ class TestDesktopCronTicker:
 
         called = threading.Event()
         monkeypatch.setattr(sched, "tick", lambda *a, **k: called.set())
-        monkeypatch.delenv("HERMES_DESKTOP", raising=False)
+        monkeypatch.delenv("HER_DESKTOP", raising=False)
 
         with self._client():
             assert not called.wait(0.5), "ticker must not run outside the desktop app"

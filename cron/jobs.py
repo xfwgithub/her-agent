@@ -34,8 +34,8 @@ except ImportError:
 # Configuration
 # =============================================================================
 
-HERMES_DIR = get_her_home().resolve()
-CRON_DIR = HERMES_DIR / "cron"
+HER_DIR = get_her_home().resolve()
+CRON_DIR = HER_DIR / "cron"
 JOBS_FILE = CRON_DIR / "jobs.json"
 
 # In-process lock protecting load_jobs→modify→save_jobs cycles.
@@ -296,13 +296,13 @@ def parse_schedule(schedule: str) -> Dict[str, Any]:
 
 
 def _ensure_aware(dt: datetime) -> datetime:
-    """Return a timezone-aware datetime in Hermes configured timezone.
+    """Return a timezone-aware datetime in her configured timezone.
 
     Backward compatibility:
     - Older stored timestamps may be naive.
     - Naive values are interpreted as *system-local wall time* (the timezone
       `datetime.now()` used when they were created), then converted to the
-      configured Hermes timezone.
+      configured her timezone.
 
     This preserves relative ordering for legacy naive timestamps across
     timezone changes and avoids false not-due results.
@@ -542,7 +542,7 @@ def _normalize_profile(profile: Optional[str]) -> Optional[str]:
     normalized = normalize_profile_name(raw)
     # resolve_profile_env validates the canonical name and checks that named
     # profiles exist. Store only the stable profile id, not the filesystem path,
-    # so profile directories can move with the Hermes root.
+    # so profile directories can move with the her root.
     resolve_profile_env(normalized)
     return normalized
 
@@ -605,7 +605,7 @@ def create_job(
                 With ``no_agent=True``, ``workdir`` is still applied as the
                 script's cwd so relative paths inside the script behave
                 predictably.
-        profile: Optional Hermes profile name. When set, the job runs with
+        profile: Optional her profile name. When set, the job runs with
                 that profile's HER_HOME so profile-specific config,
                 credentials, scripts, skills, and memory paths resolve
                 consistently. ``default`` selects the root profile; empty /

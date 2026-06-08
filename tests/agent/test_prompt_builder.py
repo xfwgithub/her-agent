@@ -500,7 +500,7 @@ class TestBuildContextFilesPrompt:
         with patch("pathlib.Path.home", return_value=fake_home):
             result = build_context_files_prompt(cwd=str(tmp_path))
         assert "Project Context" in result
-        assert "Hermes Agent" in result
+        assert "her Agent" in result
 
     def test_loads_agents_md(self, tmp_path):
         (tmp_path / "AGENTS.md").write_text("Use Ruff for linting.")
@@ -565,7 +565,7 @@ class TestBuildContextFilesPrompt:
         assert "Top level" in result
         assert "Src-specific" not in result
 
-    # --- .her.md / HERMES.md discovery ---
+    # --- .her.md / HER.md discovery ---
 
     def test_loads_her_md(self, tmp_path):
         (tmp_path / ".her.md").write_text("Use pytest for testing.")
@@ -574,13 +574,13 @@ class TestBuildContextFilesPrompt:
         assert "Project Context" in result
 
     def test_loads_her_md_uppercase(self, tmp_path):
-        (tmp_path / "HERMES.md").write_text("Always use type hints.")
+        (tmp_path / "HER.md").write_text("Always use type hints.")
         result = build_context_files_prompt(cwd=str(tmp_path))
         assert "type hints" in result
 
     def test_her_md_lowercase_takes_priority(self, tmp_path):
         (tmp_path / ".her.md").write_text("From dotfile.")
-        (tmp_path / "HERMES.md").write_text("From uppercase.")
+        (tmp_path / "HER.md").write_text("From uppercase.")
         result = build_context_files_prompt(cwd=str(tmp_path))
         assert "From dotfile" in result
         assert "From uppercase" not in result
@@ -621,9 +621,9 @@ class TestBuildContextFilesPrompt:
     def test_her_md_beats_agents_md(self, tmp_path):
         """When both exist, .her.md wins and AGENTS.md is not loaded."""
         (tmp_path / "AGENTS.md").write_text("Agent guidelines here.")
-        (tmp_path / ".her.md").write_text("Hermes project rules.")
+        (tmp_path / ".her.md").write_text("her project rules.")
         result = build_context_files_prompt(cwd=str(tmp_path))
-        assert "Hermes project rules" in result
+        assert "her project rules" in result
         assert "Agent guidelines" not in result
 
     def test_agents_md_beats_claude_md(self, tmp_path):
@@ -674,12 +674,12 @@ class TestBuildContextFilesPrompt:
 
     def test_her_md_beats_all_others(self, tmp_path):
         """When all four types exist, only .her.md is loaded."""
-        (tmp_path / ".her.md").write_text("Hermes wins.")
+        (tmp_path / ".her.md").write_text("her wins.")
         (tmp_path / "AGENTS.md").write_text("Agents lose.")
         (tmp_path / "CLAUDE.md").write_text("Claude loses.")
         (tmp_path / ".cursorrules").write_text("Cursor loses.")
         result = build_context_files_prompt(cwd=str(tmp_path))
-        assert "Hermes wins" in result
+        assert "her wins" in result
         assert "Agents lose" not in result
         assert "Claude loses" not in result
         assert "Cursor loses" not in result
@@ -696,18 +696,18 @@ class TestBuildContextFilesPrompt:
 # =========================================================================
 
 
-class TestFindHermesMd:
+class TestFindherMd:
     def test_finds_in_cwd(self, tmp_path):
         (tmp_path / ".her.md").write_text("rules")
         assert _find_her_md(tmp_path) == tmp_path / ".her.md"
 
     def test_finds_uppercase(self, tmp_path):
-        (tmp_path / "HERMES.md").write_text("rules")
-        assert _find_her_md(tmp_path) == tmp_path / "HERMES.md"
+        (tmp_path / "HER.md").write_text("rules")
+        assert _find_her_md(tmp_path) == tmp_path / "HER.md"
 
     def test_prefers_lowercase(self, tmp_path):
         (tmp_path / ".her.md").write_text("lower")
-        (tmp_path / "HERMES.md").write_text("upper")
+        (tmp_path / "HER.md").write_text("upper")
         assert _find_her_md(tmp_path) == tmp_path / ".her.md"
 
     def test_walks_to_git_root(self, tmp_path):
@@ -973,11 +973,11 @@ class TestEnvironmentHints:
             )
 
     def test_environment_hint_from_env_var_is_appended(self, monkeypatch):
-        """HERMES_ENVIRONMENT_HINT lets an embedder describe the runtime env."""
+        """HER_ENVIRONMENT_HINT lets an embedder describe the runtime env."""
         import agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
-        monkeypatch.setenv("HERMES_ENVIRONMENT_HINT", "Running inside an OpenShell sandbox.")
+        monkeypatch.setenv("HER_ENVIRONMENT_HINT", "Running inside an OpenShell sandbox.")
         _pb._clear_backend_probe_cache()
         result = _pb.build_environment_hints()
         assert "Running inside an OpenShell sandbox." in result
@@ -989,7 +989,7 @@ class TestEnvironmentHints:
         import agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
-        monkeypatch.setenv("HERMES_ENVIRONMENT_HINT", "ENV-WINS")
+        monkeypatch.setenv("HER_ENVIRONMENT_HINT", "ENV-WINS")
         monkeypatch.setattr(
             "her_cli.config.load_config",
             lambda: {"agent": {"environment_hint": "CONFIG-VALUE"}},
@@ -1004,7 +1004,7 @@ class TestEnvironmentHints:
         import agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
-        monkeypatch.delenv("HERMES_ENVIRONMENT_HINT", raising=False)
+        monkeypatch.delenv("HER_ENVIRONMENT_HINT", raising=False)
         monkeypatch.setattr(
             "her_cli.config.load_config",
             lambda: {"agent": {"environment_hint": "CONFIG-VALUE"}},
@@ -1018,7 +1018,7 @@ class TestEnvironmentHints:
         import agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
-        monkeypatch.delenv("HERMES_ENVIRONMENT_HINT", raising=False)
+        monkeypatch.delenv("HER_ENVIRONMENT_HINT", raising=False)
         monkeypatch.setattr("her_cli.config.load_config", lambda: {"agent": {}})
         _pb._clear_backend_probe_cache()
         result = _pb.build_environment_hints()

@@ -1,4 +1,4 @@
-"""Tests for ACP Registry metadata shipped with Hermes."""
+"""Tests for ACP Registry metadata shipped with her."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ def test_agent_json_matches_official_registry_required_fields():
     assert FORBIDDEN_MANIFEST_KEYS.isdisjoint(data)
     assert data["id"] == "her-agent"
     assert re.fullmatch(r"[a-z][a-z0-9-]*", data["id"])
-    assert data["name"] == "Hermes Agent"
+    assert data["name"] == "her Agent"
     assert data["description"]
     assert data["repository"] == "https://github.com/NousResearch/her-agent"
     assert data["website"].startswith("https://her-agent.nousresearch.com/")
