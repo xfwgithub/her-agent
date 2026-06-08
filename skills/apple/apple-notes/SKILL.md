@@ -6,7 +6,7 @@ author: Hermes Agent
 license: MIT
 platforms: [macos]
 metadata:
-  hermes:
+  her:
     tags: [Notes, Apple, macOS, note-taking]
     related_skills: [obsidian]
 prerequisites:

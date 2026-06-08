@@ -71,7 +71,7 @@ If you don't have System Admin access, ask your Mattermost administrator to enab
 1. In Mattermost, click the **☰** menu (top-left) → **Integrations** → **Bot Accounts**.
 2. Click **Add Bot Account**.
 3. Fill in the details:
-   - **Username**: e.g., `hermes`
+   - **Username**: e.g., `her`
    - **Display Name**: e.g., `Hermes Agent`
    - **Description**: optional
    - **Role**: `Member` is sufficient
@@ -94,7 +94,7 @@ The bot needs to be a member of any channel where you want it to respond:
 
 1. Open the channel where you want the bot.
 2. Click the channel name → **Add Members**.
-3. Search for your bot username (e.g., `hermes`) and add it.
+3. Search for your bot username (e.g., `her`) and add it.
 
 For DMs, simply open a direct message with the bot — it will be able to respond immediately.
 
@@ -129,14 +129,14 @@ To get a **Channel ID**: click the channel name → **View Info**. The Channel I
 Run the guided setup command:
 
 ```bash
-hermes gateway setup
+her gateway setup
 ```
 
 Select **Mattermost** when prompted, then paste your server URL, bot token, and user ID when asked.
 
 ### Option B: Manual Configuration
 
-Add the following to your `~/.hermes/.env` file:
+Add the following to your `~/.her/.env` file:
 
 ```bash
 # Required
@@ -157,7 +157,7 @@ MATTERMOST_ALLOWED_USERS=3uo8dkh1p7g1mfk49ear5fzs5c
 # MATTERMOST_FREE_RESPONSE_CHANNELS=channel_id_1,channel_id_2
 ```
 
-Optional behavior settings in `~/.hermes/config.yaml`:
+Optional behavior settings in `~/.her/config.yaml`:
 
 ```yaml
 group_sessions_per_user: true
@@ -170,13 +170,13 @@ group_sessions_per_user: true
 Once configured, start the Mattermost gateway:
 
 ```bash
-hermes gateway
+her gateway
 ```
 
 The bot should connect to your Mattermost server within a few seconds. Send it a message — either a DM or in a channel where it's been added — to test.
 
 :::tip
-You can run `hermes gateway` in the background or as a systemd service for persistent operation. See the deployment docs for details.
+You can run `her gateway` in the background or as a systemd service for persistent operation. See the deployment docs for details.
 :::
 
 ## Home Channel
@@ -189,7 +189,7 @@ Type `/sethome` in any Mattermost channel where the bot is present. That channel
 
 ### Manual Configuration
 
-Add this to your `~/.hermes/.env`:
+Add this to your `~/.her/.env`:
 
 ```bash
 MATTERMOST_HOME_CHANNEL=abc123def456ghi789jkl012mn
@@ -206,7 +206,7 @@ The `MATTERMOST_REPLY_MODE` setting controls how Hermes posts responses:
 | `off` (default) | Hermes posts flat messages in the channel, like a normal user. |
 | `thread` | Hermes replies in a thread under your original message. Keeps channels clean when there's lots of back-and-forth. |
 
-Set it in your `~/.hermes/.env`:
+Set it in your `~/.her/.env`:
 
 ```bash
 MATTERMOST_REPLY_MODE=thread
@@ -300,13 +300,13 @@ If this returns your bot's user info, the token is valid. If it returns an error
 
 **Cause**: The Hermes gateway isn't running, or it failed to connect.
 
-**Fix**: Check that `hermes gateway` is running. Look at the terminal output for error messages. Common issues: wrong URL, expired token, Mattermost server unreachable.
+**Fix**: Check that `her gateway` is running. Look at the terminal output for error messages. Common issues: wrong URL, expired token, Mattermost server unreachable.
 
 ### "User not allowed" / Bot ignores you
 
 **Cause**: Your User ID isn't in `MATTERMOST_ALLOWED_USERS`.
 
-**Fix**: Add your User ID to `MATTERMOST_ALLOWED_USERS` in `~/.hermes/.env` and restart the gateway. Remember: the User ID is a 26-character alphanumeric string, not your `@username`.
+**Fix**: Add your User ID to `MATTERMOST_ALLOWED_USERS` in `~/.her/.env` and restart the gateway. Remember: the User ID is a 26-character alphanumeric string, not your `@username`.
 
 ## Per-Channel Prompts
 

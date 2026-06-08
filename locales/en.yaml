@@ -113,7 +113,7 @@ gateway:
     upload_failed:         "✗ Failed to upload debug report: {error}"
     header:                "**Debug report uploaded:**"
     auto_delete:           "⏱ Pastes will auto-delete in 6 hours."
-    full_logs_hint:        "For full log uploads, use `hermes debug share` from the CLI."
+    full_logs_hint:        "For full log uploads, use `her debug share` from the CLI."
     share_hint:            "Share these links with the Hermes team for support."
 
   deny:
@@ -162,7 +162,7 @@ gateway:
   kanban:
     error_prefix:          "⚠ kanban error: {error}"
     subscribed_suffix:     "(subscribed — you'll be notified when {task_id} completes or blocks)"
-    truncated_suffix:      "… (truncated; use `hermes kanban …` in your terminal for full output)"
+    truncated_suffix:      "… (truncated; use `her kanban …` in your terminal for full output)"
     no_output:             "(no output)"
 
   personality:
@@ -230,7 +230,7 @@ gateway:
 
   restart:
     in_progress:           "⏳ Gateway restart already in progress..."
-    restarting:            "♻ Restarting gateway. If you aren't notified within 60 seconds, restart from the console with `hermes gateway restart`."
+    restarting:            "♻ Restarting gateway. If you aren't notified within 60 seconds, restart from the console with `her gateway restart`."
 
   resume:
     db_unavailable:        "Session database not available."
@@ -309,9 +309,9 @@ gateway:
     invalid_count:         "Invalid count \"{arg}\" — use /undo or /undo N."
 
   update:
-    platform_not_messaging:  "✗ /update is only available from messaging platforms. Run `hermes update` from the terminal."
+    platform_not_messaging:  "✗ /update is only available from messaging platforms. Run `her update` from the terminal."
     not_git_repo:            "✗ Not a git repository — cannot update."
-    hermes_cmd_not_found:    "✗ Could not locate the `hermes` command. Hermes is running, but the update command could not find the executable on PATH or via the current Python interpreter. Try running `hermes update` manually in your terminal."
+    her_cmd_not_found:    "✗ Could not locate the `her` command. Hermes is running, but the update command could not find the executable on PATH or via the current Python interpreter. Try running `her update` manually in your terminal."
     start_failed:            "✗ Failed to start update: {error}"
     starting:                "⚕ Starting Hermes update… I'll stream progress here."
 

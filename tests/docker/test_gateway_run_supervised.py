@@ -1,6 +1,6 @@
 """Harness: `docker run <image> gateway run` redirects to supervised mode.
 
-Before the s6 migration, ``docker run nousresearch/hermes-agent gateway
+Before the s6 migration, ``docker run nousresearch/her-agent gateway
 run`` was the standard pattern — the gateway ran as the container's
 main process, container exit code matched gateway exit code, no
 supervision. With s6 as PID 1, the same invocation now auto-redirects
@@ -15,7 +15,7 @@ These tests verify the three load-bearing properties of that redirect:
   3. The supervised process itself does NOT recurse — the
      ``HERMES_S6_SUPERVISED_CHILD`` sentinel breaks the loop.
 
-Every ``docker exec`` runs as ``hermes`` per the conftest module
+Every ``docker exec`` runs as ``her`` per the conftest module
 docstring; see ``tests/docker/conftest.py`` for rationale.
 """
 from __future__ import annotations
@@ -134,7 +134,7 @@ def test_gateway_run_no_supervise_flag_preserves_legacy_behavior(
 
     Three positive assertions confirm we took the pre-s6 path:
 
-      * The CMD process is a python ``hermes gateway run`` invocation
+      * The CMD process is a python ``her gateway run`` invocation
         (not ``sleep infinity``).
       * The ``gateway-default`` s6 service slot is NOT created.
       * No supervision-redirect breadcrumb appears in docker logs.
@@ -247,11 +247,11 @@ def test_supervised_gateway_does_not_recurse(
     built_image: str, container_name: str,
 ) -> None:
     """The HERMES_S6_SUPERVISED_CHILD sentinel must prevent the
-    supervised ``hermes gateway run`` from re-entering the redirect.
+    supervised ``her gateway run`` from re-entering the redirect.
 
     If recursion happened, every supervised gateway start would itself
     re-dispatch to s6 and exec ``sleep infinity`` — so the supervised
-    gateway slot would never actually run a python ``hermes gateway
+    gateway slot would never actually run a python ``her gateway
     run`` process. The slot would oscillate or settle into a state
     with no python in the supervise tree at all.
 
@@ -267,15 +267,15 @@ def test_supervised_gateway_does_not_recurse(
     )
     time.sleep(6)
 
-    # Count python processes running `hermes gateway run`. If the
+    # Count python processes running `her gateway run`. If the
     # recursion guard fails, s6 would respawn fresh `gateway run`
     # processes on every cycle, leaving multiple Python-process
     # descendants under the gateway-default supervise tree.
-    r = _sh(container_name, "ps -eo pid,cmd | grep -v grep | grep -E 'python.*hermes.*gateway run' | wc -l")
+    r = _sh(container_name, "ps -eo pid,cmd | grep -v grep | grep -E 'python.*her.*gateway run' | wc -l")
     assert r.returncode == 0
     n = int(r.stdout.strip() or 0)
     assert n <= 1, (
-        f"expected at most one supervised python `hermes gateway run` "
+        f"expected at most one supervised python `her gateway run` "
         f"process (the legitimately-supervised gateway); found {n}. "
         f"Recursion guard may have failed. "
         f"ps:\n{_sh(container_name, 'ps -eo pid,ppid,cmd').stdout}"
@@ -283,7 +283,7 @@ def test_supervised_gateway_does_not_recurse(
 
     # Stronger positive assertion: there should be exactly one
     # `sleep infinity` process whose parent is the main-wrapper.sh
-    # CMD process (PID 17 typically). The static `main-hermes`
+    # CMD process (PID 17 typically). The static `main-her`
     # service has its own `sleep infinity` child; THAT one is fine
     # and unrelated to our redirect.
     r = _sh(
@@ -334,7 +334,7 @@ def test_supervised_gateway_stdout_reaches_docker_logs(
 ) -> None:
     """The supervised gateway's stdout — including the rich-console
     startup banner — must reach ``docker logs``, not just the rotated
-    log file under ``${HERMES_HOME}/logs/gateways/<profile>/current``.
+    log file under ``${HER_HOME}/logs/gateways/<profile>/current``.
 
     Without the ``1`` action directive in ``_render_log_run``, s6-log
     swallows the gateway's stdout into the file and ``docker logs``

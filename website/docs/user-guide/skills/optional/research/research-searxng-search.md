@@ -14,10 +14,10 @@ Free meta-search via SearXNG — aggregates results from 70+ search engines. Sel
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/research/searxng-search` |
+| Source | Optional — install with `her skills install official/research/searxng-search` |
 | Path | `optional-skills/research/searxng-search` |
 | Version | `1.0.0` |
-| Author | hermes-agent |
+| Author | her-agent |
 | License | MIT |
 | Platforms | linux, macos |
 | Tags | `search`, `searxng`, `meta-search`, `self-hosted`, `free`, `fallback` |

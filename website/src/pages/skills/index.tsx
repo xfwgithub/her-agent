@@ -423,9 +423,9 @@ function SkillCard({
               </div>
             )}
             <div className={styles.installHint}>
-              <code>{skill.installCmd || `hermes skills install ${skill.name}`}</code>
+              <code>{skill.installCmd || `her skills install ${skill.name}`}</code>
               <CopyButton
-                text={skill.installCmd || `hermes skills install ${skill.name}`}
+                text={skill.installCmd || `her skills install ${skill.name}`}
               />
             </div>
             <div className={styles.cardLinks}>

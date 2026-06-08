@@ -13,7 +13,7 @@ If you haven't installed Hermes Agent yet, begin with the [Installation guide](/
 :::
 
 :::tip First-time provider setup
-First-time users almost always want `hermes setup --portal` — one OAuth covers a model plus the four Tool Gateway tools (search/image/TTS/browser). See [Nous Portal](/integrations/nous-portal).
+First-time users almost always want `her setup --portal` — one OAuth covers a model plus the four Tool Gateway tools (search/image/TTS/browser). See [Nous Portal](/integrations/nous-portal).
 :::
 
 ## How to Use This Page
@@ -59,7 +59,7 @@ Deploy Hermes Agent as a bot on your favorite messaging platform.
 4. [Telegram Setup](/user-guide/messaging/telegram)
 5. [Discord Setup](/user-guide/messaging/discord)
 6. [Voice Mode](/user-guide/features/voice-mode)
-7. [Use Voice Mode with Hermes](/guides/use-voice-mode-with-hermes)
+7. [Use Voice Mode with Hermes](/guides/use-voice-mode-with-her)
 8. [Security](/user-guide/security)
 
 For full project examples, see:
@@ -85,7 +85,7 @@ Cron jobs let Hermes Agent run tasks on a schedule — daily summaries, periodic
 Extend Hermes Agent with your own tools and reusable skill packages.
 
 1. [Plugins](/user-guide/features/plugins)
-2. [Build a Hermes Plugin](/guides/build-a-hermes-plugin)
+2. [Build a Hermes Plugin](/guides/build-a-her-plugin)
 3. [Tools Overview](/user-guide/features/tools)
 4. [Skills Overview](/user-guide/features/skills)
 5. [MCP (Model Context Protocol)](/user-guide/features/mcp)

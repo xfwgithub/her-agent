@@ -38,20 +38,20 @@ Your request
 
 ```bash
 # Add a second OpenRouter key
-hermes auth add openrouter --api-key sk-or-v1-your-second-key
+her auth add openrouter --api-key sk-or-v1-your-second-key
 
 # Add a second Anthropic key
-hermes auth add anthropic --type api-key --api-key sk-ant-api03-your-second-key
+her auth add anthropic --type api-key --api-key sk-ant-api03-your-second-key
 
 # Add an Anthropic OAuth credential (requires Claude Max plan + extra usage credits)
-hermes auth add anthropic --type oauth
+her auth add anthropic --type oauth
 # Opens browser for OAuth login
 ```
 
 查看你的池：
 
 ```bash
-hermes auth list
+her auth list
 ```
 
 输出：
@@ -61,7 +61,7 @@ openrouter (2 credentials):
   #2  backup-key           api_key manual
 
 anthropic (3 credentials):
-  #1  hermes_pkce          oauth   hermes_pkce ←
+  #1  her_pkce          oauth   her_pkce ←
   #2  claude_code          oauth   claude_code
   #3  ANTHROPIC_API_KEY    api_key env:ANTHROPIC_API_KEY
 ```
@@ -70,10 +70,10 @@ anthropic (3 credentials):
 
 ## 交互式管理
 
-不带子命令运行 `hermes auth` 以进入交互式向导：
+不带子命令运行 `her auth` 以进入交互式向导：
 
 ```bash
-hermes auth
+her auth
 ```
 
 这会显示完整的池状态并提供操作菜单：
@@ -100,18 +100,18 @@ Type [1/2]:
 
 | 命令 | 说明 |
 |---------|-------------|
-| `hermes auth` | 交互式池管理向导 |
-| `hermes auth list` | 显示所有池和凭证 |
-| `hermes auth list <provider>` | 显示指定提供商的池 |
-| `hermes auth add <provider>` | 添加凭证（提示选择类型和密钥） |
-| `hermes auth add <provider> --type api-key --api-key <key>` | 非交互式添加 API 密钥 |
-| `hermes auth add <provider> --type oauth` | 通过浏览器登录添加 OAuth 凭证 |
-| `hermes auth remove <provider> <index>` | 按从 1 开始的索引删除凭证 |
-| `hermes auth reset <provider>` | 清除所有冷却时间/耗尽状态 |
+| `her auth` | 交互式池管理向导 |
+| `her auth list` | 显示所有池和凭证 |
+| `her auth list <provider>` | 显示指定提供商的池 |
+| `her auth add <provider>` | 添加凭证（提示选择类型和密钥） |
+| `her auth add <provider> --type api-key --api-key <key>` | 非交互式添加 API 密钥 |
+| `her auth add <provider> --type oauth` | 通过浏览器登录添加 OAuth 凭证 |
+| `her auth remove <provider> <index>` | 按从 1 开始的索引删除凭证 |
+| `her auth reset <provider>` | 清除所有冷却时间/耗尽状态 |
 
 ## 轮换策略
 
-通过 `hermes auth` → "Set rotation strategy" 配置，或在 `config.yaml` 中设置：
+通过 `her auth` → "Set rotation strategy" 配置，或在 `config.yaml` 中设置：
 
 ```yaml
 credential_pool_strategies:
@@ -143,17 +143,17 @@ credential_pool_strategies:
 
 自定义 OpenAI 兼容端点（Together.ai、RunPod、本地服务器）拥有各自的池，以 `config.yaml` 中 `custom_providers` 的端点名称作为键。
 
-通过 `hermes model` 设置自定义端点时，会自动生成类似 "Together.ai" 或 "Local (localhost:8080)" 的名称，该名称即成为池的键。
+通过 `her model` 设置自定义端点时，会自动生成类似 "Together.ai" 或 "Local (localhost:8080)" 的名称，该名称即成为池的键。
 
 ```bash
-# After setting up a custom endpoint via hermes model:
-hermes auth list
+# After setting up a custom endpoint via her model:
+her auth list
 # Shows:
 #   Together.ai (1 credential):
 #     #1  config key    api_key config:Together.ai ←
 
 # Add a second key for the same endpoint:
-hermes auth add Together.ai --api-key sk-together-second-key
+her auth add Together.ai --api-key sk-together-second-key
 ```
 
 自定义端点池以 `custom:` 前缀存储在 `auth.json` 的 `credential_pool` 下：
@@ -176,11 +176,11 @@ Hermes 在启动时自动从多个来源发现凭证并初始化池：
 | 环境变量 | `OPENROUTER_API_KEY`、`ANTHROPIC_API_KEY` | 是 |
 | OAuth 令牌（auth.json） | Codex device code、Nous device code | 是 |
 | Claude Code 凭证 | `~/.claude/.credentials.json` | 是（Anthropic） |
-| Hermes PKCE OAuth | `~/.hermes/auth.json` | 是（Anthropic） |
+| Hermes PKCE OAuth | `~/.her/auth.json` | 是（Anthropic） |
 | 自定义端点配置 | `config.yaml` 中的 `model.api_key` | 是（自定义端点） |
-| 手动条目 | 通过 `hermes auth add` 添加 | 持久化至 auth.json |
+| 手动条目 | 通过 `her auth add` 添加 | 持久化至 auth.json |
 
-自动初始化的条目在每次池加载时更新——如果你删除了某个环境变量，其池条目会自动清除。通过 `hermes auth add` 添加的手动条目永远不会被自动清除。
+自动初始化的条目在每次池加载时更新——如果你删除了某个环境变量，其池条目会自动清除。通过 `her auth add` 添加的手动条目永远不会被自动清除。
 
 ## 委托与子代理共享
 
@@ -203,13 +203,13 @@ Hermes 在启动时自动从多个来源发现凭证并初始化池：
 凭证池集成于提供商解析层：
 
 1. **`agent/credential_pool.py`** — 池管理器：存储、选择、轮换、冷却时间
-2. **`hermes_cli/auth_commands.py`** — CLI 命令和交互式向导
-3. **`hermes_cli/runtime_provider.py`** — 感知池的凭证解析
+2. **`her_cli/auth_commands.py`** — CLI 命令和交互式向导
+3. **`her_cli/runtime_provider.py`** — 感知池的凭证解析
 4. **`run_agent.py`** — 错误恢复：429/402/401 → 池轮换 → 备用
 
 ## 存储
 
-池状态存储在 `~/.hermes/auth.json` 的 `credential_pool` 键下：
+池状态存储在 `~/.her/auth.json` 的 `credential_pool` 键下：
 
 ```json
 {

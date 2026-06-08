@@ -6,7 +6,7 @@ author: Teknium (teknium1), Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  her:
     tags: [Pinggy, Tunnel, Networking, SSH, Webhook, Localhost]
     related_skills: [cloudflared-quick-tunnel, webhook-subscriptions]
 ---

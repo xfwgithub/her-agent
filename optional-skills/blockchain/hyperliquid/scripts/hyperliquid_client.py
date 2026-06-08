@@ -45,8 +45,8 @@ DEFAULT_USER_ENV = "HYPERLIQUID_USER_ADDRESS"
 DEFAULT_API_BASE = "https://api.hyperliquid.xyz"
 
 
-def _hermes_home() -> Path:
-    return Path(os.environ.get("HERMES_HOME", "~/.hermes")).expanduser()
+def _her_home() -> Path:
+    return Path(os.environ.get("HER_HOME", "~/.her")).expanduser()
 
 
 def _dotenv_paths() -> List[Path]:
@@ -55,7 +55,7 @@ def _dotenv_paths() -> List[Path]:
     if project_env.exists():
         paths.append(project_env)
 
-    user_env = _hermes_home() / ".env"
+    user_env = _her_home() / ".env"
     if user_env.exists():
         paths.append(user_env)
 
@@ -115,7 +115,7 @@ def _resolve_user(user: Optional[str]) -> str:
 
     sys.exit(
         "Missing Hyperliquid address. Pass <address> explicitly or set "
-        f"{DEFAULT_USER_ENV} in your environment or ~/.hermes/.env."
+        f"{DEFAULT_USER_ENV} in your environment or ~/.her/.env."
     )
 
 

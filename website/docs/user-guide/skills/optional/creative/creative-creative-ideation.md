@@ -14,7 +14,7 @@ Generate project ideas via creative constraints.
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/creative/creative-ideation` |
+| Source | Optional — install with `her skills install official/creative/creative-ideation` |
 | Path | `optional-skills/creative/creative-ideation` |
 | Version | `1.0.0` |
 | Author | SHL0MS |

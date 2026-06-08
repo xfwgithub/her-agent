@@ -71,7 +71,7 @@ group_sessions_per_user: false
 1. 在 Mattermost 中，点击左上角的 **☰** 菜单 → **集成** → **机器人账户**。
 2. 点击**添加机器人账户**。
 3. 填写详细信息：
-   - **用户名**：例如 `hermes`
+   - **用户名**：例如 `her`
    - **显示名称**：例如 `Hermes Agent`
    - **描述**：可选
    - **角色**：`Member` 即可
@@ -94,7 +94,7 @@ group_sessions_per_user: false
 
 1. 打开你希望添加机器人的频道。
 2. 点击频道名称 → **添加成员**。
-3. 搜索你的机器人用户名（例如 `hermes`）并添加。
+3. 搜索你的机器人用户名（例如 `her`）并添加。
 
 对于私信，直接与机器人开启私信即可——它将立即能够响应。
 
@@ -129,14 +129,14 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 运行引导式配置命令：
 
 ```bash
-hermes gateway setup
+her gateway setup
 ```
 
 在提示时选择 **Mattermost**，然后按提示粘贴你的服务器 URL、机器人 token 和用户 ID。
 
 ### 方式 B：手动配置
 
-在你的 `~/.hermes/.env` 文件中添加以下内容：
+在你的 `~/.her/.env` 文件中添加以下内容：
 
 ```bash
 # 必填
@@ -157,7 +157,7 @@ MATTERMOST_ALLOWED_USERS=3uo8dkh1p7g1mfk49ear5fzs5c
 # MATTERMOST_FREE_RESPONSE_CHANNELS=channel_id_1,channel_id_2
 ```
 
-`~/.hermes/config.yaml` 中的可选行为设置：
+`~/.her/config.yaml` 中的可选行为设置：
 
 ```yaml
 group_sessions_per_user: true
@@ -170,13 +170,13 @@ group_sessions_per_user: true
 配置完成后，启动 Mattermost gateway：
 
 ```bash
-hermes gateway
+her gateway
 ```
 
 机器人应在几秒内连接到你的 Mattermost 服务器。发送一条消息——私信或在已添加机器人的频道中——进行测试。
 
 :::tip
-你可以在后台运行 `hermes gateway`，或将其配置为 systemd 服务以持续运行。详情参见部署文档。
+你可以在后台运行 `her gateway`，或将其配置为 systemd 服务以持续运行。详情参见部署文档。
 :::
 
 ## 主频道
@@ -189,7 +189,7 @@ hermes gateway
 
 ### 手动配置
 
-在你的 `~/.hermes/.env` 中添加：
+在你的 `~/.her/.env` 中添加：
 
 ```bash
 MATTERMOST_HOME_CHANNEL=abc123def456ghi789jkl012mn
@@ -206,7 +206,7 @@ MATTERMOST_HOME_CHANNEL=abc123def456ghi789jkl012mn
 | `off`（默认） | Hermes 在频道中发送普通消息，与普通用户一样。 |
 | `thread` | Hermes 在你的原始消息下方以线程形式回复。在大量来回交流时保持频道整洁。 |
 
-在你的 `~/.hermes/.env` 中设置：
+在你的 `~/.her/.env` 中设置：
 
 ```bash
 MATTERMOST_REPLY_MODE=thread
@@ -300,13 +300,13 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 
 **原因**：Hermes gateway 未运行，或连接失败。
 
-**解决方法**：检查 `hermes gateway` 是否正在运行。查看终端输出中的错误信息。常见问题：URL 错误、token 过期、Mattermost 服务器无法访问。
+**解决方法**：检查 `her gateway` 是否正在运行。查看终端输出中的错误信息。常见问题：URL 错误、token 过期、Mattermost 服务器无法访问。
 
 ### "User not allowed"/机器人忽略你
 
 **原因**：你的用户 ID 不在 `MATTERMOST_ALLOWED_USERS` 中。
 
-**解决方法**：将你的用户 ID 添加到 `~/.hermes/.env` 中的 `MATTERMOST_ALLOWED_USERS`，然后重启 gateway。注意：用户 ID 是 26 位字母数字字符串，不是你的 `@用户名`。
+**解决方法**：将你的用户 ID 添加到 `~/.her/.env` 中的 `MATTERMOST_ALLOWED_USERS`，然后重启 gateway。注意：用户 ID 是 26 位字母数字字符串，不是你的 `@用户名`。
 
 ## 按频道设置 Prompt
 

@@ -14,11 +14,11 @@ Right now the primary consumer is the Teams meeting summary pipeline: Graph noti
 
 - Microsoft Graph application credentials — [Register a Microsoft Graph Application](/guides/microsoft-graph-app-registration)
 - A **public HTTPS URL** that Microsoft Graph can reach (Graph does not call private endpoints). A dev tunnel works for testing; production needs a real domain with a valid certificate.
-- A strong shared secret to use as the `clientState` value. Generate with `openssl rand -hex 32` and put it in `~/.hermes/.env` as `MSGRAPH_WEBHOOK_CLIENT_STATE`.
+- A strong shared secret to use as the `clientState` value. Generate with `openssl rand -hex 32` and put it in `~/.her/.env` as `MSGRAPH_WEBHOOK_CLIENT_STATE`.
 
 ## Quick Start
 
-Minimum `~/.hermes/config.yaml`:
+Minimum `~/.her/config.yaml`:
 
 ```yaml
 platforms:
@@ -32,7 +32,7 @@ platforms:
         - "communications/onlineMeetings"
 ```
 
-Or via env vars in `~/.hermes/.env` (auto-merged on startup):
+Or via env vars in `~/.her/.env` (auto-merged on startup):
 
 ```bash
 MSGRAPH_WEBHOOK_ENABLED=true
@@ -43,7 +43,7 @@ MSGRAPH_WEBHOOK_ACCEPTED_RESOURCES=communications/onlineMeetings
 
 Note: the bind host is read from `extra.host` in `config.yaml` (see the example above); there is no `MSGRAPH_WEBHOOK_HOST` env-var override.
 
-Start the gateway: `hermes gateway run`. The listener exposes:
+Start the gateway: `her gateway run`. The listener exposes:
 
 - `POST /msgraph/webhook` — change notifications from Graph
 - `GET /msgraph/webhook?validationToken=...` — Graph subscription validation handshake
@@ -130,7 +130,7 @@ Status code table:
 |---------|---------------|
 | Graph subscription validation fails | Public URL is reachable, `/msgraph/webhook` path matches, GET with `validationToken` echoes the token verbatim as `text/plain` within 10 seconds. |
 | Notifications POST but nothing ingests | `client_state` matches what you registered the subscription with. Re-run `openssl rand -hex 32` and create a new subscription if the value drifted. Check `accepted_resources` includes the resource path Graph is sending. |
-| Every notification 403s | `clientState` mismatch (forged, or subscription registered with a different value). Re-create the subscription with `hermes teams-pipeline subscribe --client-state "$MSGRAPH_WEBHOOK_CLIENT_STATE" ...` (ships with the pipeline runtime PR). |
+| Every notification 403s | `clientState` mismatch (forged, or subscription registered with a different value). Re-create the subscription with `her teams-pipeline subscribe --client-state "$MSGRAPH_WEBHOOK_CLIENT_STATE" ...` (ships with the pipeline runtime PR). |
 | Listener refuses to start on `0.0.0.0` | Set `allowed_source_cidrs` to Microsoft's current webhook egress ranges, or bind Hermes to `127.0.0.1` / `::1` behind your tunnel or reverse proxy. |
 | Listener starts but `curl http://localhost:8646/health` hangs | Port binding collision. Check `ss -tlnp \| grep 8646` and change `port:` if needed. |
 | Real Graph requests from Microsoft get 403'd | Source IP allowlist is too narrow. Widen the list to include the current Microsoft egress ranges. If you're still validating the tunnel path, bind Hermes to loopback and let the tunnel handle public exposure. |

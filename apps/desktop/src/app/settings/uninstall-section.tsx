@@ -54,7 +54,7 @@ export function UninstallSection() {
 
   useEffect(() => {
     let alive = true
-    const bridge = window.hermesDesktop?.uninstall
+    const bridge = window.herDesktop?.uninstall
     if (!bridge) {
       setLoading(false)
       return
@@ -79,7 +79,7 @@ export function UninstallSection() {
     }
   }, [])
 
-  const bridge = window.hermesDesktop?.uninstall
+  const bridge = window.herDesktop?.uninstall
   if (!bridge) {
     return null
   }

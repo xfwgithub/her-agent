@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any, Optional
 import httpx
 
 from agent.anthropic_adapter import _is_oauth_token, resolve_anthropic_token
-from hermes_cli.auth import _read_codex_tokens, resolve_codex_runtime_credentials
-from hermes_cli.runtime_provider import resolve_runtime_provider
+from her_cli.auth import _read_codex_tokens, resolve_codex_runtime_credentials
+from her_cli.runtime_provider import resolve_runtime_provider
 
 if TYPE_CHECKING:
     from typing import TypeGuard
@@ -145,7 +145,7 @@ def build_nous_credits_snapshot(account_info) -> Optional[AccountUsageSnapshot]:
     account info to show (fail-open: caller just shows nothing).
     """
     try:
-        from hermes_cli.nous_account import nous_portal_billing_url
+        from her_cli.nous_account import nous_portal_billing_url
 
         if account_info is None or not getattr(account_info, "logged_in", False):
             return None
@@ -254,7 +254,7 @@ def nous_credits_lines(*, markdown: bool = False, timeout: float = 10.0) -> list
         return render_account_usage_lines(snapshot, markdown=markdown)
 
     try:
-        from hermes_cli.auth import get_provider_auth_state
+        from her_cli.auth import get_provider_auth_state
 
         tok = (get_provider_auth_state("nous") or {}).get("access_token")
         if not (isinstance(tok, str) and tok.strip()):
@@ -264,7 +264,7 @@ def nous_credits_lines(*, markdown: bool = False, timeout: float = 10.0) -> list
     try:
         import concurrent.futures
 
-        from hermes_cli.nous_account import get_nous_portal_account_info
+        from her_cli.nous_account import get_nous_portal_account_info
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             account = pool.submit(

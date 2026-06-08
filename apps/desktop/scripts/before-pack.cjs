@@ -23,7 +23,7 @@
  *   ENOENT: no such file or directory, rename
  *   '.../release/linux-unpacked/electron' -> '.../release/linux-unpacked/Hermes'
  *
- * This is a hard failure with no obvious cause for the user — `hermes desktop`
+ * This is a hard failure with no obvious cause for the user — `her desktop`
  * just prints "Desktop GUI build failed" and the only fix is to manually
  * `rm -rf` the release directory, which a normal user has no way to know.
  *

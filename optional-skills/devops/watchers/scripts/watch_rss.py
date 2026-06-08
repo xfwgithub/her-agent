@@ -3,9 +3,9 @@
 
 Usage (via cron with --no-agent):
 
-    hermes cron create my-feed \\
+    her cron create my-feed \\
       --schedule "*/15 * * * *" --no-agent \\
-      --script "$HERMES_HOME/skills/devops/watchers/scripts/watch_rss.py" \\
+      --script "$HER_HOME/skills/devops/watchers/scripts/watch_rss.py" \\
       --script-args "--name hn --url https://news.ycombinator.com/rss"
 
 First run records a baseline (emits nothing).  Subsequent runs emit only

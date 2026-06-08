@@ -1,4 +1,4 @@
-import type { HermesGateway } from '@/hermes'
+import type { HermesGateway } from '@/her'
 import type { ComposerAttachment } from '@/store/composer'
 
 import type { DroppedFile } from '../hooks/use-composer-actions'

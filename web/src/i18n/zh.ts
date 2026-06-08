@@ -314,7 +314,7 @@ export const zh: Translations = {
     enableAfterInstall: "安装后启用",
     enableRuntime: "启用",
     forceReinstall: "强制重装（先删除已有目录）",
-    headline: "发现、安装、启用和更新 Hermes 插件（对齐 `hermes plugins` CLI）。",
+    headline: "发现、安装、启用和更新 Hermes 插件（对齐 `her plugins` CLI）。",
     identifierLabel: "Git 地址或 owner/repo",
     inactive: "未启用",
     installBtn: "安装",
@@ -331,8 +331,8 @@ export const zh: Translations = {
     providersHint:
       "写入 config.yaml：memory.provider（留空为内置）、context.engine。下次会话生效。",
     refreshDashboard: "重新扫描仪表盘扩展",
-    removeConfirm: "从 ~/.hermes/plugins/ 删除此插件？",
-    removeHint: "仅可移除用户安装在 ~/.hermes/plugins 下的插件。",
+    removeConfirm: "从 ~/.her/plugins/ 删除此插件？",
+    removeHint: "仅可移除用户安装在 ~/.her/plugins 下的插件。",
     rescanHeading: "SPA 插件注册表",
     rescanHint: "在磁盘新增文件后扫描，使侧边栏载入新 manifest。",
     runtimeHeading: "网关运行时（YAML 插件）",
@@ -354,7 +354,7 @@ export const zh: Translations = {
     all: "全部",
     categories: "分类",
     filters: "筛选",
-    noSkills: "未找到技能。技能从 ~/.hermes/skills/ 加载",
+    noSkills: "未找到技能。技能从 ~/.her/skills/ 加载",
     noSkillsMatch: "没有匹配的技能。",
     skillCount: "{count} 个技能",
     resultCount: "{count} 个结果",
@@ -368,7 +368,7 @@ export const zh: Translations = {
   },
 
   config: {
-    configPath: "~/.hermes/config.yaml",
+    configPath: "~/.her/config.yaml",
     filters: "筛选",
     sections: "分类",
     exportConfig: "导出配置为 JSON",

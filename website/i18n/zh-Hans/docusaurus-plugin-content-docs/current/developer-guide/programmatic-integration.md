@@ -1,7 +1,7 @@
 ---
 sidebar_position: 8
 title: "程序化集成"
-description: "从外部程序驱动 hermes-agent 的三种协议：ACP、TUI gateway JSON-RPC 以及兼容 OpenAI 的 HTTP API"
+description: "从外部程序驱动 her-agent 的三种协议：ACP、TUI gateway JSON-RPC 以及兼容 OpenAI 的 HTTP API"
 ---
 
 # 程序化集成
@@ -20,22 +20,22 @@ Hermes 提供三种协议，供外部程序驱动 agent——IDE 插件、自定
 
 ## ACP（Agent Client Protocol）
 
-`hermes acp` 启动一个基于 stdio 的 JSON-RPC 服务器，使用 ACP 协议。已在 VS Code（Zed Industries 的 ACP 扩展）、Zed 以及所有安装了 ACP 插件的 JetBrains IDE 中投入生产使用。
+`her acp` 启动一个基于 stdio 的 JSON-RPC 服务器，使用 ACP 协议。已在 VS Code（Zed Industries 的 ACP 扩展）、Zed 以及所有安装了 ACP 插件的 JetBrains IDE 中投入生产使用。
 
 暴露的能力：会话创建、prompt（提示词）提交、流式 agent 消息块、工具调用事件、权限请求、会话 fork、取消及身份验证。工具输出会被渲染为 IDE 可理解的 ACP `Diff`/`ToolCall` 内容块。
 
 完整生命周期、事件桥接及审批流程：[ACP 内部机制](./acp-internals)。
 
 ```bash
-hermes acp                  # 在 stdio 上提供 ACP 服务
-hermes acp --bootstrap      # 打印适用于支持 ACP 的 IDE 的安装代码片段
+her acp                  # 在 stdio 上提供 ACP 服务
+her acp --bootstrap      # 打印适用于支持 ACP 的 IDE 的安装代码片段
 ```
 
 ---
 
 ## TUI Gateway JSON-RPC
 
-`tui_gateway/server.py` 是 Ink TUI（`hermes --tui`）和嵌入式仪表板 PTY 桥接所使用的协议。任何外部宿主均可通过 stdio（或经由 `tui_gateway/ws.py` 的 WebSocket）使用相同协议。
+`tui_gateway/server.py` 是 Ink TUI（`her --tui`）和嵌入式仪表板 PTY 桥接所使用的协议。任何外部宿主均可通过 stdio（或经由 `tui_gateway/ws.py` 的 WebSocket）使用相同协议。
 
 ### 方法目录（精选）
 
@@ -58,7 +58,7 @@ terminal.resize         clipboard.paste         image.attach
 
 ### Pi 风格 RPC 映射
 
-Pi-mono RPC 规范（[issue #360](https://github.com/NousResearch/hermes-agent/issues/360)）中的每条命令均有对应的 TUI gateway 等价项：
+Pi-mono RPC 规范（[issue #360](https://github.com/NousResearch/her-agent/issues/360)）中的每条命令均有对应的 TUI gateway 等价项：
 
 | Pi 命令 | Hermes 等价项 |
 |------------|-------------------|
@@ -91,7 +91,7 @@ GET  /v1/runs/{id}/events        生命周期事件的 SSE 流
 POST /v1/runs/{id}/approval      解决待处理的审批
 POST /v1/runs/{id}/stop          中断运行
 GET  /v1/capabilities            机器可读的功能标志
-GET  /v1/models                  列出 hermes-agent
+GET  /v1/models                  列出 her-agent
 GET  /health, /health/detailed
 ```
 
@@ -117,7 +117,7 @@ GET  /health, /health/detailed
 - **ACP：** IDE 将 slash 命令作为 prompt 发送，agent 负责分发
 - **API server：** 在请求体中包含 `model` 字段，或设置 `X-Hermes-Model`
 
-内置 provider 感知解析（相同的模型名称会根据当前 provider 自动选择正确格式）。参见 `hermes_cli/model_switch.py`。
+内置 provider 感知解析（相同的模型名称会根据当前 provider 自动选择正确格式）。参见 `her_cli/model_switch.py`。
 
 ---
 

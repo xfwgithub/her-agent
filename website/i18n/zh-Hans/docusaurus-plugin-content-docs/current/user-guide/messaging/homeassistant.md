@@ -25,7 +25,7 @@ Hermes Agent 通过以下两种方式与 [Home Assistant](https://www.home-assis
 ### 2. 配置环境变量
 
 ```bash
-# Add to ~/.hermes/.env
+# Add to ~/.her/.env
 
 # Required: your Long-Lived Access Token
 HASS_TOKEN=your-long-lived-access-token
@@ -41,7 +41,7 @@ HASS_URL=http://192.168.1.100:8123
 ### 3. 启动 Gateway
 
 ```bash
-hermes gateway
+her gateway
 ```
 
 Home Assistant 将作为已连接平台出现，与其他消息平台（Telegram、Discord 等）并列显示。
@@ -130,7 +130,7 @@ Home Assistant gateway 适配器通过 WebSocket 连接并订阅 `state_changed`
 默认情况下，**不转发任何事件**。您必须配置 `watch_domains`、`watch_entities` 或 `watch_all` 中的至少一项才能接收事件。若未设置过滤器，启动时将记录警告日志，所有状态变更将被静默丢弃。
 :::
 
-在 `~/.hermes/config.yaml` 中，于 Home Assistant 平台的 `extra` 部分配置 agent 接收的事件：
+在 `~/.her/config.yaml` 中，于 Home Assistant 平台的 `extra` 部分配置 agent 接收的事件：
 
 ```yaml
 platforms:

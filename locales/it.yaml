@@ -98,7 +98,7 @@ gateway:
     upload_failed:         "✗ Caricamento del report di debug non riuscito: {error}"
     header:                "**Report di debug caricato:**"
     auto_delete:           "⏱ I paste verranno eliminati automaticamente tra 6 ore."
-    full_logs_hint:        "Per il caricamento dei log completi, usa `hermes debug share` dalla CLI."
+    full_logs_hint:        "Per il caricamento dei log completi, usa `her debug share` dalla CLI."
     share_hint:            "Condividi questi link con il team Hermes per ricevere supporto."
 
   deny:
@@ -147,7 +147,7 @@ gateway:
   kanban:
     error_prefix:          "⚠ errore kanban: {error}"
     subscribed_suffix:     "(iscritto — riceverai notifica quando {task_id} verrà completato o si bloccherà)"
-    truncated_suffix:      "… (troncato; usa `hermes kanban …` nel terminale per l'output completo)"
+    truncated_suffix:      "… (troncato; usa `her kanban …` nel terminale per l'output completo)"
     no_output:             "(nessun output)"
 
   personality:
@@ -215,7 +215,7 @@ gateway:
 
   restart:
     in_progress:           "⏳ Riavvio del gateway già in corso..."
-    restarting:            "♻ Riavvio del gateway. Se non ricevi una notifica entro 60 secondi, riavvia dalla console con `hermes gateway restart`."
+    restarting:            "♻ Riavvio del gateway. Se non ricevi una notifica entro 60 secondi, riavvia dalla console con `her gateway restart`."
 
   resume:
     db_unavailable:        "Database delle sessioni non disponibile."
@@ -294,9 +294,9 @@ gateway:
     invalid_count:         "Conteggio non valido \"{arg}\" — usa /undo o /undo N."
 
   update:
-    platform_not_messaging:  "✗ /update è disponibile solo dalle piattaforme di messaggistica. Esegui `hermes update` dal terminale."
+    platform_not_messaging:  "✗ /update è disponibile solo dalle piattaforme di messaggistica. Esegui `her update` dal terminale."
     not_git_repo:            "✗ Non è un repository git — impossibile aggiornare."
-    hermes_cmd_not_found:    "✗ Impossibile localizzare il comando `hermes`. Hermes è in esecuzione, ma il comando di aggiornamento non ha trovato l'eseguibile nel PATH o tramite l'interprete Python attuale. Prova a eseguire `hermes update` manualmente nel terminale."
+    her_cmd_not_found:    "✗ Impossibile localizzare il comando `her`. Hermes è in esecuzione, ma il comando di aggiornamento non ha trovato l'eseguibile nel PATH o tramite l'interprete Python attuale. Prova a eseguire `her update` manualmente nel terminale."
     start_failed:            "✗ Avvio dell'aggiornamento non riuscito: {error}"
     starting:                "⚕ Avvio dell'aggiornamento di Hermes… mostrerò qui i progressi in streaming."
 

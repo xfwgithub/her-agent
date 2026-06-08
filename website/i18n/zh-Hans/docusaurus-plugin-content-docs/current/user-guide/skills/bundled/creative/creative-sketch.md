@@ -44,7 +44,7 @@ description: "一次性 HTML 原型：2-3 个设计方案对比"
 
 ## 如果用户安装了完整的 GSD 系统
 
-如果 `gsd-sketch` 作为同级 skill 出现（通过 `npx get-shit-done-cc --hermes` 安装），优先使用 **`gsd-sketch`** 以获得完整工作流：持久化的 `.planning/sketches/` 目录（含 MANIFEST）、前沿模式分析、跨历史草图的一致性审计，以及与 GSD 其余部分的集成。本 skill 是轻量级独立版本——无状态机制的一次性草图。
+如果 `gsd-sketch` 作为同级 skill 出现（通过 `npx get-shit-done-cc --her` 安装），优先使用 **`gsd-sketch`** 以获得完整工作流：持久化的 `.planning/sketches/` 目录（含 MANIFEST）、前沿模式分析、跨历史草图的一致性审计，以及与 GSD 其余部分的集成。本 skill 是轻量级独立版本——无状态机制的一次性草图。
 
 ## 核心方法
 
@@ -235,4 +235,4 @@ browser_vision(question="How does this look? Any obvious layout issues?")
 
 ## 致谢
 
-改编自 GSD（Get Shit Done）项目的 `/gsd-sketch` 工作流——MIT © 2025 Lex Christopherson（[gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)）。完整 GSD 系统提供持久化草图状态、主题/方案模式参考及一致性审计工作流；通过 `npx get-shit-done-cc --hermes --global` 安装。
+改编自 GSD（Get Shit Done）项目的 `/gsd-sketch` 工作流——MIT © 2025 Lex Christopherson（[gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)）。完整 GSD 系统提供持久化草图状态、主题/方案模式参考及一致性审计工作流；通过 `npx get-shit-done-cc --her --global` 安装。

@@ -15,5 +15,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    hermes_bootstrap_lib::run()
+    her_bootstrap_lib::run()
 }

@@ -34,7 +34,7 @@ Install the required dependencies:
 ```bash
 pip install aiohttp cryptography
 # Optional: for terminal QR code display
-pip install hermes-agent[messaging]
+pip install her-agent[messaging]
 ```
 
 ## Setup
@@ -44,7 +44,7 @@ pip install hermes-agent[messaging]
 The easiest way to connect your WeChat account is through the interactive setup:
 
 ```bash
-hermes gateway setup
+her gateway setup
 ```
 
 Select **Weixin** when prompted. The wizard will:
@@ -53,7 +53,7 @@ Select **Weixin** when prompted. The wizard will:
 2. Display the QR code in your terminal (or provide a URL)
 3. Wait for you to scan the QR code with the WeChat mobile app
 4. Prompt you to confirm the login on your phone
-5. Save the account credentials automatically to `~/.hermes/weixin/accounts/`
+5. Save the account credentials automatically to `~/.her/weixin/accounts/`
 
 Once confirmed, you'll see a message like:
 
@@ -65,7 +65,7 @@ The wizard stores the `account_id`, `token`, and `base_url` so you don't need to
 
 ### 2. Configure Environment Variables
 
-After initial QR login, set at minimum the account ID in `~/.hermes/.env`:
+After initial QR login, set at minimum the account ID in `~/.her/.env`:
 
 ```bash
 WEIXIN_ACCOUNT_ID=your-account-id
@@ -88,7 +88,7 @@ WEIXIN_HOME_CHANNEL_NAME=Home
 ### 3. Start the Gateway
 
 ```bash
-hermes gateway
+her gateway
 ```
 
 The adapter will restore saved credentials, connect to the iLink API, and begin long-polling for messages.
@@ -96,7 +96,7 @@ The adapter will restore saved credentials, connect to the iLink API, and begin 
 ## Features
 
 - **Long-poll transport** — no public endpoint, webhook, or WebSocket needed
-- **QR code login** — scan-to-connect setup via `hermes gateway setup`
+- **QR code login** — scan-to-connect setup via `her gateway setup`
 - **DM messaging** — configurable access policies; group messaging depends on iLink actually delivering group events for the connected identity (often not the case for iLink bot accounts — see the warning above)
 - **Media support** — images, video, files, and voice messages
 - **AES-128-ECB encrypted CDN** — automatic encryption/decryption for all media transfers
@@ -152,7 +152,7 @@ Weixin user ID is present in `WEIXIN_ALLOWED_USERS`.
 
 A practical setup flow is:
 
-1. Pair Hermes once with `hermes gateway setup` and note the connected iLink bot
+1. Pair Hermes once with `her gateway setup` and note the connected iLink bot
    account.
 2. Have each allowed user send a direct message to that bot/contact.
 3. Read the sender/user ID from the gateway logs or the inbound event payload.
@@ -231,7 +231,7 @@ All outbound media goes through the encrypted CDN upload flow:
 
 The iLink Bot API requires a `context_token` to be echoed back with each outbound message for a given peer. The adapter maintains a disk-backed context token store:
 
-- Tokens are saved per account+peer to `~/.hermes/weixin/accounts/<account_id>.context-tokens.json`
+- Tokens are saved per account+peer to `~/.her/weixin/accounts/<account_id>.context-tokens.json`
 - On startup, previously saved tokens are restored
 - Every inbound message updates the stored token for that sender
 - Outbound messages automatically include the latest context token
@@ -318,10 +318,10 @@ Only one Weixin gateway instance can use a given token at a time. The adapter ac
 | Problem | Fix |
 |---------|-----|
 | `Weixin startup failed: aiohttp and cryptography are required` | Install both: `pip install aiohttp cryptography` |
-| `Weixin startup failed: WEIXIN_TOKEN is required` | Run `hermes gateway setup` to complete QR login, or set `WEIXIN_TOKEN` manually |
-| `Weixin startup failed: WEIXIN_ACCOUNT_ID is required` | Set `WEIXIN_ACCOUNT_ID` in your `.env` or run `hermes gateway setup` |
+| `Weixin startup failed: WEIXIN_TOKEN is required` | Run `her gateway setup` to complete QR login, or set `WEIXIN_TOKEN` manually |
+| `Weixin startup failed: WEIXIN_ACCOUNT_ID is required` | Set `WEIXIN_ACCOUNT_ID` in your `.env` or run `her gateway setup` |
 | `Another local Hermes gateway is already using this Weixin token` | Stop the other gateway instance first — only one poller per token is allowed |
-| Session expired (`errcode=-14`) | Your login session has expired. Re-run `hermes gateway setup` to scan a new QR code |
+| Session expired (`errcode=-14`) | Your login session has expired. Re-run `her gateway setup` to scan a new QR code |
 | QR code expired during setup | The QR auto-refreshes up to 3 times. If it keeps expiring, check your network connection |
 | Bot doesn't respond to DMs | Check `WEIXIN_DM_POLICY` — if set to `allowlist`, the sender must be in `WEIXIN_ALLOWED_USERS` |
 | Bot ignores group messages | Group policy defaults to `disabled`. Set `WEIXIN_GROUP_POLICY=open` or `allowlist` — but note that QR-login iLink bot identities (`...@im.bot`) typically cannot receive ordinary WeChat group messages at all. If the gateway logs show no raw inbound events for group messages, the limitation is on the iLink side, not in Hermes. |
@@ -330,4 +330,4 @@ Only one Weixin gateway instance can use a given token at a time. The adapter ac
 | Voice messages show as text | If WeChat provides a transcription, the adapter uses the text. This is expected behavior |
 | Messages appear duplicated | The adapter deduplicates by message ID. If you see duplicates, check if multiple gateway instances are running |
 | `iLink POST ... HTTP 4xx/5xx` | API error from the iLink service. Check your token validity and network connectivity |
-| Terminal QR code doesn't render | Reinstall with the messaging extra: `pip install hermes-agent[messaging]`. Alternatively, open the URL printed above the QR |
+| Terminal QR code doesn't render | Reinstall with the messaging extra: `pip install her-agent[messaging]`. Alternatively, open the URL printed above the QR |

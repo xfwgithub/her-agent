@@ -64,7 +64,7 @@ _BUILTIN_DELIVER_PLATFORMS = {
 }
 
 DEFAULT_HOST = "0.0.0.0"
-DEFAULT_PORT = 8644
+DEFAULT_PORT = 23452
 _INSECURE_NO_AUTH = "INSECURE_NO_AUTH"
 _DYNAMIC_ROUTES_FILENAME = "webhook_subscriptions.json"
 
@@ -294,9 +294,9 @@ class WebhookAdapter(BasePlatformAdapter):
 
     def _reload_dynamic_routes(self) -> None:
         """Reload agent-created subscriptions from disk if the file changed."""
-        from hermes_constants import get_hermes_home
-        hermes_home = get_hermes_home()
-        subs_path = hermes_home / _DYNAMIC_ROUTES_FILENAME
+        from her_constants import get_her_home
+        her_home = get_her_home()
+        subs_path = her_home / _DYNAMIC_ROUTES_FILENAME
         if not subs_path.exists():
             if self._dynamic_routes:
                 self._dynamic_routes = {}

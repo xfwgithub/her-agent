@@ -541,7 +541,7 @@ export interface Translations {
     switchTheme: string;
   };
 
-  // ── Achievements plugin (plugins/hermes-achievements) ──
+  // ── Achievements plugin (plugins/her-achievements) ──
   achievements: {
     hero: {
       kicker: string;

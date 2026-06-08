@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from cli import HermesCLI, _build_compact_banner, _rich_text_from_ansi
-from hermes_cli.skin_engine import get_active_skin, set_active_skin
+from her_cli.skin_engine import get_active_skin, set_active_skin
 
 
 def _make_cli_stub():
@@ -53,7 +53,7 @@ class TestCliSkinPromptIntegration:
         cli = _make_cli_stub()
         cli._secret_state = {"response_queue": object()}
 
-        with patch("hermes_cli.skin_engine.get_active_prompt_symbol", return_value="⚔ "):
+        with patch("her_cli.skin_engine.get_active_prompt_symbol", return_value="⚔ "):
             assert cli._get_tui_prompt_fragments() == [("class:sudo-prompt", "🔑 ⚔ ")]
 
     def test_build_tui_style_dict_uses_skin_overrides(self):
@@ -92,7 +92,7 @@ class TestCliSkinPromptIntegration:
 
 
 class TestCompactBannerSkinIntegration:
-    def test_default_compact_banner_keeps_legacy_nous_hermes_branding(self):
+    def test_default_compact_banner_keeps_legacy_nous_her_branding(self):
         set_active_skin("default")
 
         with patch("cli.shutil.get_terminal_size", return_value=SimpleNamespace(columns=90)), \
@@ -101,7 +101,7 @@ class TestCompactBannerSkinIntegration:
 
         assert "NOUS HERMES" in banner
 
-    def test_poseidon_compact_banner_uses_skin_branding_instead_of_nous_hermes(self):
+    def test_poseidon_compact_banner_uses_skin_branding_instead_of_nous_her(self):
         set_active_skin("poseidon")
 
         with patch("cli.shutil.get_terminal_size", return_value=SimpleNamespace(columns=90)), \

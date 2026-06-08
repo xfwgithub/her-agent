@@ -18,8 +18,8 @@ export async function writeClipboardText(text: string) {
     return
   }
 
-  if (window.hermesDesktop?.writeClipboard) {
-    await window.hermesDesktop.writeClipboard(text)
+  if (window.herDesktop?.writeClipboard) {
+    await window.herDesktop.writeClipboard(text)
 
     return
   }

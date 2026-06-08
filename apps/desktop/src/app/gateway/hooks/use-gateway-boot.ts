@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 import type { HermesConnection } from '@/global'
-import { HermesGateway } from '@/hermes'
+import { HermesGateway } from '@/her'
 import { translateNow } from '@/i18n'
 import { isGatewayReauthRequired, resolveGatewayWsUrl } from '@/lib/gateway-ws-url'
 import {
@@ -32,12 +32,12 @@ import {
   setConnection,
   setSessionsLoading
 } from '@/store/session'
-import type { RpcEvent } from '@/types/hermes'
+import type { RpcEvent } from '@/types/her'
 
 interface GatewayBootOptions {
   handleGatewayEvent: (event: RpcEvent) => void
   onConnectionReady: (
-    connection: Awaited<ReturnType<NonNullable<typeof window.hermesDesktop>['getConnection']>> | null
+    connection: Awaited<ReturnType<NonNullable<typeof window.herDesktop>['getConnection']>> | null
   ) => void
   onGatewayReady: (gateway: HermesGateway | null) => void
   refreshHermesConfig: () => Promise<void>
@@ -69,7 +69,7 @@ export function useGatewayBoot({
 
   useEffect(() => {
     let cancelled = false
-    const desktop = window.hermesDesktop
+    const desktop = window.herDesktop
 
     const publish = (next: HermesConnection | null) => {
       callbacksRef.current.onConnectionReady(next)

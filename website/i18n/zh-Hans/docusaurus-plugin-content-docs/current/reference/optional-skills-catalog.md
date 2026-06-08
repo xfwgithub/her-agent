@@ -1,22 +1,22 @@
 ---
 sidebar_position: 9
 title: "可选技能目录"
-description: "hermes-agent 附带的官方可选技能 — 通过 hermes skills install official/<category>/<skill> 安装"
+description: "her-agent 附带的官方可选技能 — 通过 her skills install official/<category>/<skill> 安装"
 ---
 
 # 可选技能目录
 
-可选技能随 hermes-agent 一起发布，位于 `optional-skills/` 目录下，但**默认未激活**。请显式安装：
+可选技能随 her-agent 一起发布，位于 `optional-skills/` 目录下，但**默认未激活**。请显式安装：
 
 ```bash
-hermes skills install official/<category>/<skill>
+her skills install official/<category>/<skill>
 ```
 
 示例：
 
 ```bash
-hermes skills install official/blockchain/solana
-hermes skills install official/mlops/flash-attention
+her skills install official/blockchain/solana
+her skills install official/mlops/flash-attention
 ```
 
 下方每个技能均链接至专属页面，包含完整定义、配置和使用说明。
@@ -24,7 +24,7 @@ hermes skills install official/mlops/flash-attention
 卸载方式：
 
 ```bash
-hermes skills uninstall <skill-name>
+her skills uninstall <skill-name>
 ```
 
 ## autonomous-ai-agents
@@ -77,7 +77,7 @@ hermes skills uninstall <skill-name>
 
 | 技能 | 描述 |
 |-------|-------------|
-| [**agentmail**](/user-guide/skills/optional/email/email-agentmail) | 通过 AgentMail 为 agent 提供专属邮箱。使用 agent 专属邮件地址（如 hermes-agent@agentmail.to）自主发送、接收和管理邮件。 |
+| [**agentmail**](/user-guide/skills/optional/email/email-agentmail) | 通过 AgentMail 为 agent 提供专属邮箱。使用 agent 专属邮件地址（如 her-agent@agentmail.to）自主发送、接收和管理邮件。 |
 
 ## finance
 

@@ -14,7 +14,7 @@ description: "公开记录 OSINT 调查框架 — SEC EDGAR 文件、USAspending
 
 | | |
 |---|---|
-| 来源 | 可选 — 通过 `hermes skills install official/research/osint-investigation` 安装 |
+| 来源 | 可选 — 通过 `her skills install official/research/osint-investigation` 安装 |
 | 路径 | `optional-skills/research/osint-investigation` |
 | 版本 | `0.1.0` |
 | 作者 | Hermes Agent（改编自 ShinMegamiBoson/OpenPlanter，MIT 许可）|
@@ -113,7 +113,7 @@ python3 SKILL_DIR/scripts/fetch_ofac_sdn.py --out data/ofac_sdn.csv
 
 # ICIJ 离岸泄露 — 首次使用时下载约 70 MB 批量 CSV，
 # 之后在本地搜索。缓存 30 天，存储于
-# $HERMES_OSINT_CACHE/icij/（默认：~/.cache/hermes-osint/icij/）。
+# $HERMES_OSINT_CACHE/icij/（默认：~/.cache/her-osint/icij/）。
 python3 SKILL_DIR/scripts/fetch_icij_offshore.py --entity "EXAMPLE CORP" \
     --out data/icij.csv
 ```

@@ -837,8 +837,8 @@ class GeminiNativeClient:
         if not (api_key or "").strip():
             raise RuntimeError(
                 "Gemini native client requires an API key, but none was provided. "
-                "Set GOOGLE_API_KEY or GEMINI_API_KEY in your environment / ~/.hermes/.env "
-                "(get one at https://aistudio.google.com/app/apikey), or run `hermes setup` "
+                "Set GOOGLE_API_KEY or GEMINI_API_KEY in your environment / ~/.her/.env "
+                "(get one at https://aistudio.google.com/app/apikey), or run `her setup` "
                 "to configure the Google provider."
             )
         self.api_key = api_key
@@ -871,7 +871,7 @@ class GeminiNativeClient:
             "Content-Type": "application/json",
             "Accept": "application/json",
             "x-goog-api-key": self.api_key,
-            "User-Agent": "hermes-agent (gemini-native)",
+            "User-Agent": "her-agent (gemini-native)",
         }
         headers.update(self._default_headers)
         return headers

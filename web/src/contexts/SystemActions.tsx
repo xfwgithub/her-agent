@@ -10,7 +10,7 @@ import {
 
 const ACTION_NAMES: Record<SystemAction, string> = {
   restart: "gateway-restart",
-  update: "hermes-update",
+  update: "her-update",
 };
 
 export function SystemActionsProvider({
@@ -74,7 +74,7 @@ export function SystemActionsProvider({
           setActiveAction(action);
         } else {
           const resp = await api.updateHermes();
-          // In a Docker install the image is immutable, so `hermes update`
+          // In a Docker install the image is immutable, so `her update`
           // can't apply — the endpoint returns 200 with a structured
           // {ok:false, error:"docker_update_unsupported", message, update_command}
           // envelope instead of spawning the action (see #34347 / #36263).

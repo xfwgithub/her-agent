@@ -36,7 +36,7 @@ Hermes 支持两种企业微信集成模式：
 3. 在应用设置中创建 **Corp Secret**
 4. 在应用概览页记录 **Agent ID**
 5. 在**接收消息**下配置回调 URL：
-   - URL：`http://YOUR_PUBLIC_IP:8645/wecom/callback`
+   - URL：`http://YOUR_PUBLIC_IP:23454/wecom/callback`
    - Token：生成一个随机 token（企业微信会提供）
    - EncodingAESKey：生成一个密钥（企业微信会提供）
 
@@ -53,17 +53,17 @@ WECOM_CALLBACK_ENCODING_AES_KEY=your-43-char-aes-key
 
 # 可选
 WECOM_CALLBACK_HOST=0.0.0.0
-WECOM_CALLBACK_PORT=8645
+WECOM_CALLBACK_PORT=23454
 WECOM_CALLBACK_ALLOWED_USERS=user1,user2
 ```
 
 ### 3. 启动 Gateway
 
 ```bash
-hermes gateway
+her gateway
 ```
 
-（仅在通过 `hermes gateway install` 注册 systemd/launchd 服务后，才使用 `hermes gateway start`。）
+（仅在通过 `her gateway install` 注册 systemd/launchd 服务后，才使用 `her gateway start`。）
 
 回调适配器会在配置的端口上启动 HTTP 服务器。企业微信将通过 GET 请求验证回调 URL，随后开始通过 POST 发送消息。
 
@@ -79,7 +79,7 @@ hermes gateway
 | `token` | — | 回调验证 token（必填） |
 | `encoding_aes_key` | — | 43 字符的 AES 密钥，用于回调加密（必填） |
 | `host` | `0.0.0.0` | HTTP 回调服务器绑定地址 |
-| `port` | `8645` | HTTP 回调服务器端口 |
+| `port` | `23454` | HTTP 回调服务器端口 |
 | `path` | `/wecom/callback` | 回调端点的 URL 路径 |
 
 ## 多应用路由
@@ -92,7 +92,7 @@ platforms:
     enabled: true
     extra:
       host: "0.0.0.0"
-      port: 8645
+      port: 23454
       apps:
         - name: "dept-a"
           corp_id: "ww_corp_a"

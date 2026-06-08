@@ -703,7 +703,7 @@ def seed_credits_at_session_start(agent) -> bool:
 
         def _bg_seed() -> None:
             try:
-                from hermes_cli.nous_account import get_nous_portal_account_info
+                from her_cli.nous_account import get_nous_portal_account_info
                 info = get_nous_portal_account_info(force_fresh=True)
                 if getattr(agent, "_credits_state", None) is not None:
                     return  # a live inference header beat us — don't clobber it

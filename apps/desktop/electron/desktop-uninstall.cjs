@@ -2,7 +2,7 @@
  * desktop-uninstall.cjs
  *
  * Pure, electron-free helpers for the desktop Chat GUI uninstaller. These map
- * the three user-facing uninstall modes to the `hermes uninstall` CLI flags,
+ * the three user-facing uninstall modes to the `her uninstall` CLI flags,
  * resolve the running app bundle/exe so a detached cleanup script can remove
  * it after the app quits, and build that cleanup script for each OS.
  *
@@ -12,14 +12,14 @@
  *
  * The three modes mirror the CLI's options exactly:
  *   - 'gui'  → remove ONLY the Chat GUI, keep the agent + all user data.
- *              `hermes uninstall --gui --yes`
+ *              `her uninstall --gui --yes`
  *   - 'lite' → remove the GUI + agent code, KEEP user data (config / sessions
- *              / .env) for a future reinstall. `hermes uninstall --yes`
+ *              / .env) for a future reinstall. `her uninstall --yes`
  *   - 'full' → remove everything: GUI + agent + all user data.
- *              `hermes uninstall --full --yes`
+ *              `her uninstall --full --yes`
  *
  * Why a detached cleanup script: 'lite'/'full' delete the very venv the
- * `hermes` command runs from, and every mode may need to delete the running
+ * `her` command runs from, and every mode may need to delete the running
  * app bundle (locked on macOS/Windows while the process is alive). So we hand
  * the work to a detached child that waits for this app's PID to exit, runs the
  * Python uninstall, then removes the app bundle — then the app quits. Same
@@ -31,9 +31,9 @@ const path = require('node:path')
 const UNINSTALL_MODES = ['gui', 'lite', 'full']
 
 /**
- * Map an uninstall mode to the `python -m hermes_cli.uninstall` argv (after the
+ * Map an uninstall mode to the `python -m her_cli.uninstall` argv (after the
  * python executable). Uses the dedicated lightweight module entrypoint (not
- * `hermes_cli.main`) so it can run under a system Python OUTSIDE the venv that
+ * `her_cli.main`) so it can run under a system Python OUTSIDE the venv that
  * lite/full delete — see the Finding-3 note in buildWindowsCleanupScript.
  * Throws on an unknown mode so a typo can't silently become a full wipe.
  */
@@ -41,7 +41,7 @@ function uninstallArgsForMode(mode) {
   if (!UNINSTALL_MODES.includes(mode)) {
     throw new Error(`Unknown uninstall mode: ${mode}`)
   }
-  return ['-m', 'hermes_cli.uninstall', '--mode', mode]
+  return ['-m', 'her_cli.uninstall', '--mode', mode]
 }
 
 /** True when `mode` removes the agent (lite/full), false for gui-only. */
@@ -86,13 +86,13 @@ function resolveRemovableAppPath(execPath, platform, env = {}) {
   if (platform === 'win32') {
     // NSIS per-user installs Hermes.exe directly in the install dir.
     const dir = p.dirname(exe)
-    if (/[\\/]Hermes$/i.test(dir) || /[\\/]hermes-desktop$/i.test(dir)) return dir
+    if (/[\\/]Hermes$/i.test(dir) || /[\\/]her-desktop$/i.test(dir)) return dir
     return null
   }
 
   // Linux: an AppImage exposes its own path via the APPIMAGE env var.
   if (env.APPIMAGE) return env.APPIMAGE
-  // Unpacked electron-builder tree: …/linux-unpacked/hermes
+  // Unpacked electron-builder tree: …/linux-unpacked/her
   const dir = p.dirname(exe)
   if (/-unpacked$/.test(dir)) return dir
   return null
@@ -115,11 +115,11 @@ function shouldRemoveAppBundle(isPackaged, appPath) {
  *   3. removes the app bundle if one was resolved.
  *
  * `pythonExe` should be a Python OUTSIDE the venv for lite/full (the venv is
- * being deleted); `pythonPath` is prepended to PYTHONPATH so `import hermes_cli`
+ * being deleted); `pythonPath` is prepended to PYTHONPATH so `import her_cli`
  * resolves from the agent source. `q()` single-quote-escapes for the shell
  * (closes-escapes-reopens any embedded apostrophe), defending against spaces.
  */
-function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot, uninstallArgs, appPath, hermesHome }) {
+function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot, uninstallArgs, appPath, herHome }) {
   const q = s => `'${String(s).replace(/'/g, `'\\''`)}'`
   const lines = [
     '#!/bin/bash',
@@ -133,7 +133,7 @@ function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot,
     '    sleep 0.5',
     '  done',
     'fi',
-    `export HERMES_HOME=${q(hermesHome)}`
+    `export HER_HOME=${q(herHome)}`
   ]
   if (pythonPath) {
     lines.push(`export PYTHONPATH=${q(pythonPath)}\${PYTHONPATH:+:$PYTHONPATH}`)
@@ -158,7 +158,7 @@ function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot,
  * the venv that contains `python.exe`. A running .exe is mandatory-locked on
  * Windows, so running the uninstall from the venv's OWN python half-fails. The
  * desktop passes a system Python (findSystemPython) as `pythonExe` for those
- * modes + `pythonPath`=agentRoot so `import hermes_cli` resolves from source
+ * modes + `pythonPath`=agentRoot so `import her_cli` resolves from source
  * while the venv is torn down. gui-only doesn't touch the venv, so it can use
  * either interpreter.
  *
@@ -169,7 +169,7 @@ function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot,
  * Removal: even after the desktop PID is gone, Windows releases directory
  * handles lazily, so a single `rmdir /s /q` can half-fail — retry up to 10x.
  */
-function buildWindowsCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot, uninstallArgs, appPath, hermesHome }) {
+function buildWindowsCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot, uninstallArgs, appPath, herHome }) {
   const pid = Number(desktopPid) || 0
   // cmd.exe has no string escaping inside quotes; strip embedded quotes (paths
   // under %LOCALAPPDATA% never contain them). `&`/`^` in a path would still be
@@ -178,7 +178,7 @@ function buildWindowsCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoo
   const lines = [
     '@echo off',
     'setlocal enableextensions',
-    `set "HERMES_HOME=${String(hermesHome).replace(/"/g, '')}"`,
+    `set "HER_HOME=${String(herHome).replace(/"/g, '')}"`,
     `set "PID=${pid}"`
   ]
   if (pythonPath) {

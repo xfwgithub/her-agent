@@ -13,7 +13,7 @@ process does not need a public URL, a tunnel, or a TLS certificate. It connects,
 authenticates, and listens on a subscription — the same way a Telegram bot listens
 on a token.
 
-> Run `hermes gateway setup` and pick **Google Chat** for a guided walk-through.
+> Run `her gateway setup` and pick **Google Chat** for a guided walk-through.
 
 :::note Workspace edition
 Google Chat is part of Google Workspace. You can use this integration with a
@@ -60,13 +60,13 @@ Both are free for the volumes a personal bot generates.
 
 **IAM & Admin → Service Accounts → Create Service Account.**
 
-- Name: `hermes-chat-bot`
+- Name: `her-chat-bot`
 - Skip the "Grant this service account access to project" step. IAM on the specific
   subscription is all you need — do **NOT** grant project-level Pub/Sub roles.
 
 After creation, open the SA, go to **Keys → Add Key → Create new key → JSON** and
 download the file. Save it somewhere only Hermes can read (e.g.,
-`~/.hermes/google-chat-sa.json`, `chmod 600`).
+`~/.her/google-chat-sa.json`, `chmod 600`).
 
 :::caution There is NO "Chat Bot Caller" role
 A common mistake is to search for a Chat-specific IAM role and grant it at the
@@ -81,14 +81,14 @@ the subscription you create in the next step.
 
 **Pub/Sub → Topics → Create topic.**
 
-- Topic ID: `hermes-chat-events`
+- Topic ID: `her-chat-events`
 - Leave the defaults for everything else.
 
 After creation, the topic's detail page has a **Subscriptions** tab. Create one:
 
-- Subscription ID: `hermes-chat-events-sub`
+- Subscription ID: `her-chat-events-sub`
 - Delivery type: **Pull**
-- Message retention: **7 days** (so backlog survives a hermes restart)
+- Message retention: **7 days** (so backlog survives a her restart)
 - Leave the rest default.
 
 ---
@@ -109,7 +109,7 @@ never receive anything.
 
 On the **subscription**, add your own Service Account as a principal:
 
-- Principal: `hermes-chat-bot@<your-project>.iam.gserviceaccount.com`
+- Principal: `her-chat-bot@<your-project>.iam.gserviceaccount.com`
 - Role: `Pub/Sub Subscriber`
 
 Also grant `Pub/Sub Viewer` on the same subscription — Hermes calls
@@ -127,7 +127,7 @@ Go to **APIs & Services → Google Chat API → Configuration**.
 - **Functionality**: enable **Receive 1:1 messages** and **Join spaces and group
   conversations**.
 - **Connection settings**: select **Cloud Pub/Sub**, enter the topic name
-  `projects/<your-project>/topics/hermes-chat-events`.
+  `projects/<your-project>/topics/her-chat-events`.
 - **Visibility**: restrict to your workspace (or specific users) — do not publish
   to everyone while you're testing.
 
@@ -146,13 +146,13 @@ self-message filtering.
 
 ## Step 9: Configure Hermes
 
-Add the Google Chat section to `~/.hermes/.env`:
+Add the Google Chat section to `~/.her/.env`:
 
 ```bash
 # Required
 GOOGLE_CHAT_PROJECT_ID=my-chat-bot-123
-GOOGLE_CHAT_SUBSCRIPTION_NAME=projects/my-chat-bot-123/subscriptions/hermes-chat-events-sub
-GOOGLE_CHAT_SERVICE_ACCOUNT_JSON=/home/you/.hermes/google-chat-sa.json
+GOOGLE_CHAT_SUBSCRIPTION_NAME=projects/my-chat-bot-123/subscriptions/her-chat-events-sub
+GOOGLE_CHAT_SERVICE_ACCOUNT_JSON=/home/you/.her/google-chat-sa.json
 
 # Authorization — paste the emails of people allowed to talk to the bot
 GOOGLE_CHAT_ALLOWED_USERS=you@yourdomain.com,coworker@yourdomain.com
@@ -175,7 +175,7 @@ pip install google-cloud-pubsub google-api-python-client google-auth google-auth
 Start the gateway:
 
 ```bash
-hermes gateway
+her gateway
 ```
 
 You should see a log line like:
@@ -244,12 +244,12 @@ python -m plugins.platforms.google_chat.oauth \
     --client-secret /path/to/client_secret.json
 
 # A named profile gets its own separate registration:
-hermes -p <profile> python -m plugins.platforms.google_chat.oauth \
+her -p <profile> python -m plugins.platforms.google_chat.oauth \
     --client-secret /path/to/client_secret.json
 ```
 
 That writes the client secret into the active profile's Hermes home (e.g.
-`~/.hermes/google_chat_user_client_secret.json` for the default profile). The
+`~/.her/google_chat_user_client_secret.json` for the default profile). The
 client secret is **profile-scoped, not shared across profiles** — each profile
 registers its own. This is deliberate: profiles are isolated auth boundaries, so
 two profiles can point at different Google OAuth apps / accounts. Register it
@@ -269,7 +269,7 @@ Each user runs the flow once, in their own DM with the bot:
    into chat as `/setup-files <PASTED_URL>`. The bot exchanges it for a
    refresh token.
 
-The token lands at `~/.hermes/google_chat_user_tokens/<sanitized_email>.json`.
+The token lands at `~/.her/google_chat_user_tokens/<sanitized_email>.json`.
 Subsequent file requests in that user's DM use *their* token, so the bot
 uploads as them and the message lands in their space.
 
@@ -286,7 +286,7 @@ on purpose.
 ### Multi-user behavior
 
 When the asker has no per-user token yet, the bot falls back to a legacy
-single-user token at `~/.hermes/google_chat_user_token.json` (if present from
+single-user token at `~/.her/google_chat_user_token.json` (if present from
 a pre-multi-user install). When neither is available, the bot posts a clear
 text notice telling the asker to run `/setup-files`.
 
@@ -305,7 +305,7 @@ evicts only that user's cache. Users don't disrupt each other.
 2. If the subscription has zero messages, Google Chat isn't publishing.
    Double-check the IAM binding on the **topic**:
    `chat-api-push@system.gserviceaccount.com` must have `Pub/Sub Publisher`.
-3. Check `hermes gateway` logs for `[GoogleChat] Connected`. If you see
+3. Check `her gateway` logs for `[GoogleChat] Connected`. If you see
    `[GoogleChat] Config validation failed`, the error message tells you which
    env var to fix.
 
@@ -346,7 +346,7 @@ python -m plugins.platforms.google_chat.oauth \
     --client-secret /path/to/client_secret.json
 
 # Named profile:
-hermes -p <profile> python -m plugins.platforms.google_chat.oauth \
+her -p <profile> python -m plugins.platforms.google_chat.oauth \
     --client-secret /path/to/client_secret.json
 ```
 
@@ -381,6 +381,6 @@ The auth code is single-use and short-lived (typically a few minutes). Send
 - **User OAuth scope**: the per-user attachment flow requests *only*
   `chat.messages.create` — the minimum that covers `media.upload` plus the
   follow-up `messages.create`. Tokens are persisted as plain JSON at
-  `~/.hermes/google_chat_user_tokens/<sanitized_email>.json` (filesystem
+  `~/.her/google_chat_user_tokens/<sanitized_email>.json` (filesystem
   permissions are the protection — same model as the SA key file). Each
   token is owned by exactly one user; revoke is scoped to that user.

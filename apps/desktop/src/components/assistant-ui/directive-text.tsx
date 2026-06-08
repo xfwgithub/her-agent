@@ -163,7 +163,7 @@ export function formatRefValue(value: string): string {
   return value
 }
 
-export const hermesDirectiveFormatter: Unstable_DirectiveFormatter = {
+export const herDirectiveFormatter: Unstable_DirectiveFormatter = {
   serialize(item: Unstable_TriggerItem): string {
     const metadata = item.metadata as { rawText?: unknown; insertId?: unknown } | undefined
     const rawText = typeof metadata?.rawText === 'string' ? metadata.rawText : null
@@ -287,7 +287,7 @@ function shortLabel(type: HermesRefType, id: string): string {
  */
 export function DirectiveContent({ text }: { text: string }) {
   const { cleanedText, images } = useMemo(() => extractEmbeddedImages(text ?? ''), [text])
-  const segments = useMemo(() => hermesDirectiveFormatter.parse(cleanedText), [cleanedText])
+  const segments = useMemo(() => herDirectiveFormatter.parse(cleanedText), [cleanedText])
 
   return (
     <span className="whitespace-pre-line" data-slot="aui_directive-text">
@@ -337,7 +337,7 @@ const DirectiveImage: FC<{ id: string; label: string }> = ({ id, label }) => {
     }
 
     let alive = true
-    void window.hermesDesktop
+    void window.herDesktop
       ?.readFileDataUrl(id)
       .then(url => alive && setSrc(url))
       .catch(() => alive && setFailed(true))

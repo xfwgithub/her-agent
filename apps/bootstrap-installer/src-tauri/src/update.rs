@@ -4,18 +4,18 @@
 //! `AppMode` in lib.rs). The desktop app hands off to us — it exits, then we:
 //!
 //!   1. wait for the old Hermes desktop process to fully exit (so the venv
-//!      shim is free; otherwise `hermes update` aborts with exit code 2),
-//!   2. run `hermes update --yes --gateway` (Python/repo update; this does NOT
-//!      rebuild apps/desktop by design — see cmd_update in hermes_cli/main.py),
-//!   3. run `hermes desktop --build-only` (the rebuild step update skips),
+//!      shim is free; otherwise `her update` aborts with exit code 2),
+//!   2. run `her update --yes --gateway` (Python/repo update; this does NOT
+//!      rebuild apps/desktop by design — see cmd_update in her_cli/main.py),
+//!   3. run `her desktop --build-only` (the rebuild step update skips),
 //!   4. launch the freshly-built desktop (reuses bootstrap::launch logic).
 //!
 //! We reuse the `BootstrapEvent` channel + the existing progress UI by
 //! emitting a synthetic two-stage manifest ("update", "rebuild"). To the
 //! frontend an update looks like a short bootstrap.
 //!
-//! Cross-platform note: `hermes update` already handles macOS/Linux (git/pip).
-//! The only OS-specific bits here are the venv shim path (resolve_hermes) and
+//! Cross-platform note: `her update` already handles macOS/Linux (git/pip).
+//! The only OS-specific bits here are the venv shim path (resolve_her) and
 //! the no-window creation flag — both already cfg-gated. Keep new logic
 //! OS-agnostic so the mac/linux port stays "fill in the paths".
 
@@ -33,13 +33,13 @@ use tokio::process::Command;
 
 use crate::events::{BootstrapEvent, LogStream, StageInfo, StageState};
 
-/// `hermes update` exit code meaning "another hermes process is holding the
+/// `her update` exit code meaning "another her process is holding the
 /// venv shim open / dirty precondition" — see _cmd_update_impl in
-/// hermes_cli/main.py (sys.exit(2)). We surface a targeted message for this.
+/// her_cli/main.py (sys.exit(2)). We surface a targeted message for this.
 const UPDATE_EXIT_CONCURRENT: i32 = 2;
 
 /// How long to wait for the old desktop process to release the venv shim
-/// before giving up and letting `hermes update`'s own guard decide.
+/// before giving up and letting `her update`'s own guard decide.
 const DESKTOP_EXIT_WAIT: Duration = Duration::from_secs(20);
 const DESKTOP_EXIT_POLL: Duration = Duration::from_millis(500);
 
@@ -103,8 +103,8 @@ pub async fn start_update(app: AppHandle) -> Result<(), String> {
 }
 
 async fn run_update(app: AppHandle) -> Result<()> {
-    let hermes_home = crate::paths::hermes_home();
-    let install_root = hermes_home.join("hermes-agent");
+    let her_home = crate::paths::her_home();
+    let install_root = her_home.join("her-agent");
     let update_branch = update_branch_from_args(std::env::args().skip(1))
         .or_else(|| option_env_string("BUILD_PIN_BRANCH"))
         .unwrap_or_else(|| "main".to_string());
@@ -114,9 +114,9 @@ async fn run_update(app: AppHandle) -> Result<()> {
         None
     };
 
-    let hermes = resolve_hermes(&install_root).ok_or_else(|| {
+    let her = resolve_her(&install_root).ok_or_else(|| {
         let msg = format!(
-            "Could not find the hermes CLI under {}. Is Hermes installed? \
+            "Could not find the her CLI under {}. Is Hermes installed? \
              Re-run the installer to repair the install.",
             install_root.display()
         );
@@ -149,15 +149,15 @@ async fn run_update(app: AppHandle) -> Result<()> {
 
     // ---- pre-step: wait for the old desktop to die -----------------------
     // The desktop exec'd us then called app.exit(), but process teardown is
-    // async on Windows. If it still holds the venv shim, `hermes update`
+    // async on Windows. If it still holds the venv shim, `her update`
     // aborts with exit 2. Give it a bounded window to clear.
     wait_for_venv_free(&install_root, &app).await;
 
-    // ---- stage 1: hermes update -----------------------------------------
-    // Pass --branch so `hermes update` targets the branch this installer was
+    // ---- stage 1: her update -----------------------------------------
+    // Pass --branch so `her update` targets the branch this installer was
     // built/pinned against (BUILD_PIN_BRANCH), NOT its built-in default of
     // `main`. The install was a detached-HEAD checkout of a specific commit;
-    // without --branch, `hermes update` switches the checkout to `main` (a
+    // without --branch, `her update` switches the checkout to `main` (a
     // divergent branch that may not even have the desktop CLI command), then
     // reports "already up to date" against the wrong branch. The desktop
     // detected the update against this same branch, so we must update against
@@ -171,11 +171,11 @@ async fn run_update(app: AppHandle) -> Result<()> {
     let child_env = update_child_env(&install_root);
     let mut update_args: Vec<String> =
         vec!["update".into(), "--yes".into(), "--gateway".into()];
-    // --force skips `hermes update`'s Windows running-exe guard (which would
+    // --force skips `her update`'s Windows running-exe guard (which would
     // `sys.exit(2)` and dead-end the handoff). By contract the desktop has
     // already exited and waited for the venv shim to unlock before launching
     // us, and wait_for_venv_free below force-kills any straggler — so by the
-    // time `hermes update` runs there is no legitimate hermes.exe to protect,
+    // time `her update` runs there is no legitimate her.exe to protect,
     // and the guard would only produce a false "Hermes is still running" stop.
     update_args.push("--force".into());
     update_args.push("--branch".into());
@@ -185,7 +185,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
     let started = Instant::now();
     let mut update = run_streamed(
         &app,
-        &hermes,
+        &her,
         &update_args,
         &install_root,
         &child_env,
@@ -193,7 +193,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
     )
     .await?;
 
-    // Retry-once for the update-boundary crash. `hermes update` lazily imports
+    // Retry-once for the update-boundary crash. `her update` lazily imports
     // the FRESHLY PULLED modules, but the dependency-install step still runs the
     // already-in-memory pre-pull code for one invocation. A release that changed
     // an updater-path contract across that boundary (e.g. #39780's `_UvResult`,
@@ -201,7 +201,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
     // `list2cmdline` with `TypeError: sequence item 1: expected str instance,
     // bool found`, fixed in #39820) therefore kills the FIRST update on the
     // parked population — even though the fix is already on disk by then. A
-    // second `hermes update` runs clean because the now-current module is loaded
+    // second `her update` runs clean because the now-current module is loaded
     // from the start. Rather than make the parked user click Update twice (and
     // stare at a scary crash first), retry once automatically. Skip the retry
     // for the concurrent-instance guard (exit 2) — that's a "close Hermes" state
@@ -216,7 +216,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
         );
         update = run_streamed(
             &app,
-            &hermes,
+            &her,
             &update_args,
             &install_root,
             &child_env,
@@ -252,9 +252,9 @@ async fn run_update(app: AppHandle) -> Result<()> {
         }
         other => {
             let msg = format!(
-                "hermes update failed (exit {:?}). See {} for details.",
+                "her update failed (exit {:?}). See {} for details.",
                 other,
-                crate::paths::hermes_home()
+                crate::paths::her_home()
                     .join("logs")
                     .join("update.log")
                     .display()
@@ -277,15 +277,15 @@ async fn run_update(app: AppHandle) -> Result<()> {
         }
     }
 
-    // ---- stage 2: hermes desktop --build-only ----------------------------
-    // `hermes update` deliberately does NOT build apps/desktop (it installs
+    // ---- stage 2: her desktop --build-only ----------------------------
+    // `her update` deliberately does NOT build apps/desktop (it installs
     // repo-root deps with --workspaces=false). This is the rebuild it skips.
     emit_stage(&app, "rebuild", StageState::Running, None, None);
     let started = Instant::now();
     let rebuild_args: Vec<String> = vec!["desktop".into(), "--build-only".into()];
     let rebuild = run_streamed(
         &app,
-        &hermes,
+        &her,
         &rebuild_args,
         &install_root,
         &child_env,
@@ -297,7 +297,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
     if rebuild.exit_code != Some(0) {
         let msg = format!(
             "Rebuilding the desktop app failed (exit {:?}). The update was \
-             applied but the app could not be rebuilt; run `hermes desktop` \
+             applied but the app could not be rebuilt; run `her desktop` \
              from a terminal to see the error.",
             rebuild.exit_code
         );
@@ -375,7 +375,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
             );
         }
     } else if let Err(err) =
-        crate::bootstrap::launch_hermes_desktop(app.clone(), install_root.to_string_lossy().into_owned()).await
+        crate::bootstrap::launch_her_desktop(app.clone(), install_root.to_string_lossy().into_owned()).await
     {
         // Launch failed: don't hard-fail the update (it succeeded); surface a
         // log line so the success screen can still tell the user to launch
@@ -395,7 +395,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
 /// elapses. On non-Windows this is a short fixed grace since file locking
 /// isn't the failure mode there.
 async fn wait_for_venv_free(install_root: &Path, app: &AppHandle) {
-    let shim = venv_hermes(install_root);
+    let shim = venv_her(install_root);
     let deadline = Instant::now() + DESKTOP_EXIT_WAIT;
 
     emit_log(app, Some("update"), LogStream::Stdout, "[update] waiting for Hermes to exit…");
@@ -405,12 +405,12 @@ async fn wait_for_venv_free(install_root: &Path, app: &AppHandle) {
             return;
         }
         if Instant::now() >= deadline {
-            // Last resort: a backend hermes.exe (or a grandchild it spawned)
+            // Last resort: a backend her.exe (or a grandchild it spawned)
             // is still holding the shim. The desktop should have reaped its
             // tree before handing off, but SIGTERM races / detached
             // grandchildren / AV handles can leave a straggler. Rather than
             // "proceed anyway" straight into uv's "Access is denied", force-kill
-            // every hermes.exe except ourselves, then give the OS a beat to
+            // every her.exe except ourselves, then give the OS a beat to
             // unload the image.
             emit_log(
                 app,
@@ -418,7 +418,7 @@ async fn wait_for_venv_free(install_root: &Path, app: &AppHandle) {
                 LogStream::Stdout,
                 "[update] Hermes still holding the venv shim; force-killing stragglers…",
             );
-            force_kill_other_hermes();
+            force_kill_other_her();
             tokio::time::sleep(Duration::from_millis(800)).await;
             if !is_locked(&shim) {
                 emit_log(
@@ -441,19 +441,19 @@ async fn wait_for_venv_free(install_root: &Path, app: &AppHandle) {
     }
 }
 
-/// Force-kill any `hermes.exe` other than this process. Windows-only; a no-op
+/// Force-kill any `her.exe` other than this process. Windows-only; a no-op
 /// elsewhere (POSIX has no mandatory-lock contention). We can't selectively
 /// target "the backend" by PID here — the desktop already exited and we never
-/// knew its children — so we kill the whole `hermes.exe` image tree via
+/// knew its children — so we kill the whole `her.exe` image tree via
 /// taskkill, excluding our own PID.
 ///
 /// Safe w.r.t. our own update child: this runs inside `wait_for_venv_free`,
-/// which completes BEFORE we spawn `venv\Scripts\hermes.exe update`. At this
-/// point no update-driven hermes.exe exists yet, so the only hermes.exe images
+/// which completes BEFORE we spawn `venv\Scripts\her.exe update`. At this
+/// point no update-driven her.exe exists yet, so the only her.exe images
 /// are stragglers from the old desktop — exactly what we want gone. (`/FI PID
 /// ne <self>` also spares this Tauri process, though it isn't named
-/// hermes.exe.)
-fn force_kill_other_hermes() {
+/// her.exe.)
+fn force_kill_other_her() {
     if !cfg!(target_os = "windows") {
         return;
     }
@@ -466,7 +466,7 @@ fn force_kill_other_hermes() {
                 "/F",
                 "/T",
                 "/IM",
-                "hermes.exe",
+                "her.exe",
                 "/FI",
                 &format!("PID ne {my_pid}"),
             ])
@@ -490,7 +490,7 @@ fn is_locked(path: &Path) -> bool {
     }
 }
 
-/// Spawn `hermes <args>` from `cwd`, stream stdout/stderr as Log events on the
+/// Spawn `her <args>` from `cwd`, stream stdout/stderr as Log events on the
 /// bootstrap channel, and return the exit code. Mirrors powershell::run_script
 /// but for an arbitrary command (no install.ps1 -File wrapping).
 async fn run_streamed(
@@ -559,24 +559,24 @@ struct CmdResult {
     exit_code: Option<i32>,
 }
 
-/// Path to the venv hermes shim under an install root, regardless of existence.
-fn venv_hermes(install_root: &Path) -> PathBuf {
+/// Path to the venv her shim under an install root, regardless of existence.
+fn venv_her(install_root: &Path) -> PathBuf {
     if cfg!(target_os = "windows") {
-        install_root.join("venv").join("Scripts").join("hermes.exe")
+        install_root.join("venv").join("Scripts").join("her.exe")
     } else {
-        install_root.join("venv").join("bin").join("hermes")
+        install_root.join("venv").join("bin").join("her")
     }
 }
 
-/// Resolve the hermes CLI to drive. Prefer the venv shim in the install we
-/// just updated; fall back to `hermes` on PATH.
-fn resolve_hermes(install_root: &Path) -> Option<PathBuf> {
-    let shim = venv_hermes(install_root);
+/// Resolve the her CLI to drive. Prefer the venv shim in the install we
+/// just updated; fall back to `her` on PATH.
+fn resolve_her(install_root: &Path) -> Option<PathBuf> {
+    let shim = venv_her(install_root);
     if shim.exists() {
         return Some(shim);
     }
     // PATH fallback. which-style probe via env, kept dependency-free.
-    let exe = if cfg!(target_os = "windows") { "hermes.exe" } else { "hermes" };
+    let exe = if cfg!(target_os = "windows") { "her.exe" } else { "her" };
     if let Ok(path) = std::env::var("PATH") {
         let sep = if cfg!(target_os = "windows") { ';' } else { ':' };
         for dir in path.split(sep) {
@@ -590,13 +590,13 @@ fn resolve_hermes(install_root: &Path) -> Option<PathBuf> {
 }
 
 fn update_child_env(install_root: &Path) -> Vec<(String, OsString)> {
-    let hermes_home = crate::paths::hermes_home();
+    let her_home = crate::paths::her_home();
     let mut envs = vec![(
-        "HERMES_HOME".to_string(),
-        hermes_home.as_os_str().to_os_string(),
+        "HER_HOME".to_string(),
+        her_home.as_os_str().to_os_string(),
     )];
     if let Some(path) = path_with_prepended_entries(&[
-        hermes_home.join("node").join("bin"),
+        her_home.join("node").join("bin"),
         venv_bin_dir(install_root),
     ]) {
         envs.push(("PATH".to_string(), path));
@@ -670,7 +670,7 @@ async fn install_macos_app_update(
         ));
     }
 
-    let rebuilt_app = crate::bootstrap::resolve_hermes_desktop_app(install_root).ok_or_else(|| {
+    let rebuilt_app = crate::bootstrap::resolve_her_desktop_app(install_root).ok_or_else(|| {
         anyhow!(
             "desktop rebuild succeeded but no Hermes.app was found under {}",
             install_root.join("apps").join("desktop").join("release").display()
@@ -708,15 +708,15 @@ async fn install_macos_app_update(
     if let Some(parent) = target_app.parent() {
         tokio::fs::create_dir_all(parent).await?;
     }
-    let tmp = PathBuf::from(format!("{}.hermes-update-new", target_app.display()));
-    let old = PathBuf::from(format!("{}.hermes-update-old", target_app.display()));
+    let tmp = PathBuf::from(format!("{}.her-update-new", target_app.display()));
+    let old = PathBuf::from(format!("{}.her-update-old", target_app.display()));
     remove_dir_if_exists(&tmp).await;
     remove_dir_if_exists(&old).await;
 
     let ditto = Command::new("/usr/bin/ditto")
         .arg(&rebuilt_app)
         .arg(&tmp)
-        .current_dir(crate::paths::hermes_home())
+        .current_dir(crate::paths::her_home())
         .status()
         .await
         .map_err(|e| anyhow!("running ditto: {e}"))?;
@@ -736,7 +736,7 @@ async fn install_macos_app_update(
         .arg("-dr")
         .arg("com.apple.quarantine")
         .arg(target_app)
-        .current_dir(crate::paths::hermes_home())
+        .current_dir(crate::paths::her_home())
         .status()
         .await;
 
@@ -879,9 +879,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn venv_hermes_is_under_install_root() {
-        let root = Path::new("/x/hermes-agent");
-        let shim = venv_hermes(root);
+    fn venv_her_is_under_install_root() {
+        let root = Path::new("/x/her-agent");
+        let shim = venv_her(root);
         assert!(shim.starts_with(root));
         assert!(shim.to_string_lossy().contains("venv"));
     }
@@ -916,7 +916,7 @@ mod tests {
     // Helpers for the swap tests: make a throwaway dir tree we can rename.
     fn unique_tmp_dir(tag: &str) -> PathBuf {
         let base = std::env::temp_dir().join(format!(
-            "hermes-swap-test-{tag}-{}-{}",
+            "her-swap-test-{tag}-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -936,8 +936,8 @@ mod tests {
     async fn swap_installs_new_bundle_and_cleans_up() {
         let base = unique_tmp_dir("ok");
         let target = base.join("Hermes.app");
-        let tmp = base.join("Hermes.app.hermes-update-new");
-        let old = base.join("Hermes.app.hermes-update-old");
+        let tmp = base.join("Hermes.app.her-update-new");
+        let old = base.join("Hermes.app.her-update-old");
         write_marker(&target, "OLD");
         write_marker(&tmp, "NEW");
 
@@ -966,8 +966,8 @@ mod tests {
         //  - `tmp` does not exist       -> rename(tmp, target) fails
         let base = unique_tmp_dir("fail");
         let target = base.join("Hermes.app");
-        let tmp = base.join("Hermes.app.hermes-update-new"); // intentionally absent
-        let old = base.join("Hermes.app.hermes-update-old");
+        let tmp = base.join("Hermes.app.her-update-new"); // intentionally absent
+        let old = base.join("Hermes.app.her-update-old");
         write_marker(&target, "OLD");
         write_marker(&old, "OCCUPIED"); // non-empty => rename(target,old) fails
 
@@ -989,8 +989,8 @@ mod tests {
         // absent). The original must be rolled back from `old` to `target`.
         let base = unique_tmp_dir("rollback");
         let target = base.join("Hermes.app");
-        let tmp = base.join("Hermes.app.hermes-update-new"); // absent
-        let old = base.join("Hermes.app.hermes-update-old");
+        let tmp = base.join("Hermes.app.her-update-new"); // absent
+        let old = base.join("Hermes.app.her-update-old");
         write_marker(&target, "OLD");
 
         let result = swap_in_new_bundle(&tmp, &target, &old).await;

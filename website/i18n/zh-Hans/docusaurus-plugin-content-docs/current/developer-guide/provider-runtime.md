@@ -16,14 +16,14 @@ Hermes 拥有一个共享的 provider 运行时解析器，用于以下场景：
 
 主要实现：
 
-- `hermes_cli/runtime_provider.py` — 凭据解析，`_resolve_custom_runtime()`
-- `hermes_cli/auth.py` — provider 注册表，`resolve_provider()`
-- `hermes_cli/model_switch.py` — 共享 `/model` 切换流水线（CLI + gateway）
+- `her_cli/runtime_provider.py` — 凭据解析，`_resolve_custom_runtime()`
+- `her_cli/auth.py` — provider 注册表，`resolve_provider()`
+- `her_cli/model_switch.py` — 共享 `/model` 切换流水线（CLI + gateway）
 - `agent/auxiliary_client.py` — 辅助模型路由
 - `providers/` — ABC + 注册表入口点（`ProviderProfile`、`register_provider`、`get_provider_profile`、`list_providers`）
-- `plugins/model-providers/<name>/` — 每个 provider 的插件（内置），声明 `api_mode`、`base_url`、`env_vars`、`fallback_models` 并在首次访问时将自身注册到注册表。用户插件位于 `$HERMES_HOME/plugins/model-providers/<name>/`，会覆盖同名的内置插件。
+- `plugins/model-providers/<name>/` — 每个 provider 的插件（内置），声明 `api_mode`、`base_url`、`env_vars`、`fallback_models` 并在首次访问时将自身注册到注册表。用户插件位于 `$HER_HOME/plugins/model-providers/<name>/`，会覆盖同名的内置插件。
 
-`providers/` 中的 `get_provider_profile()` 为给定 provider id 返回一个 `ProviderProfile`。`runtime_provider.py` 在解析时调用它，以获取规范的 `base_url`、`env_vars` 优先级列表、`api_mode` 和 `fallback_models`，无需在多个文件中重复这些数据。在 `plugins/model-providers/<your-provider>/`（或 `$HERMES_HOME/plugins/model-providers/<your-provider>/`）下添加一个调用 `register_provider()` 的新插件，即可让 `runtime_provider.py` 自动识别它——无需在解析器本身中添加分支。
+`providers/` 中的 `get_provider_profile()` 为给定 provider id 返回一个 `ProviderProfile`。`runtime_provider.py` 在解析时调用它，以获取规范的 `base_url`、`env_vars` 优先级列表、`api_mode` 和 `fallback_models`，无需在多个文件中重复这些数据。在 `plugins/model-providers/<your-provider>/`（或 `$HER_HOME/plugins/model-providers/<your-provider>/`）下添加一个调用 `register_provider()` 的新插件，即可让 `runtime_provider.py` 自动识别它——无需在解析器本身中添加分支。
 
 如果你想添加一个新的一等推理 provider，请结合本页阅读 [添加 Provider](./adding-providers.md) 和 [Model Provider 插件指南](./model-provider-plugin.md)。
 
@@ -36,7 +36,7 @@ Hermes 拥有一个共享的 provider 运行时解析器，用于以下场景：
 3. 环境变量
 4. provider 特定的默认值或自动解析
 
-该顺序很重要，因为 Hermes 将已保存的模型/provider 选择视为正常运行的真实来源。这可以防止过时的 shell 导出变量悄悄覆盖用户在 `hermes model` 中最后选择的端点。
+该顺序很重要，因为 Hermes 将已保存的模型/provider 选择视为正常运行的真实来源。这可以防止过时的 shell 导出变量悄悄覆盖用户在 `her model` 中最后选择的端点。
 
 ## Provider
 
@@ -86,7 +86,7 @@ Hermes 拥有一个共享的 provider 运行时解析器，用于以下场景：
 
 该解析器是 Hermes 能够在以下场景之间共享认证/运行时逻辑的主要原因：
 
-- `hermes chat`
+- `her chat`
 - gateway 消息处理
 - 在全新会话中运行的 cron 任务
 - ACP 编辑器会话
@@ -153,7 +153,7 @@ Codex 使用独立的 Responses API 路径：
 当辅助任务配置的 provider 为 `main` 时，Hermes 通过与普通对话相同的共享运行时路径进行解析。实际效果为：
 
 - 环境变量驱动的自定义端点仍然有效
-- 通过 `hermes model` / `config.yaml` 保存的自定义端点同样有效
+- 通过 `her model` / `config.yaml` 保存的自定义端点同样有效
 - 辅助路由能够区分真实保存的自定义端点与 OpenRouter 回退
 
 ## 回退模型

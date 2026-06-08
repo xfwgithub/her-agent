@@ -21,7 +21,7 @@ Skills（技能）是按需加载的知识文档，用于教会 Hermes 如何处
 /skills
 
 # 或通过 CLI：
-hermes skills list
+her skills list
 ```
 
 输出包含名称和描述的紧凑列表：
@@ -90,18 +90,18 @@ Skills 采用 token 高效的加载模式，agent 不会一次性加载所有内
 
 ```bash
 # 安装官方可选 skill
-hermes skills install official/research/arxiv
+her skills install official/research/arxiv
 
 # 在聊天会话中从 Hub 安装
 /skills install official/creative/songwriting-and-ai-music
 
 # 直接从任意 HTTP(S) URL 安装单文件 SKILL.md
-hermes skills install https://sharethis.chat/SKILL.md
+her skills install https://sharethis.chat/SKILL.md
 /skills install https://example.com/SKILL.md --name my-skill
 ```
 
 安装过程：
-1. skill 目录被复制到 `~/.hermes/skills/`
+1. skill 目录被复制到 `~/.her/skills/`
 2. 出现在 `skills_list` 输出中
 3. 成为可用的斜杠命令
 
@@ -113,7 +113,7 @@ hermes skills install https://sharethis.chat/SKILL.md
 
 ```bash
 # 确认已安装
-hermes skills list | grep arxiv
+her skills list | grep arxiv
 
 # 或在聊天中
 /skills search arxiv
@@ -135,7 +135,7 @@ skill_view("writing-plans")
 
 插件 skills **不会**列在系统 prompt 中，也不出现在 `skills_list` 中。它们是按需加载的——当你知道某个插件提供了某个 skill 时，显式加载它。加载后，agent 会看到一个横幅，列出同一插件的其他 skills。
 
-关于如何在自己的插件中捆绑 skills，请参见 [构建 Hermes 插件 → 捆绑 skills](/guides/build-a-hermes-plugin#bundle-skills)。
+关于如何在自己的插件中捆绑 skills，请参见 [构建 Hermes 插件 → 捆绑 skills](/guides/build-a-her-plugin#bundle-skills)。
 
 ---
 
@@ -145,7 +145,7 @@ skill_view("writing-plans")
 
 ```yaml
 metadata:
-  hermes:
+  her:
     config:
       - key: tenor.api_key
         description: "Tenor API key for GIF search"
@@ -159,10 +159,10 @@ metadata:
 
 ```bash
 # 对特定 skill 进行交互式配置
-hermes skills config gif-search
+her skills config gif-search
 
 # 查看所有 skill 配置
-hermes config get skills.config
+her config get skills.config
 ```
 
 ---
@@ -174,18 +174,18 @@ Skills 只是带有 YAML frontmatter 的 Markdown 文件，创建一个不超过
 ### 1. 创建目录
 
 ```bash
-mkdir -p ~/.hermes/skills/my-category/my-skill
+mkdir -p ~/.her/skills/my-category/my-skill
 ```
 
 ### 2. 编写 SKILL.md
 
-```markdown title="~/.hermes/skills/my-category/my-skill/SKILL.md"
+```markdown title="~/.her/skills/my-category/my-skill/SKILL.md"
 ---
 name: my-skill
 description: Brief description of what this skill does
 version: 1.0.0
 metadata:
-  hermes:
+  her:
     tags: [my-tag, automation]
     category: my-category
 ---
@@ -235,10 +235,10 @@ For API details, load the reference: `skill_view("my-skill", "references/api-doc
 开启新会话并测试你的 skill：
 
 ```bash
-hermes chat -q "/my-skill help me with the thing"
+her chat -q "/my-skill help me with the thing"
 ```
 
-Skill 会自动出现——无需注册。放入 `~/.hermes/skills/` 即可立即生效。
+Skill 会自动出现——无需注册。放入 `~/.her/skills/` 即可立即生效。
 
 :::info
 Agent 也可以使用 `skill_manage` 自行创建和更新 skills。解决复杂问题后，Hermes 可能会主动提议将该方法保存为 skill，以便下次使用。
@@ -251,7 +251,7 @@ Agent 也可以使用 `skill_manage` 自行创建和更新 skills。解决复杂
 控制哪些 skills 在哪些平台上可用：
 
 ```bash
-hermes skills
+her skills
 ```
 
 这会打开一个交互式 TUI，你可以按平台（CLI、Telegram、Discord 等）启用或禁用 skills。当你希望某些 skills 仅在特定场景下可用时非常有用——例如，在 Telegram 上禁用开发类 skills。
@@ -281,7 +281,7 @@ hermes skills
 
 **让 agent 创建 skills。** 完成复杂的多步骤任务后，Hermes 通常会主动提议将该方法保存为 skill。接受它——这些由 agent 编写的 skills 会捕捉到完整的工作流程，包括过程中发现的各种坑。
 
-**使用分类目录。** 将 skills 整理到子目录中（`~/.hermes/skills/devops/`、`~/.hermes/skills/research/` 等），保持列表整洁，并帮助 agent 更快找到相关 skills。
+**使用分类目录。** 将 skills 整理到子目录中（`~/.her/skills/devops/`、`~/.her/skills/research/` 等），保持列表整洁，并帮助 agent 更快找到相关 skills。
 
 **及时更新过时的 skills。** 如果使用某个 skill 时遇到它未覆盖的问题，告诉 Hermes 用你学到的内容更新该 skill。不维护的 skills 会成为负担。
 

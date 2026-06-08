@@ -105,7 +105,7 @@ _TERMINAL_STATES = {"completed", "failed", "cancelled"}
 def _load_krea_config() -> Dict[str, Any]:
     """Read ``image_gen.krea`` (with fallthrough to ``image_gen``) from config.yaml."""
     try:
-        from hermes_cli.config import load_config
+        from her_cli.config import load_config
 
         cfg = load_config()
         section = cfg.get("image_gen") if isinstance(cfg, dict) else None
@@ -227,7 +227,7 @@ class KreaImageGenProvider(ImageGenProvider):
         if not api_key:
             return error_response(
                 error=(
-                    "KREA_API_KEY not set. Run `hermes tools` → Image "
+                    "KREA_API_KEY not set. Run `her tools` → Image "
                     "Generation → Krea to configure, or get a key at "
                     "https://www.krea.ai/settings/api-tokens."
                 ),

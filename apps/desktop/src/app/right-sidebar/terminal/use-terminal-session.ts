@@ -12,7 +12,7 @@ import { isAddSelectionShortcut, terminalSelectionAnchor, terminalSelectionLabel
 
 type TerminalStatus = 'closed' | 'open' | 'starting'
 
-const HERMES_PATHS_MIME = 'application/x-hermes-paths'
+const HERMES_PATHS_MIME = 'application/x-her-paths'
 
 function readEscapeSequence(data: string, index: number) {
   if (data.charCodeAt(index) !== 0x1b || index + 1 >= data.length) {
@@ -140,7 +140,7 @@ function collectDroppedPaths(t: DataTransfer): string[] {
     // Malformed in-app drag payload — fall through to OS files.
   }
 
-  const getPath = window.hermesDesktop?.getPathForFile
+  const getPath = window.herDesktop?.getPathForFile
 
   const addFile = (file: File | null) => {
     if (!file || !getPath) {
@@ -244,7 +244,7 @@ export function useTerminalSession({ cwd, onAddSelectionToChat }: UseTerminalSes
 
   useEffect(() => {
     const host = hostRef.current
-    const terminalApi = window.hermesDesktop?.terminal
+    const terminalApi = window.herDesktop?.terminal
 
     if (!host || !terminalApi) {
       setStatus('closed')
@@ -286,7 +286,7 @@ export function useTerminalSession({ cwd, onAddSelectionToChat }: UseTerminalSes
       webgl.onContextLoss(() => webgl.dispose())
       term.loadAddon(webgl)
     } catch (err) {
-      console.warn('[hermes-terminal] WebGL unavailable; falling back to DOM', err)
+      console.warn('[her-terminal] WebGL unavailable; falling back to DOM', err)
     }
 
     const onDragOver = (e: DragEvent) => {

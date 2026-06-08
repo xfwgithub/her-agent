@@ -3,12 +3,12 @@
 Traces Hermes conversations, LLM calls, and tool usage to Langfuse.
 
 Activation is handled by the Hermes plugin system — standalone plugins only
-load when listed in ``plugins.enabled`` (via ``hermes plugins enable
-observability/langfuse`` or ``hermes tools → Langfuse Observability``). At
+load when listed in ``plugins.enabled`` (via ``her plugins enable
+observability/langfuse`` or ``her tools → Langfuse Observability``). At
 runtime the plugin also requires the ``langfuse`` SDK and credentials; if
 either is missing the hooks are inert.
 
-Required env vars (set via ``hermes tools`` or ~/.hermes/.env):
+Required env vars (set via ``her tools`` or ~/.her/.env):
   HERMES_LANGFUSE_PUBLIC_KEY  - Langfuse project public key (pk-lf-...)
   HERMES_LANGFUSE_SECRET_KEY  - Langfuse project secret key (sk-lf-...)
   HERMES_LANGFUSE_BASE_URL    - Langfuse server URL (default: https://cloud.langfuse.com)
@@ -544,7 +544,7 @@ def _start_root_trace(task_key: str, *, task_id: str, session_id: str, platform:
     trace_id = client.create_trace_id(seed=f"{session_id or 'sessionless'}::{task_id or task_key}")
     trace_input = _extract_last_user_message(messages)
     metadata = {
-        "source": "hermes",
+        "source": "her",
         "task_id": task_id,
         "platform": platform,
         "provider": provider,
@@ -562,7 +562,7 @@ def _start_root_trace(task_key: str, *, task_id: str, session_id: str, platform:
             with propagate_attributes(
                 session_id=session_id or task_key,
                 trace_name="Hermes turn",
-                tags=["hermes", "langfuse"],
+                tags=["her", "langfuse"],
             ):
                 root_ctx = client.start_as_current_observation(
                     trace_context=trace_ctx,

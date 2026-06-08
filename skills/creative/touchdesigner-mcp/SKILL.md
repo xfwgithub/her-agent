@@ -6,9 +6,9 @@ author: kshitijk4poor
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  her:
     tags: [TouchDesigner, MCP, twozero, creative-coding, real-time-visuals, generative-art, audio-reactive, VJ, installation, GLSL]
-    related_skills: [native-mcp, ascii-video, manim-video, hermes-video]
+    related_skills: [native-mcp, ascii-video, manim-video, her-video]
 
 ---
 
@@ -37,7 +37,7 @@ Hub health check: `GET http://localhost:40404/mcp` returns JSON with instance PI
 Run the setup script to handle everything:
 
 ```bash
-bash "${HERMES_HOME:-$HOME/.hermes}/skills/creative/touchdesigner-mcp/scripts/setup.sh"
+bash "${HER_HOME:-$HOME/.her}/skills/creative/touchdesigner-mcp/scripts/setup.sh"
 ```
 
 The script will:

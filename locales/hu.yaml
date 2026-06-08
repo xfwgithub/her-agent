@@ -98,7 +98,7 @@ gateway:
     upload_failed:         "✗ Nem sikerült feltölteni a hibakeresési jelentést: {error}"
     header:                "**Hibakeresési jelentés feltöltve:**"
     auto_delete:           "⏱ A beillesztések 6 óra múlva automatikusan törlődnek."
-    full_logs_hint:        "Teljes naplók feltöltéséhez használd a `hermes debug share` parancsot a CLI-ből."
+    full_logs_hint:        "Teljes naplók feltöltéséhez használd a `her debug share` parancsot a CLI-ből."
     share_hint:            "Oszd meg ezeket a hivatkozásokat a Hermes csapattal támogatásért."
 
   deny:
@@ -147,7 +147,7 @@ gateway:
   kanban:
     error_prefix:          "⚠ kanban hiba: {error}"
     subscribed_suffix:     "(feliratkozva — értesítést kapsz, ha a {task_id} befejeződik vagy elakad)"
-    truncated_suffix:      "… (csonkítva; használd a `hermes kanban …` parancsot a terminálban a teljes kimenethez)"
+    truncated_suffix:      "… (csonkítva; használd a `her kanban …` parancsot a terminálban a teljes kimenethez)"
     no_output:             "(nincs kimenet)"
 
   personality:
@@ -215,7 +215,7 @@ gateway:
 
   restart:
     in_progress:           "⏳ Az átjáró újraindítása már folyamatban van..."
-    restarting:            "♻ Átjáró újraindítása. Ha 60 másodpercen belül nem kapsz értesítést, indítsd újra a konzolból a `hermes gateway restart` paranccsal."
+    restarting:            "♻ Átjáró újraindítása. Ha 60 másodpercen belül nem kapsz értesítést, indítsd újra a konzolból a `her gateway restart` paranccsal."
 
   resume:
     db_unavailable:        "A munkamenet-adatbázis nem érhető el."
@@ -294,9 +294,9 @@ gateway:
     invalid_count:         "Érvénytelen szám \"{arg}\" — használd a /undo vagy /undo N parancsot."
 
   update:
-    platform_not_messaging:  "✗ A /update csak üzenetküldő platformokról érhető el. Futtasd a `hermes update` parancsot a terminálból."
+    platform_not_messaging:  "✗ A /update csak üzenetküldő platformokról érhető el. Futtasd a `her update` parancsot a terminálból."
     not_git_repo:            "✗ Nem git-tárhely — frissítés nem lehetséges."
-    hermes_cmd_not_found:    "✗ Nem sikerült megtalálni a `hermes` parancsot. A Hermes fut, de a frissítőparancs nem találta a futtatható fájlt a PATH-on vagy a jelenlegi Python interpreteren keresztül. Próbáld futtatni a `hermes update` parancsot manuálisan a terminálban."
+    her_cmd_not_found:    "✗ Nem sikerült megtalálni a `her` parancsot. A Hermes fut, de a frissítőparancs nem találta a futtatható fájlt a PATH-on vagy a jelenlegi Python interpreteren keresztül. Próbáld futtatni a `her update` parancsot manuálisan a terminálban."
     start_failed:            "✗ Nem sikerült elindítani a frissítést: {error}"
     starting:                "⚕ Hermes frissítés indítása… A folyamatot itt fogom közvetíteni."
 

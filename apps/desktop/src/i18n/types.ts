@@ -552,7 +552,7 @@ export interface Translations {
     noSessions: string
     gatewayRunning: string
     gatewayStopped: string
-    hermesActiveSessions: (version: string, count: number) => string
+    herActiveSessions: (version: string, count: number) => string
     restartMessaging: string
     updateHermes: string
     actionRunning: string

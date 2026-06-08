@@ -4,11 +4,11 @@
 
 ntfy makes a great lightweight push channel for Hermes: subscribe to a topic from the [ntfy mobile app](https://ntfy.sh/docs/subscribe/phone/), send messages to the topic to talk to the agent, get the response back on your phone.
 
-> Run `hermes gateway setup` and pick **ntfy** for a guided walk-through.
+> Run `her gateway setup` and pick **ntfy** for a guided walk-through.
 
 ## Prerequisites
 
-- A topic name (any unique string — `hermes-myname-2026` works fine)
+- A topic name (any unique string — `her-myname-2026` works fine)
 - The [ntfy mobile app](https://ntfy.sh/docs/subscribe/phone/) installed and subscribed to that topic
 - Optional: a self-hosted ntfy server, or an `ntfy.sh` account token for private/reserved topics
 
@@ -19,19 +19,19 @@ That's it. No SDK, no daemon, no Node.js. The adapter uses `httpx` which is alre
 ### Via setup wizard
 
 ```bash
-hermes setup gateway
+her setup gateway
 ```
 
 Select **ntfy** and follow the prompts.
 
 ### Via environment variables
 
-Add these to `~/.hermes/.env`:
+Add these to `~/.her/.env`:
 
 ```
-NTFY_TOPIC=hermes-myname-2026
-NTFY_ALLOWED_USERS=hermes-myname-2026
-NTFY_HOME_CHANNEL=hermes-myname-2026
+NTFY_TOPIC=her-myname-2026
+NTFY_ALLOWED_USERS=her-myname-2026
+NTFY_HOME_CHANNEL=her-myname-2026
 ```
 
 | Variable | Required | Description |
@@ -56,19 +56,19 @@ This means **anyone who knows the topic can talk to the agent**. To make that a 
 
 - **Self-host ntfy** and lock the topic down with [Access Control](https://docs.ntfy.sh/config/#access-control). Only authorized clients with the read/write token can publish.
 - Or **use a private topic on ntfy.sh** ([reserved topics](https://docs.ntfy.sh/publish/#reserved-topics) require an account) and protect it with a `NTFY_TOKEN`.
-- Or **pick a long, unguessable topic name** (`hermes-7d4f9c8b-2026`) and treat it as the shared secret. This is the lightest setup but the topic name leaks via any logs or screenshots.
+- Or **pick a long, unguessable topic name** (`her-7d4f9c8b-2026`) and treat it as the shared secret. This is the lightest setup but the topic name leaks via any logs or screenshots.
 
 In all cases, do not put sensitive data through ntfy unless the underlying topic is access-controlled.
 
 ## Quick start — talk to your agent from your phone
 
-1. Pick a topic name: `hermes-myname-2026`
-2. On your phone: install the [ntfy app](https://ntfy.sh/docs/subscribe/phone/), tap **+**, enter `hermes-myname-2026`
+1. Pick a topic name: `her-myname-2026`
+2. On your phone: install the [ntfy app](https://ntfy.sh/docs/subscribe/phone/), tap **+**, enter `her-myname-2026`
 3. On the host:
    ```bash
-   echo 'NTFY_TOPIC=hermes-myname-2026' >> ~/.hermes/.env
-   echo 'NTFY_ALLOWED_USERS=hermes-myname-2026' >> ~/.hermes/.env
-   hermes gateway restart
+   echo 'NTFY_TOPIC=her-myname-2026' >> ~/.her/.env
+   echo 'NTFY_ALLOWED_USERS=her-myname-2026' >> ~/.her/.env
+   her gateway restart
    ```
 4. From the ntfy app, send a message to the topic. The agent's reply lands as a push notification.
 
@@ -110,7 +110,7 @@ Then point Hermes at it:
 
 ```
 NTFY_SERVER_URL=https://ntfy.mydomain.com
-NTFY_TOPIC=hermes
+NTFY_TOPIC=her
 NTFY_TOKEN=tk_abc123  # if you've set up access control
 ```
 

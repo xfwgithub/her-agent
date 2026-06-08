@@ -6,8 +6,8 @@ module-import time into ``tools.approval._YOLO_MODE_FROZEN`` (security
 hardening: stops prompt-injected skills from flipping the bypass mid-run),
 so the post-startup toggle was a silent no-op. ``/yolo`` advertised "YOLO ON"
 in the status bar while every dangerous command still hit the approval
-prompt. Only ``hermes --yolo`` (process-start env), ``HERMES_YOLO_MODE=1``,
-and ``hermes config set approvals.mode off`` actually bypassed.
+prompt. Only ``her --yolo`` (process-start env), ``HERMES_YOLO_MODE=1``,
+and ``her config set approvals.mode off`` actually bypassed.
 
 The fix routes the CLI toggle through ``enable_session_yolo`` /
 ``disable_session_yolo`` (matching the gateway and TUI ``/yolo`` paths) and
@@ -144,7 +144,7 @@ class TestIsSessionYoloActiveHelper:
         assert HermesCLI._is_session_yolo_active(stand_in) is False
 
     def test_helper_honors_frozen_yolo_mode(self):
-        """``hermes --yolo`` sets ``HERMES_YOLO_MODE`` before tool imports, so
+        """``her --yolo`` sets ``HERMES_YOLO_MODE`` before tool imports, so
         ``_YOLO_MODE_FROZEN`` ends up True. The status bar should still
         reflect YOLO on in that case even when the session toggle is off."""
         stand_in = _make_stand_in()

@@ -15,7 +15,7 @@ const { canImportHermesCli, verifyHermesCli } = require('./backend-probes.cjs')
 
 // Resolve the host's own Node binary -- guaranteed to be on disk and
 // runnable. We use it as both a stand-in for "a python that doesn't
-// have hermes_cli" (since `node -c "import hermes_cli"` will exit
+// have her_cli" (since `node -c "import her_cli"` will exit
 // non-zero) and as a way to script verifyHermesCli's success path
 // (a tiny script we write to disk that exits 0 on --version).
 const NODE_BIN = process.execPath
@@ -27,7 +27,7 @@ test('canImportHermesCli returns false when path is falsy', () => {
 })
 
 test('canImportHermesCli returns false when interpreter cannot run -c', () => {
-  // node IS an interpreter, but `node -c "import hermes_cli"` is a
+  // node IS an interpreter, but `node -c "import her_cli"` is a
   // SyntaxError -- different exit reason from a real Python's
   // ModuleNotFoundError, but the predicate is "exit 0 or not" and
   // both land on "not", which is exactly what we want for the
@@ -36,7 +36,7 @@ test('canImportHermesCli returns false when interpreter cannot run -c', () => {
 })
 
 test('canImportHermesCli returns false when binary does not exist', () => {
-  const ghost = path.join(os.tmpdir(), 'hermes-probes-ghost-' + Date.now() + '.exe')
+  const ghost = path.join(os.tmpdir(), 'her-probes-ghost-' + Date.now() + '.exe')
   assert.equal(canImportHermesCli(ghost), false)
 })
 
@@ -47,15 +47,15 @@ test('verifyHermesCli returns false when command is falsy', () => {
 })
 
 test('verifyHermesCli returns false when binary does not exist', () => {
-  const ghost = path.join(os.tmpdir(), 'hermes-probes-ghost-' + Date.now() + '.exe')
+  const ghost = path.join(os.tmpdir(), 'her-probes-ghost-' + Date.now() + '.exe')
   assert.equal(verifyHermesCli(ghost), false)
 })
 
 test('verifyHermesCli returns true when --version exits 0', () => {
   // Write a tiny script that exits 0 regardless of args, then invoke
-  // it through node. This stands in for a working hermes binary --
+  // it through node. This stands in for a working her binary --
   // verifyHermesCli only cares about the exit code.
-  const scriptPath = path.join(os.tmpdir(), `hermes-probes-ok-${Date.now()}-${process.pid}.cjs`)
+  const scriptPath = path.join(os.tmpdir(), `her-probes-ok-${Date.now()}-${process.pid}.cjs`)
   fs.writeFileSync(scriptPath, 'process.exit(0)\n')
   try {
     // Use node as the launcher and our script as the "command". Pass

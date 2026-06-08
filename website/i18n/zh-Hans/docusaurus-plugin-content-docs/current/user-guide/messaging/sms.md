@@ -20,7 +20,7 @@ SMS gateway（网关）与可选的 [telephony skill](/reference/skills-catalog)
 - **Twilio 账户** — [在 twilio.com 注册](https://www.twilio.com/try-twilio)（提供免费试用）
 - **具备 SMS 功能的 Twilio 电话号码**
 - **可公开访问的服务器** — Twilio 在收到 SMS 时会向你的服务器发送 webhook
-- **aiohttp** — `pip install 'hermes-agent[sms]'`
+- **aiohttp** — `pip install 'her-agent[sms]'`
 
 ---
 
@@ -37,14 +37,14 @@ SMS gateway（网关）与可选的 [telephony skill](/reference/skills-catalog)
 ### 交互式设置（推荐）
 
 ```bash
-hermes gateway setup
+her gateway setup
 ```
 
 从平台列表中选择 **SMS (Twilio)**，向导将提示你输入凭据。
 
 ### 手动设置
 
-在 `~/.hermes/.env` 中添加：
+在 `~/.her/.env` 中添加：
 
 ```bash
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -102,7 +102,7 @@ SMS_WEBHOOK_PORT=3000
 ## 第四步：启动 Gateway
 
 ```bash
-hermes gateway
+her gateway
 ```
 
 你应该看到：

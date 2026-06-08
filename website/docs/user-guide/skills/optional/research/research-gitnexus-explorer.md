@@ -14,7 +14,7 @@ Index a codebase with GitNexus and serve an interactive knowledge graph via web 
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/research/gitnexus-explorer` |
+| Source | Optional — install with `her skills install official/research/gitnexus-explorer` |
 | Path | `optional-skills/research/gitnexus-explorer` |
 | Version | `1.0.0` |
 | Author | Hermes Agent + Teknium |
@@ -219,7 +219,7 @@ rm -rf .claude/
 - **The web UI does NOT create `.claude/` or `CLAUDE.md`.** Those are created by
   `npx gitnexus analyze`. Use `--skip-agents-md` to suppress the markdown files,
   then `rm -rf .claude/` for the rest. These are Claude Code integrations that
-  hermes-agent users don't need.
+  her-agent users don't need.
 
 - **Browser memory limit.** The web UI loads the entire graph into browser memory.
   Repos with 5k+ files may be sluggish. 30k+ files will likely crash the tab.

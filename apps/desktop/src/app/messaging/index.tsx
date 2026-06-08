@@ -12,7 +12,7 @@ import {
   type MessagingEnvVarInfo,
   type MessagingPlatformInfo,
   updateMessagingPlatform
-} from '@/hermes'
+} from '@/her'
 import { type Translations, useI18n } from '@/i18n'
 import { AlertTriangle, ExternalLink, Save, Trash2 } from '@/lib/icons'
 import { cn } from '@/lib/utils'

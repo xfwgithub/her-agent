@@ -43,7 +43,7 @@ description: "在构建前验证想法的一次性实验"
 
 ## 如果用户安装了完整的 GSD 系统
 
-如果 `gsd-spike` 作为同级 skill 出现（通过 `npx get-shit-done-cc --hermes` 安装），当用户需要完整 GSD 工作流时，优先使用 **`gsd-spike`**：持久化的 `.planning/spikes/` 状态、跨会话的 MANIFEST 追踪、Given/When/Then 结论格式，以及与 GSD 其余部分集成的提交模式。本 skill 是面向未安装（或不需要）完整系统的用户的轻量独立版本。
+如果 `gsd-spike` 作为同级 skill 出现（通过 `npx get-shit-done-cc --her` 安装），当用户需要完整 GSD 工作流时，优先使用 **`gsd-spike`**：持久化的 `.planning/spikes/` 状态、跨会话的 MANIFEST 追踪、Given/When/Then 结论格式，以及与 GSD 其余部分集成的提交模式。本 skill 是面向未安装（或不需要）完整系统的用户的轻量独立版本。
 
 ## 核心方法
 
@@ -214,4 +214,4 @@ delegate_task(tasks=[
 
 ## 致谢
 
-改编自 GSD（Get Shit Done）项目的 `/gsd-spike` 工作流——MIT © 2025 Lex Christopherson（[gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)）。完整 GSD 系统提供持久化 spike 状态、MANIFEST 追踪，以及与更广泛的规格驱动开发流水线的集成；通过 `npx get-shit-done-cc --hermes --global` 安装。
+改编自 GSD（Get Shit Done）项目的 `/gsd-spike` 工作流——MIT © 2025 Lex Christopherson（[gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)）。完整 GSD 系统提供持久化 spike 状态、MANIFEST 追踪，以及与更广泛的规格驱动开发流水线的集成；通过 `npx get-shit-done-cc --her --global` 安装。

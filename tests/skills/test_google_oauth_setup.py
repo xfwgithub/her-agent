@@ -259,69 +259,69 @@ class TestExchangeAuthCode:
 
 
 class TestHermesConstantsFallback:
-    """Tests for _hermes_home.py fallback when hermes_constants is unavailable."""
+    """Tests for _her_home.py fallback when her_constants is unavailable."""
 
     HELPER_PATH = (
         Path(__file__).resolve().parents[2]
-        / "skills/productivity/google-workspace/scripts/_hermes_home.py"
+        / "skills/productivity/google-workspace/scripts/_her_home.py"
     )
 
     def _load_helper(self, monkeypatch):
-        """Load _hermes_home.py with hermes_constants blocked."""
-        monkeypatch.setitem(sys.modules, "hermes_constants", None)
-        spec = importlib.util.spec_from_file_location("_hermes_home_test", self.HELPER_PATH)
+        """Load _her_home.py with her_constants blocked."""
+        monkeypatch.setitem(sys.modules, "her_constants", None)
+        spec = importlib.util.spec_from_file_location("_her_home_test", self.HELPER_PATH)
         module = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
         spec.loader.exec_module(module)
         return module
 
-    def test_fallback_uses_hermes_home_env_var(self, monkeypatch, tmp_path):
-        """When hermes_constants is missing, HERMES_HOME comes from env var."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "custom-hermes"))
+    def test_fallback_uses_her_home_env_var(self, monkeypatch, tmp_path):
+        """When her_constants is missing, HER_HOME comes from env var."""
+        monkeypatch.setenv("HER_HOME", str(tmp_path / "custom-her"))
         module = self._load_helper(monkeypatch)
-        assert module.get_hermes_home() == tmp_path / "custom-hermes"
+        assert module.get_her_home() == tmp_path / "custom-her"
 
-    def test_fallback_defaults_to_dot_hermes(self, monkeypatch):
-        """When hermes_constants is missing and HERMES_HOME unset, default to ~/.hermes."""
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+    def test_fallback_defaults_to_dot_her(self, monkeypatch):
+        """When her_constants is missing and HER_HOME unset, default to ~/.her."""
+        monkeypatch.delenv("HER_HOME", raising=False)
         module = self._load_helper(monkeypatch)
-        assert module.get_hermes_home() == Path.home() / ".hermes"
+        assert module.get_her_home() == Path.home() / ".her"
 
-    def test_fallback_ignores_empty_hermes_home(self, monkeypatch):
-        """Empty/whitespace HERMES_HOME is treated as unset."""
-        monkeypatch.setenv("HERMES_HOME", "  ")
+    def test_fallback_ignores_empty_her_home(self, monkeypatch):
+        """Empty/whitespace HER_HOME is treated as unset."""
+        monkeypatch.setenv("HER_HOME", "  ")
         module = self._load_helper(monkeypatch)
-        assert module.get_hermes_home() == Path.home() / ".hermes"
+        assert module.get_her_home() == Path.home() / ".her"
 
-    def test_fallback_display_hermes_home_shortens_path(self, monkeypatch):
-        """Fallback display_hermes_home() uses ~/ shorthand like the real one."""
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+    def test_fallback_display_her_home_shortens_path(self, monkeypatch):
+        """Fallback display_her_home() uses ~/ shorthand like the real one."""
+        monkeypatch.delenv("HER_HOME", raising=False)
         module = self._load_helper(monkeypatch)
-        assert module.display_hermes_home() == "~/.hermes"
+        assert module.display_her_home() == "~/.her"
 
-    def test_fallback_display_hermes_home_profile_path(self, monkeypatch):
-        """Fallback display_hermes_home() handles profile paths under ~/."""
-        monkeypatch.setenv("HERMES_HOME", str(Path.home() / ".hermes/profiles/coder"))
+    def test_fallback_display_her_home_profile_path(self, monkeypatch):
+        """Fallback display_her_home() handles profile paths under ~/."""
+        monkeypatch.setenv("HER_HOME", str(Path.home() / ".her/profiles/coder"))
         module = self._load_helper(monkeypatch)
-        assert module.display_hermes_home() == "~/.hermes/profiles/coder"
+        assert module.display_her_home() == "~/.her/profiles/coder"
 
-    def test_fallback_display_hermes_home_custom_path(self, monkeypatch):
-        """Fallback display_hermes_home() returns full path for non-home locations."""
-        monkeypatch.setenv("HERMES_HOME", "/opt/hermes-custom")
+    def test_fallback_display_her_home_custom_path(self, monkeypatch):
+        """Fallback display_her_home() returns full path for non-home locations."""
+        monkeypatch.setenv("HER_HOME", "/opt/her-custom")
         module = self._load_helper(monkeypatch)
-        assert module.display_hermes_home() == "/opt/hermes-custom"
+        assert module.display_her_home() == "/opt/her-custom"
 
-    def test_delegates_to_hermes_constants_when_available(self):
-        """When hermes_constants IS importable, _hermes_home delegates to it."""
+    def test_delegates_to_her_constants_when_available(self):
+        """When her_constants IS importable, _her_home delegates to it."""
         spec = importlib.util.spec_from_file_location(
-            "_hermes_home_happy", self.HELPER_PATH
+            "_her_home_happy", self.HELPER_PATH
         )
         module = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
         spec.loader.exec_module(module)
-        import hermes_constants
-        assert module.get_hermes_home is hermes_constants.get_hermes_home
-        assert module.display_hermes_home is hermes_constants.display_hermes_home
+        import her_constants
+        assert module.get_her_home is her_constants.get_her_home
+        assert module.display_her_home is her_constants.display_her_home
 
 
 def _load_setup_module(monkeypatch):
@@ -429,7 +429,7 @@ class TestInstallDeps:
 
         assert module.install_deps() is False
         out = capsys.readouterr().out
-        assert "hermes-agent[google]" in out
+        assert "her-agent[google]" in out
 
     def test_returns_false_when_uv_fallback_also_fails(self, monkeypatch, capsys):
         """uv present but its install fails → failure surfaced (not swallowed)."""

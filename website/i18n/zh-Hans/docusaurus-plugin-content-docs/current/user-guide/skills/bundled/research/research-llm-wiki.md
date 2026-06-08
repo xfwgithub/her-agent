@@ -49,7 +49,7 @@ Karpathy 的 LLM Wiki：构建/查询互联 Markdown 知识库。
 
 ## Wiki 位置
 
-**位置：** 通过 `WIKI_PATH` 环境变量设置（例如在 `~/.hermes/.env` 中）。
+**位置：** 通过 `WIKI_PATH` 环境变量设置（例如在 `~/.her/.env` 中）。
 
 未设置时，默认为 `~/wiki`。
 

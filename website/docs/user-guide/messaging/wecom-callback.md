@@ -14,7 +14,7 @@ Hermes supports two WeCom integration modes:
 
 See also: [WeCom Bot](./wecom.md) for the bot-style integration.
 
-> Run `hermes gateway setup` and pick **WeCom Callback** for a guided walk-through.
+> Run `her gateway setup` and pick **WeCom Callback** for a guided walk-through.
 
 ## How It Works
 
@@ -40,7 +40,7 @@ See also: [WeCom Bot](./wecom.md) for the bot-style integration.
 3. In the app settings, create a **Corp Secret**
 4. Note the **Agent ID** from the app's overview page
 5. Under **Receive Messages**, configure the callback URL:
-   - URL: `http://YOUR_PUBLIC_IP:8645/wecom/callback`
+   - URL: `http://YOUR_PUBLIC_IP:23454/wecom/callback`
    - Token: Generate a random token (WeCom provides one)
    - EncodingAESKey: Generate a key (WeCom provides one)
 
@@ -57,17 +57,17 @@ WECOM_CALLBACK_ENCODING_AES_KEY=your-43-char-aes-key
 
 # Optional
 WECOM_CALLBACK_HOST=0.0.0.0
-WECOM_CALLBACK_PORT=8645
+WECOM_CALLBACK_PORT=23454
 WECOM_CALLBACK_ALLOWED_USERS=user1,user2
 ```
 
 ### 3. Start the Gateway
 
 ```bash
-hermes gateway
+her gateway
 ```
 
-(Use `hermes gateway start` only after `hermes gateway install` has registered the systemd/launchd service.)
+(Use `her gateway start` only after `her gateway install` has registered the systemd/launchd service.)
 
 The callback adapter starts an HTTP server on the configured port. WeCom will verify the callback URL via a GET request, then begin sending messages via POST.
 
@@ -83,7 +83,7 @@ Set these in `config.yaml` under `platforms.wecom_callback.extra`, or use enviro
 | `token` | — | Callback verification token (required) |
 | `encoding_aes_key` | — | 43-character AES key for callback encryption (required) |
 | `host` | `0.0.0.0` | Bind address for the HTTP callback server |
-| `port` | `8645` | Port for the HTTP callback server |
+| `port` | `23454` | Port for the HTTP callback server |
 | `path` | `/wecom/callback` | URL path for the callback endpoint |
 
 ## Multi-App Routing
@@ -96,7 +96,7 @@ platforms:
     enabled: true
     extra:
       host: "0.0.0.0"
-      port: 8645
+      port: 23454
       apps:
         - name: "dept-a"
           corp_id: "ww_corp_a"
@@ -159,8 +159,8 @@ WeCom signs every request with the **Token** you registered in the admin
 console. A mismatch between the token configured in Hermes and the token the
 admin console expects is the most common cause. Re-copy both the **Token** and
 **EncodingAESKey** from the admin console — they're easy to truncate. Whitespace
-in `~/.hermes/.env` values around `=` will also break signature checks. After
-fixing, restart `hermes gateway run`.
+in `~/.her/.env` values around `=` will also break signature checks. After
+fixing, restart `her gateway run`.
 
 **Callback URL not reachable / verification step fails.**
 WeCom hits the public URL you registered. Confirm:
@@ -171,7 +171,7 @@ WeCom hits the public URL you registered. Confirm:
    it just means the listener is reachable).
 
 **Port not reachable / listener not bound.**
-Check `hermes gateway run` logs for the bound host/port. If the adapter bound to
+Check `her gateway run` logs for the bound host/port. If the adapter bound to
 `127.0.0.1` you must front it with a reverse proxy or tunnel — WeCom's servers
 can't reach loopback. Set `extra.host: 0.0.0.0` in `config.yaml` (plus
 `allowed_source_cidrs` if exposing directly) or keep loopback and use a tunnel

@@ -21,7 +21,7 @@ description: "调试 Node"
 | 许可证 | MIT |
 | 平台 | linux, macos, windows |
 | 标签 | `debugging`, `nodejs`, `node-inspect`, `cdp`, `breakpoints`, `ui-tui` |
-| 相关 skill | [`systematic-debugging`](/user-guide/skills/bundled/software-development/software-development-systematic-debugging), [`python-debugpy`](/user-guide/skills/bundled/software-development/software-development-python-debugpy), [`debugging-hermes-tui-commands`](/user-guide/skills/bundled/software-development/software-development-debugging-hermes-tui-commands) |
+| 相关 skill | [`systematic-debugging`](/user-guide/skills/bundled/software-development/software-development-systematic-debugging), [`python-debugpy`](/user-guide/skills/bundled/software-development/software-development-python-debugpy), [`debugging-her-tui-commands`](/user-guide/skills/bundled/software-development/software-development-debugging-her-tui-commands) |
 
 ## 参考：完整 SKILL.md
 
@@ -201,7 +201,7 @@ TUI 基于 Ink + tsx 构建。两种常见场景：
 `ui-tui/package.json` 有 `npm run dev`（tsx --watch）。直接运行 tsx 并添加 `--inspect-brk`：
 
 ```bash
-cd /home/bb/hermes-agent/ui-tui
+cd /home/bb/her-agent/ui-tui
 npm run build    # produce dist/ once so transpile isn't needed on first load
 node --inspect-brk dist/entry.js
 # In another terminal:
@@ -217,13 +217,13 @@ cont
 
 暂停后，进入 `repl` → 检查 `props`、state 引用、`useInput` 处理器的值等。
 
-### 调试运行中的 `hermes --tui`
+### 调试运行中的 `her --tui`
 
 TUI 由 Python CLI 启动 Node。最简路径：
 
 ```bash
 # 1. Launch TUI
-hermes --tui &
+her --tui &
 TUI_PID=$(pgrep -f 'ui-tui/dist/entry' | head -1)
 
 # 2. Enable inspector on that Node PID
@@ -245,7 +245,7 @@ node inspect ws://127.0.0.1:9229/<uuid>
 ## 在调试器下运行 Vitest 测试
 
 ```bash
-cd /home/bb/hermes-agent/ui-tui
+cd /home/bb/her-agent/ui-tui
 # Run a single test file paused on entry
 node --inspect-brk ./node_modules/vitest/vitest.mjs run --no-file-parallelism src/app/foo.test.tsx
 ```

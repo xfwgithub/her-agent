@@ -10,12 +10,12 @@ const readDir = vi.fn<(path: string) => Promise<HermesReadDirResult>>()
 beforeEach(() => {
   resetProjectTreeState()
   readDir.mockReset()
-  ;(window as unknown as { hermesDesktop: { readDir: typeof readDir } }).hermesDesktop = { readDir }
+  ;(window as unknown as { herDesktop: { readDir: typeof readDir } }).herDesktop = { readDir }
 })
 
 afterEach(() => {
   resetProjectTreeState()
-  delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
+  delete (window as unknown as { herDesktop?: unknown }).herDesktop
 })
 
 function ok(entries: { name: string; path: string; isDirectory: boolean }[]): HermesReadDirResult {
@@ -179,8 +179,8 @@ describe('useProjectTree', () => {
     expect(readDir).toHaveBeenLastCalledWith('/b')
   })
 
-  it('returns no-bridge gracefully when window.hermesDesktop is missing', async () => {
-    delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
+  it('returns no-bridge gracefully when window.herDesktop is missing', async () => {
+    delete (window as unknown as { herDesktop?: unknown }).herDesktop
 
     const { result } = renderHook(() => useProjectTree('/p'))
 

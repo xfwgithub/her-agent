@@ -62,7 +62,7 @@ class TestConfigPassthrough:
         config = {"terminal": {"env_passthrough": ["MY_CUSTOM_KEY", "ANOTHER_TOKEN"]}}
         config_path = tmp_path / "config.yaml"
         config_path.write_text(yaml.dump(config))
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("HER_HOME", str(tmp_path))
         _ep_mod._config_passthrough = None
 
         assert is_env_passthrough("MY_CUSTOM_KEY")
@@ -73,7 +73,7 @@ class TestConfigPassthrough:
         config = {"terminal": {"env_passthrough": []}}
         config_path = tmp_path / "config.yaml"
         config_path.write_text(yaml.dump(config))
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("HER_HOME", str(tmp_path))
         _ep_mod._config_passthrough = None
 
         assert not is_env_passthrough("ANYTHING")
@@ -82,13 +82,13 @@ class TestConfigPassthrough:
         config = {"terminal": {"backend": "local"}}
         config_path = tmp_path / "config.yaml"
         config_path.write_text(yaml.dump(config))
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("HER_HOME", str(tmp_path))
         _ep_mod._config_passthrough = None
 
         assert not is_env_passthrough("ANYTHING")
 
     def test_no_config_file(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("HER_HOME", str(tmp_path))
         _ep_mod._config_passthrough = None
 
         assert not is_env_passthrough("ANYTHING")
@@ -97,7 +97,7 @@ class TestConfigPassthrough:
         config = {"terminal": {"env_passthrough": ["CONFIG_KEY"]}}
         config_path = tmp_path / "config.yaml"
         config_path.write_text(yaml.dump(config))
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("HER_HOME", str(tmp_path))
         _ep_mod._config_passthrough = None
 
         register_env_passthrough(["SKILL_KEY"])
@@ -217,7 +217,7 @@ class TestTerminalIntegration:
         finally:
             os.environ.pop(blocked_var, None)
 
-    def test_non_hermes_api_key_still_registerable(self):
+    def test_non_her_api_key_still_registerable(self):
         """Third-party API keys (TENOR_API_KEY, NOTION_TOKEN, etc.) are NOT
         Hermes provider credentials and must still pass through — skills
         that legitimately wrap third-party APIs must keep working."""

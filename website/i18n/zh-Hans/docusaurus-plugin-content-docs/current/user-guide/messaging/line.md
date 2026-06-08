@@ -44,9 +44,9 @@ cloudflared tunnel --url http://localhost:8646
 ngrok http 8646
 
 # devtunnel
-devtunnel create hermes-line --allow-anonymous
-devtunnel port create hermes-line -p 8646 --protocol https
-devtunnel host hermes-line
+devtunnel create her-line --allow-anonymous
+devtunnel port create her-line -p 8646 --protocol https
+devtunnel host her-line
 ```
 
 复制 `https://...` URL — 稍后将其设置为 webhook URL。**保持隧道运行**以便测试。生产环境请配置固定的 Cloudflare 命名隧道，避免重启后 webhook URL 变更。
@@ -55,7 +55,7 @@ devtunnel host hermes-line
 
 ## 第三步：配置 Hermes
 
-在 `~/.hermes/.env` 中添加：
+在 `~/.her/.env` 中添加：
 
 ```env
 LINE_CHANNEL_ACCESS_TOKEN=YOUR_LONG_LIVED_TOKEN
@@ -71,7 +71,7 @@ LINE_ALLOWED_ROOMS=R1234567890abcdef...           # 可选的房间 ID
 LINE_PUBLIC_URL=https://my-tunnel.example.com
 ```
 
-然后在 `~/.hermes/config.yaml` 中：
+然后在 `~/.her/config.yaml` 中：
 
 ```yaml
 gateway:
@@ -98,7 +98,7 @@ gateway:
 ## 第五步：运行 gateway
 
 ```bash
-hermes gateway
+her gateway
 ```
 
 Agent 日志显示：
@@ -134,7 +134,7 @@ LINE_SLOW_RESPONSE_THRESHOLD=0
 为使 postback 流程可靠触发，请抑制可能在阈值前消耗 reply token 的冗余输出：
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.her/config.yaml
 display:
   interim_assistant_messages: false
   platforms:
@@ -180,7 +180,7 @@ LINE_HOME_CHANNEL=Uxxxxxxxxxxxxxxxxxxxx     # 默认推送目标
 
 **webhook 验证时提示"invalid signature"。** `Channel secret` 复制有误，或隧道重写了请求体。请先用 `curl -i https://<tunnel>/line/webhook/health` 验证 — 应返回 `{"status":"ok","platform":"line"}`。
 
-**机器人在群组中收不到消息。** 检查 `LINE_ALLOWED_GROUPS` 是否包含对应的 `C...` 群组 ID。如需查找群组 ID，发送一条测试消息后在 `~/.hermes/logs/gateway.log` 中搜索 `LINE: rejecting unauthorized source` — 被拒绝的 source 字典中包含相关 ID。
+**机器人在群组中收不到消息。** 检查 `LINE_ALLOWED_GROUPS` 是否包含对应的 `C...` 群组 ID。如需查找群组 ID，发送一条测试消息后在 `~/.her/logs/gateway.log` 中搜索 `LINE: rejecting unauthorized source` — 被拒绝的 source 字典中包含相关 ID。
 
 **`send_image` 报错"LINE_PUBLIC_URL must be set"。** LINE Messaging API 不接受二进制上传 — 图片、音频和视频必须是可访问的 HTTPS URL。将 `LINE_PUBLIC_URL` 设置为隧道的公网主机名，适配器会自动从 `/line/media/<token>/<filename>` 提供文件服务。
 

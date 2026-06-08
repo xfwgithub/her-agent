@@ -14,7 +14,7 @@ Stock quotes, history, search, compare, crypto via Yahoo.
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/finance/stocks` |
+| Source | Optional — install with `her skills install official/finance/stocks` |
 | Path | `optional-skills/finance/stocks` |
 | Version | `0.1.0` |
 | Author | Mibay (Mibayy), Hermes Agent |
@@ -54,7 +54,7 @@ fields come back null. Free key: https://www.alphavantage.co/support/#api-key
 Invoke through the `terminal` tool. Once installed:
 
 ```
-SCRIPT=~/.hermes/skills/finance/stocks/scripts/stocks_client.py
+SCRIPT=~/.her/skills/finance/stocks/scripts/stocks_client.py
 python3 $SCRIPT quote AAPL
 ```
 
@@ -106,7 +106,7 @@ Crypto prices. Pass `BTC` (the script appends `-USD` automatically).
 ## Verification
 
 ```
-python3 ~/.hermes/skills/finance/stocks/scripts/stocks_client.py quote AAPL
+python3 ~/.her/skills/finance/stocks/scripts/stocks_client.py quote AAPL
 ```
 
 Returns a JSON object with `symbol: "AAPL"` and a numeric `price` field.

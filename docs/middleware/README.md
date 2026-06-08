@@ -34,8 +34,8 @@ def register(ctx):
 
 Every middleware callback receives:
 
-- `telemetry_schema_version`: currently `hermes.observer.v1`
-- `middleware_schema_version`: currently `hermes.middleware.v1`
+- `telemetry_schema_version`: currently `her.observer.v1`
+- `middleware_schema_version`: currently `her.middleware.v1`
 - Runtime context such as `session_id`, `task_id`, `turn_id`,
   `api_request_id`, `provider`, `model`, `api_mode`, `tool_name`, and
   `tool_call_id` when applicable.
@@ -115,17 +115,17 @@ rewritten path, command, or URL is the value downstream policy will evaluate.
 Middleware only runs for enabled plugins. For a bundled plugin:
 
 ```bash
-hermes plugins enable <plugin-name>
+her plugins enable <plugin-name>
 ```
 
-For isolated local testing, use one `HERMES_HOME` for plugin enablement and the
+For isolated local testing, use one `HER_HOME` for plugin enablement and the
 agent run:
 
 ```bash
-export HERMES_HOME=/tmp/hermes-middleware-test
-mkdir -p "$HERMES_HOME"
-hermes plugins enable <plugin-name>
-hermes chat --query 'Reply exactly ok'
+export HER_HOME=/tmp/her-middleware-test
+mkdir -p "$HER_HOME"
+her plugins enable <plugin-name>
+her chat --query 'Reply exactly ok'
 ```
 
 For source checkouts, prefer the source command so the runtime sees plugins and
@@ -133,8 +133,8 @@ middleware from the working tree:
 
 ```bash
 uv sync
-uv run hermes plugins enable <plugin-name>
-uv run hermes chat --query 'Reply exactly ok'
+uv run her plugins enable <plugin-name>
+uv run her chat --query 'Reply exactly ok'
 ```
 
 ## Generic Plugin Examples
@@ -154,7 +154,7 @@ def register(ctx):
 def tag_llm_request(**kwargs):
     request = dict(kwargs["request"])
     extra_body = dict(request.get("extra_body") or {})
-    extra_body.setdefault("metadata", {})["hermes_middleware_demo"] = True
+    extra_body.setdefault("metadata", {})["her_middleware_demo"] = True
     request["extra_body"] = extra_body
     return {
         "request": request,
@@ -179,7 +179,7 @@ def normalize_terminal_workdir(**kwargs):
     if kwargs.get("tool_name") != "terminal":
         return None
     args = dict(kwargs["args"])
-    args.setdefault("workdir", "/tmp/hermes-middleware-demo")
+    args.setdefault("workdir", "/tmp/her-middleware-demo")
     return {
         "args": args,
         "source": "middleware-demo",

@@ -23,7 +23,7 @@ Config keys this provider responds to::
 Auth env vars (one of)::
 
     BROWSER_USE_API_KEY=...           # https://browser-use.com
-    # OR a managed Nous gateway entry (configured via 'hermes setup')
+    # OR a managed Nous gateway entry (configured via 'her setup')
 """
 
 from __future__ import annotations
@@ -233,7 +233,7 @@ class BrowserUseBrowserProvider(BrowserProvider):
         session_data = response.json()
         if managed_mode:
             _clear_pending_create_key(task_id)
-        session_name = f"hermes_{task_id}_{uuid.uuid4().hex[:8]}"
+        session_name = f"her_{task_id}_{uuid.uuid4().hex[:8]}"
         external_call_id = (
             response.headers.get("x-external-call-id") if managed_mode else None
         )

@@ -1,4 +1,4 @@
-import type { HermesConfigRecord, ToolsetInfo } from '@/types/hermes'
+import type { HermesConfigRecord, ToolsetInfo } from '@/types/her'
 
 import { BUILTIN_PERSONALITIES, ENUM_OPTIONS, PROVIDER_GROUPS } from './constants'
 

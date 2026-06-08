@@ -51,7 +51,7 @@ description: "手绘风格 Excalidraw JSON 图表（架构图、流程图、时�
 {
   "type": "excalidraw",
   "version": 2,
-  "source": "hermes-agent",
+  "source": "her-agent",
   "elements": [ ...your elements array here... ],
   "appState": {
     "viewBackgroundColor": "#ffffff"

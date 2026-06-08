@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 
-TERMINAL_SETUP_AUTH_METHOD_ID = "hermes-setup"
+TERMINAL_SETUP_AUTH_METHOD_ID = "her-setup"
 
 
 def detect_provider() -> Optional[str]:
@@ -18,7 +18,7 @@ def detect_provider() -> Optional[str]:
     handshake rejects the legitimate provider.
     """
     try:
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from her_cli.runtime_provider import resolve_runtime_provider
         runtime = resolve_runtime_provider()
         api_key = runtime.get("api_key")
         provider = runtime.get("provider")

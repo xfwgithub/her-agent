@@ -38,44 +38,44 @@ https://github.com/harbor-framework/harbor/blob/main/rfcs/0001-trajectory-format
 Enable the plugin before setting export options:
 
 ```bash
-hermes plugins enable observability/nemo_relay
+her plugins enable observability/nemo_relay
 ```
 
 The `HERMES_NEMO_RELAY_*` environment variables below only configure an
 already-enabled plugin. They do not enable plugin discovery by themselves.
 
-For isolated test homes, enable the plugin in the same `HERMES_HOME` that the
+For isolated test homes, enable the plugin in the same `HER_HOME` that the
 agent run will use:
 
 ```bash
-env HERMES_HOME=/tmp/hermes-nemo-relay-test \
-  hermes plugins enable observability/nemo_relay
+env HER_HOME=/tmp/her-nemo-relay-test \
+  her plugins enable observability/nemo_relay
 ```
 
 Runs started with `--ignore_user_config` skip the enabled-plugin state from
-`HERMES_HOME`, so local E2E tests should omit that flag unless the test harness
+`HER_HOME`, so local E2E tests should omit that flag unless the test harness
 loads `observability/nemo_relay` explicitly another way.
 
-`HERMES_HOME` is the Hermes profile/config home used by both
-`hermes plugins enable ...` and the later `hermes chat ...` run. If unset,
-Hermes uses the user's default home, usually `~/.hermes`. For isolated smoke
+`HER_HOME` is the Hermes profile/config home used by both
+`her plugins enable ...` and the later `her chat ...` run. If unset,
+Hermes uses the user's default home, usually `~/.her`. For isolated smoke
 tests, choose any writable temporary directory and use the same value for every
 command in that test:
 
 ```bash
-export HERMES_HOME=/tmp/hermes-nemo-relay-test
-hermes plugins enable observability/nemo_relay
-hermes chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
+export HER_HOME=/tmp/her-nemo-relay-test
+her plugins enable observability/nemo_relay
+her chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
 ```
 
-For source checkouts, make sure the `hermes` command you run is built from the
+For source checkouts, make sure the `her` command you run is built from the
 checkout that contains this plugin. A globally installed older CLI will not see
 new bundled plugins from your working tree.
 
 ```bash
 uv sync --extra nemo-relay
-uv run hermes plugins enable observability/nemo_relay
-uv run hermes chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
+uv run her plugins enable observability/nemo_relay
+uv run her chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
 ```
 
 To ship the updated CLI into another environment, build and install a fresh
@@ -83,9 +83,9 @@ wheel from this checkout, then install the official NeMo Relay runtime extra:
 
 ```bash
 uv build --wheel
-python -m pip install --force-reinstall dist/hermes_agent-*.whl
+python -m pip install --force-reinstall dist/her_agent-*.whl
 python -m pip install "nemo-relay==0.3"
-hermes plugins enable observability/nemo_relay
+her plugins enable observability/nemo_relay
 ```
 
 The plugin fails open when `nemo-relay` is not installed. Install and test it against the official NeMo Relay 0.3 PyPI distribution:
@@ -195,10 +195,10 @@ Ollama model served through the OpenAI-compatible API.
 ```bash
 pip install "nemo-relay==0.3"
 
-export HERMES_HOME=/tmp/hermes-nemo-relay-docs/hermes-home
-mkdir -p "$HERMES_HOME"
+export HER_HOME=/tmp/her-nemo-relay-docs/her-home
+mkdir -p "$HER_HOME"
 
-cat > "$HERMES_HOME/config.yaml" <<'YAML'
+cat > "$HER_HOME/config.yaml" <<'YAML'
 model:
   provider: custom
   default: qwen3.6:35b
@@ -225,17 +225,17 @@ child call `terminal`, and writes both ATOF and ATIF.
 
 ```bash
 export HERMES_NEMO_RELAY_ATOF_ENABLED=1
-export HERMES_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/subagent/atof
+export HERMES_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/her-nemo-relay-docs/subagent/atof
 export HERMES_NEMO_RELAY_ATOF_FILENAME=nested-subagent-atof.jsonl
 export HERMES_NEMO_RELAY_ATOF_MODE=overwrite
 export HERMES_NEMO_RELAY_ATIF_ENABLED=1
-export HERMES_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/subagent/atif
+export HERMES_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/her-nemo-relay-docs/subagent/atif
 export HERMES_NEMO_RELAY_ATIF_FILENAME_TEMPLATE='nested-subagent-atif-{session_id}.json'
 export HERMES_NEMO_RELAY_ATIF_AGENT_NAME='Hermes Agent E2E'
 export HERMES_NEMO_RELAY_ATIF_AGENT_VERSION=docs-example
 export HERMES_NEMO_RELAY_ATIF_SUBAGENT_EXPORT_MODE=all
 
-hermes chat \
+her chat \
   --query 'Use delegate_task exactly once. Ask the child subagent to use the terminal tool exactly once to run printf docs_nested_leaf_function. After the child returns, reply with exactly: parent received nested subagent result.' \
   --provider custom \
   --model qwen3.6:35b \
@@ -256,7 +256,7 @@ Sanitized ATOF excerpt:
 
 ```jsonl
 {"kind":"scope","category":"tool","name":"delegate_task","scope_category":"start","metadata":{"session_id":"docs-parent-session","tool_call_id":"call_delegate"},"data":{"goal":"Run the command `printf docs_nested_leaf_function` using the terminal tool.","toolsets":["terminal"]}}
-{"kind":"mark","name":"hermes.subagent.start","metadata":{"parent_session_id":"docs-parent-session","session_id":"docs-child-session","subagent_id":"sa-0-docs","child_role":"leaf"}}
+{"kind":"mark","name":"her.subagent.start","metadata":{"parent_session_id":"docs-parent-session","session_id":"docs-child-session","subagent_id":"sa-0-docs","child_role":"leaf"}}
 {"kind":"scope","category":"tool","name":"terminal","scope_category":"end","metadata":{"session_id":"docs-child-session","tool_call_id":"call_terminal","status":"ok"},"data":"{\"output\":\"docs_nested_leaf_function\",\"exit_code\":0,\"error\":null}"}
 {"kind":"scope","category":"tool","name":"delegate_task","scope_category":"end","metadata":{"session_id":"docs-parent-session","tool_call_id":"call_delegate","status":"ok"}}
 ```
@@ -305,22 +305,22 @@ message. Hermes dispatches the read-only tools as one batch, and NeMo Relay
 records both tool invocations.
 
 ```bash
-mkdir -p /tmp/hermes-nemo-relay-docs/workdir
-printf 'docs_parallel_alpha_function\n' > /tmp/hermes-nemo-relay-docs/workdir/alpha.txt
-printf 'docs_parallel_beta_function\n' > /tmp/hermes-nemo-relay-docs/workdir/beta.txt
-cd /tmp/hermes-nemo-relay-docs/workdir
+mkdir -p /tmp/her-nemo-relay-docs/workdir
+printf 'docs_parallel_alpha_function\n' > /tmp/her-nemo-relay-docs/workdir/alpha.txt
+printf 'docs_parallel_beta_function\n' > /tmp/her-nemo-relay-docs/workdir/beta.txt
+cd /tmp/her-nemo-relay-docs/workdir
 
 export HERMES_NEMO_RELAY_ATOF_ENABLED=1
-export HERMES_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/parallel/atof
+export HERMES_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/her-nemo-relay-docs/parallel/atof
 export HERMES_NEMO_RELAY_ATOF_FILENAME=parallel-tools-atof.jsonl
 export HERMES_NEMO_RELAY_ATOF_MODE=overwrite
 export HERMES_NEMO_RELAY_ATIF_ENABLED=1
-export HERMES_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/parallel/atif
+export HERMES_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/her-nemo-relay-docs/parallel/atif
 export HERMES_NEMO_RELAY_ATIF_FILENAME_TEMPLATE='parallel-tools-atif-{session_id}.json'
 export HERMES_NEMO_RELAY_ATIF_AGENT_NAME='Hermes Agent E2E'
 export HERMES_NEMO_RELAY_ATIF_AGENT_VERSION=docs-example
 
-hermes chat \
+her chat \
   --query 'Use exactly two read_file tool calls in the same assistant message. Read alpha.txt and beta.txt. Do not call terminal. After both tool results are available, reply with exactly: parallel tools complete.' \
   --provider custom \
   --model qwen3.6:35b \
@@ -411,7 +411,7 @@ mode = "route"
 Enable it for Hermes:
 
 ```bash
-export HERMES_NEMO_RELAY_PLUGINS_TOML=/tmp/hermes-middleware-test/plugins.toml
+export HERMES_NEMO_RELAY_PLUGINS_TOML=/tmp/her-middleware-test/plugins.toml
 ```
 
 When the adaptive component is enabled and the installed NeMo Relay runtime
@@ -443,10 +443,10 @@ middleware for a local Hermes run.
 ```bash
 pip install "nemo-relay==0.3"
 
-export HERMES_HOME=/tmp/hermes-middleware-test/hermes-home
-mkdir -p "$HERMES_HOME" /tmp/hermes-middleware-test/nemo-relay
+export HER_HOME=/tmp/her-middleware-test/her-home
+mkdir -p "$HER_HOME" /tmp/her-middleware-test/nemo-relay
 
-cat > "$HERMES_HOME/config.yaml" <<'YAML'
+cat > "$HER_HOME/config.yaml" <<'YAML'
 model:
   provider: custom
   default: qwen3.6:35b
@@ -457,7 +457,7 @@ plugins:
     - observability/nemo_relay
 YAML
 
-cat > /tmp/hermes-middleware-test/nemo-relay/plugins.toml <<'TOML'
+cat > /tmp/her-middleware-test/nemo-relay/plugins.toml <<'TOML'
 version = 1
 
 [[components]]
@@ -469,13 +469,13 @@ version = 1
 
 [components.config.atof]
 enabled = true
-output_directory = "/tmp/hermes-middleware-test/atof"
+output_directory = "/tmp/her-middleware-test/atof"
 filename = "middleware-events.jsonl"
 mode = "overwrite"
 
 [components.config.atif]
 enabled = true
-output_directory = "/tmp/hermes-middleware-test/atif"
+output_directory = "/tmp/her-middleware-test/atif"
 filename_template = "middleware-trajectory-{session_id}.json"
 agent_name = "Hermes Middleware E2E"
 agent_version = "local"
@@ -488,9 +488,9 @@ enabled = true
 mode = "route"
 TOML
 
-export HERMES_NEMO_RELAY_PLUGINS_TOML=/tmp/hermes-middleware-test/nemo-relay/plugins.toml
+export HERMES_NEMO_RELAY_PLUGINS_TOML=/tmp/her-middleware-test/nemo-relay/plugins.toml
 
-hermes chat \
+her chat \
   --query 'Use the terminal tool exactly once to run printf middleware_execution_ok. Then reply with exactly the command output.' \
   --provider custom \
   --model qwen3.6:35b \

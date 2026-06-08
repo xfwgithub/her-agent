@@ -22,7 +22,7 @@ Hermes Agent 的 `azure-foundry` provider 支持 Microsoft Foundry（原 Azure A
 ## 快速开始
 
 ```bash
-hermes model
+her model
 # → 选择 "Azure Foundry"
 # → 输入你的端点 URL
 # → 选择认证方式：
@@ -86,7 +86,7 @@ az role assignment create \
 ### 一次性设置（Hermes 侧）
 
 ```bash
-hermes model
+her model
 # → 选择 "Azure Foundry"
 # → 输入你的端点 URL
 # → 认证方式：2（Microsoft Entra ID）
@@ -122,9 +122,9 @@ Hermes 在 `config.yaml` 中只管理一个 Entra 专属配置项：
 
 - **`scope`** — OAuth 资源 scope。默认为 Microsoft 文档中的推理 scope（`https://ai.azure.com/.default`）。仅在你的资源针对非标准 audience 进行了预配时才需要覆盖。
 
-其他所有内容（租户、服务主体密钥、联合令牌文件、主权云 authority、broker 偏好）均由 `azure-identity` 直接从标准 `AZURE_*` 环境变量读取——参见下方的[凭据解析顺序](#credential-resolution-order)。在 `~/.hermes/.env` 或你的部署环境中设置这些变量，与 Microsoft SDK 参考文档的描述完全一致。
+其他所有内容（租户、服务主体密钥、联合令牌文件、主权云 authority、broker 偏好）均由 `azure-identity` 直接从标准 `AZURE_*` 环境变量读取——参见下方的[凭据解析顺序](#credential-resolution-order)。在 `~/.her/.env` 或你的部署环境中设置这些变量，与 Microsoft SDK 参考文档的描述完全一致。
 
-Entra 模式下不会将任何密钥写入 `~/.hermes/.env`——`azure-identity` 在进程内缓存令牌（在可用时也会使用操作系统密钥链 / `~/.IdentityService`）。
+Entra 模式下不会将任何密钥写入 `~/.her/.env`——`azure-identity` 在进程内缓存令牌（在可用时也会使用操作系统密钥链 / `~/.IdentityService`）。
 
 ### 凭据解析顺序
 
@@ -146,8 +146,8 @@ Entra 模式下不会将任何密钥写入 `~/.hermes/.env`——`azure-identity
 **本地开发：**
 ```bash
 az login
-hermes model   # 选择 Azure Foundry → Entra ID
-hermes         # 使用你的 az login 令牌
+her model   # 选择 Azure Foundry → Entra ID
+her         # 使用你的 az login 令牌
 ```
 
 **Azure VM / Functions / App Service / Container Apps（系统分配的托管标识）：**
@@ -175,9 +175,9 @@ hermes         # 使用你的 az login 令牌
 
 ### 健康检查
 
-当 `model.auth_mode: entra_id` 时，`hermes doctor` 会对 `DefaultAzureCredential` 运行 10 秒探测，报告哪个内部凭据成功（环境变量是否存在、托管标识端点是否可达等）。
+当 `model.auth_mode: entra_id` 时，`her doctor` 会对 `DefaultAzureCredential` 运行 10 秒探测，报告哪个内部凭据成功（环境变量是否存在、托管标识端点是否可达等）。
 
-`hermes auth` 显示结构化状态块：
+`her auth` 显示结构化状态块：
 
 ```
 azure-foundry (Microsoft Entra ID):
@@ -205,7 +205,7 @@ model:
   context_length: 400000             # 自动检测
 ```
 
-以及在 `~/.hermes/.env` 中：
+以及在 `~/.her/.env` 中：
 
 ```
 AZURE_FOUNDRY_API_KEY=<your-azure-key>
@@ -261,7 +261,7 @@ model:
   default: claude-sonnet-4-6
 ```
 
-在 `~/.hermes/.env` 中设置 `AZURE_ANTHROPIC_KEY`。Hermes 检测到 base URL 中包含 `azure.com` 时，会绕过 Claude Code OAuth 令牌链，直接使用 Azure 密钥进行 `x-api-key` 认证。
+在 `~/.her/.env` 中设置 `AZURE_ANTHROPIC_KEY`。Hermes 检测到 base URL 中包含 `azure.com` 时，会绕过 Claude Code OAuth 令牌链，直接使用 Azure 密钥进行 `x-api-key` 认证。
 
 `key_env` 是规范的 snake_case 字段名；`api_key_env`（以及驼峰式 `keyEnv` / `apiKeyEnv`）作为别名被接受。如果同时设置了 `key_env` 和 `AZURE_ANTHROPIC_KEY`/`ANTHROPIC_API_KEY`，`key_env` 指定的环境变量优先。
 
@@ -282,7 +282,7 @@ Hermes 能做的：
 | 变量 | 用途 |
 |----------|---------|
 | `AZURE_FOUNDRY_API_KEY` | Microsoft Foundry / Azure OpenAI 的主 API 密钥（api_key 模式） |
-| `AZURE_FOUNDRY_BASE_URL` | 端点 URL（通过 `hermes model` 设置；环境变量作为回退） |
+| `AZURE_FOUNDRY_BASE_URL` | 端点 URL（通过 `her model` 设置；环境变量作为回退） |
 | `AZURE_ANTHROPIC_KEY` | 由 `provider: anthropic` + Azure base URL 使用（`ANTHROPIC_API_KEY` 的替代） |
 | `AZURE_TENANT_ID` | 服务主体流程的 Entra ID 租户 |
 | `AZURE_CLIENT_ID` | Entra ID 客户端 ID（服务主体、工作负载标识或用户分配的托管标识） |
@@ -292,7 +292,7 @@ Hermes 能做的：
 | `AZURE_AUTHORITY_HOST` | 主权云 authority 主机覆盖 |
 | `IDENTITY_ENDPOINT` / `MSI_ENDPOINT` | App Service、Functions 和 Container Apps 的托管标识端点；VM 通常改用 IMDS |
 
-Azure SDK 直接读取 `AZURE_*` 环境变量。Hermes 除在 `hermes doctor` 输出中报告哪些来源存在外，不会检查这些变量。
+Azure SDK 直接读取 `AZURE_*` 环境变量。Hermes 除在 `her doctor` 输出中报告哪些来源存在外，不会检查这些变量。
 
 ## 故障排查
 
@@ -306,7 +306,7 @@ Azure 在 `/chat/completions` 上提供 gpt-5.x，而非 `/responses`。当 URL 
 端点拒绝了 `/models` 探测和 Anthropic Messages 探测。这对于防火墙后或设有 IP 白名单的私有端点是正常现象。回退到手动选择 API 模式并输入部署名称——一切仍然正常工作，Hermes 只是无法预填选择器。
 
 **选择了错误的传输协议。**
-再次运行 `hermes model`，向导将重新探测。如果探测仍然选择了错误的模式，可以直接编辑 `config.yaml`：
+再次运行 `her model`，向导将重新探测。如果探测仍然选择了错误的模式，可以直接编辑 `config.yaml`：
 
 ```yaml
 model:
@@ -318,10 +318,10 @@ model:
 - 运行 `az login` 刷新你的开发者会话（缓存的令牌可能已过期）。
 - 验证 `Azure AI User`（或 `Foundry User`）角色分配是否已生效：`az role assignment list --assignee <user-or-identity-id>` 应在你的 Foundry 资源上列出该角色。角色传播最多需要 5 分钟。
 - 对于用户分配的托管标识，请仔细检查 `AZURE_CLIENT_ID` 是否与附加到计算资源的标识匹配。
-- 运行 `hermes doctor`——Azure Entra 探测会报告令牌获取是否成功，并提供修复提示。
+- 运行 `her doctor`——Azure Entra 探测会报告令牌获取是否成功，并提供修复提示。
 
 **Entra ID：向导预检挂起或超时。**
-10 秒预检是软性检查。选择"仍然保存，稍后验证"，部署到目标环境后运行 `hermes doctor`。常见原因包括令牌服务不可达或本地登录状态过期——在 CI 中优先使用工作负载标识，使用服务主体时设置 `AZURE_TENANT_ID`+`AZURE_CLIENT_ID`+`AZURE_CLIENT_SECRET`，或在本地开发时运行 `az login`。
+10 秒预检是软性检查。选择"仍然保存，稍后验证"，部署到目标环境后运行 `her doctor`。常见原因包括令牌服务不可达或本地登录状态过期——在 CI 中优先使用工作负载标识，使用服务主体时设置 `AZURE_TENANT_ID`+`AZURE_CLIENT_ID`+`AZURE_CLIENT_SECRET`，或在本地开发时运行 `az login`。
 
 **Anthropic 风格端点使用 Entra ID 时返回 401。**
 验证同一 `Azure AI User`（或 `Foundry User`）角色是否已在 Foundry 资源上分配（它同时覆盖 `/openai/v1` 和 `/anthropic` 路径）。如果向导期间 OpenAI 风格探测成功，但运行时 `claude-*` 请求失败，最常见的原因是早期向导运行遗留的过时 `model.entra.scope`——从 `config.yaml` 中删除 `entra.scope` 行，使运行时回退到默认的 `https://ai.azure.com/.default` scope。

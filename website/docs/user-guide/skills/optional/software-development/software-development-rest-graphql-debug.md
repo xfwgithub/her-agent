@@ -14,7 +14,7 @@ Debug REST/GraphQL APIs: status codes, auth, schemas, repro.
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/software-development/rest-graphql-debug` |
+| Source | Optional — install with `her skills install official/software-development/rest-graphql-debug` |
 | Path | `optional-skills/software-development/rest-graphql-debug` |
 | Version | `1.2.0` |
 | Author | eren-karakus0 |
@@ -414,7 +414,7 @@ class TestAPISmoke:
 
 ### Token handling
 - Never log full tokens. Redact: `Bearer <REDACTED>`.
-- Never hardcode tokens in scripts. Read from env (`os.environ["API_TOKEN"]`) or `~/.hermes/.env`.
+- Never hardcode tokens in scripts. Read from env (`os.environ["API_TOKEN"]`) or `~/.her/.env`.
 - Rotate immediately if a token surfaces in logs, error messages, or git history.
 
 ### Safe logging

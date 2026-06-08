@@ -3,13 +3,13 @@
  *
  * Cheap "does this candidate backend actually work" checks used by
  * resolveHermesBackend (main.cjs). The resolver walks a ladder of
- * candidates -- bootstrap marker, `hermes` on PATH, system Python with
- * hermes_cli installed -- and historically returned the first candidate
+ * candidates -- bootstrap marker, `her` on PATH, system Python with
+ * her_cli installed -- and historically returned the first candidate
  * whose binary existed on disk. That assumption breaks when a user has
  * a pre-installed Python 3.11-3.13 (so findSystemPython() returns a
- * path) but no hermes_cli in its site-packages: the resolver hands back
+ * path) but no her_cli in its site-packages: the resolver hands back
  * a backend the spawn step can't actually run, and the user gets a
- * dead-on-arrival "ModuleNotFoundError: No module named 'hermes_cli'"
+ * dead-on-arrival "ModuleNotFoundError: No module named 'her_cli'"
  * instead of the first-launch installer.
  *
  * These probes give the resolver a way to verify a candidate before
@@ -37,12 +37,12 @@ const { execFileSync } = require('node:child_process')
 const PROBE_TIMEOUT_MS = 5000
 
 /**
- * Return true iff `python -c "import hermes_cli"` exits 0.
+ * Return true iff `python -c "import her_cli"` exits 0.
  *
- * Used to gate the "fallback to system Python with hermes_cli installed"
+ * Used to gate the "fallback to system Python with her_cli installed"
  * rung of resolveHermesBackend. Without this, a system Python 3.11-3.13
  * registered in PEP 514 makes findSystemPython() succeed regardless of
- * whether hermes_cli has actually been pip-installed into its
+ * whether her_cli has actually been pip-installed into its
  * site-packages -- and the resolver returns a backend that immediately
  * dies on spawn.
  *
@@ -52,7 +52,7 @@ const PROBE_TIMEOUT_MS = 5000
 function canImportHermesCli(pythonPath) {
   if (!pythonPath) return false
   try {
-    execFileSync(pythonPath, ['-c', 'import hermes_cli'], {
+    execFileSync(pythonPath, ['-c', 'import her_cli'], {
       stdio: 'ignore',
       timeout: PROBE_TIMEOUT_MS,
       windowsHide: true
@@ -64,18 +64,18 @@ function canImportHermesCli(pythonPath) {
 }
 
 /**
- * Return true iff `<hermesCommand> --version` exits 0.
+ * Return true iff `<herCommand> --version` exits 0.
  *
- * Used to gate the "existing `hermes` on PATH" rung. Without this, a
- * stale hermes.cmd shim left behind by an uninstalled pip install (or
- * a half-built venv whose `hermes` entry-point points at a deleted
+ * Used to gate the "existing `her` on PATH" rung. Without this, a
+ * stale her.cmd shim left behind by an uninstalled pip install (or
+ * a half-built venv whose `her` entry-point points at a deleted
  * Python) survives findOnPath() and gets selected as the backend.
  *
  * We intentionally avoid invoking the command with the dashboard args
  * here -- `--version` is the cheapest "is this binary alive" smoke
- * test that every hermes_cli entry-point has supported since 0.1.
+ * test that every her_cli entry-point has supported since 0.1.
  *
- * @param {string} hermesCommand - Resolved absolute path to a hermes
+ * @param {string} herCommand - Resolved absolute path to a her
  *   executable (or an interpreter+script wrapper).
  * @param {object} [opts]
  * @param {boolean} [opts.shell] - Whether to run through a shell. For
@@ -84,10 +84,10 @@ function canImportHermesCli(pythonPath) {
  *   in resolveHermesBackend.
  * @returns {boolean}
  */
-function verifyHermesCli(hermesCommand, opts = {}) {
-  if (!hermesCommand) return false
+function verifyHermesCli(herCommand, opts = {}) {
+  if (!herCommand) return false
   try {
-    execFileSync(hermesCommand, ['--version'], {
+    execFileSync(herCommand, ['--version'], {
       stdio: 'ignore',
       timeout: PROBE_TIMEOUT_MS,
       shell: Boolean(opts.shell),

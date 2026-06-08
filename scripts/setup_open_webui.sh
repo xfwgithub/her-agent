@@ -4,9 +4,9 @@ set -euo pipefail
 # Bootstrap Open WebUI against Hermes Agent's OpenAI-compatible API server.
 #
 # Idempotent by design:
-# - ensures ~/.hermes/.env has API server settings
+# - ensures ~/.her/.env has API server settings
 # - installs Open WebUI into ~/.local/open-webui-venv
-# - writes a reusable launcher at ~/.local/bin/start-open-webui-hermes.sh
+# - writes a reusable launcher at ~/.local/bin/start-open-webui-her.sh
 # - optionally installs a user service (launchd on macOS, systemd --user on Linux)
 #
 # Usage:
@@ -31,14 +31,14 @@ OPEN_WEBUI_ENABLE_SIGNUP="${OPEN_WEBUI_ENABLE_SIGNUP:-true}"
 OPEN_WEBUI_ENABLE_SERVICE="${OPEN_WEBUI_ENABLE_SERVICE:-auto}"
 OPEN_WEBUI_VENV="${OPEN_WEBUI_VENV:-$HOME/.local/open-webui-venv}"
 OPEN_WEBUI_DATA_DIR="${OPEN_WEBUI_DATA_DIR:-$HOME/.local/share/open-webui/data}"
-HERMES_ENV_FILE="${HERMES_ENV_FILE:-$HOME/.hermes/.env}"
+HERMES_ENV_FILE="${HERMES_ENV_FILE:-$HOME/.her/.env}"
 HERMES_API_PORT="${HERMES_API_PORT:-8642}"
 HERMES_API_HOST="${HERMES_API_HOST:-127.0.0.1}"
 HERMES_API_CONNECT_HOST="${HERMES_API_CONNECT_HOST:-127.0.0.1}"
 HERMES_API_MODEL_NAME="${HERMES_API_MODEL_NAME:-Hermes Agent}"
 HERMES_API_BASE_URL="http://${HERMES_API_CONNECT_HOST}:${HERMES_API_PORT}/v1"
-LAUNCHER_PATH="$HOME/.local/bin/start-open-webui-hermes.sh"
-LOG_DIR="$HOME/.hermes/logs"
+LAUNCHER_PATH="$HOME/.local/bin/start-open-webui-her.sh"
+LOG_DIR="$HOME/.her/logs"
 
 log() {
   printf '[open-webui-bootstrap] %s\n' "$*"
@@ -184,7 +184,7 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 API_KEY=\$(python3 - <<'PY'
 from pathlib import Path
-p = Path.home()/'.hermes'/'.env'
+p = Path.home()/'.her'/'.env'
 for raw in p.read_text().splitlines():
     line = raw.strip()
     if line.startswith('API_SERVER_KEY='):
@@ -222,7 +222,7 @@ ensure_env_permissions() {
 }
 
 install_launchd_service() {
-  local plist="$HOME/Library/LaunchAgents/ai.openwebui.hermes.plist"
+  local plist="$HOME/Library/LaunchAgents/ai.openwebui.her.plist"
   mkdir -p "$(dirname "$plist")"
   cat > "$plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -230,7 +230,7 @@ install_launchd_service() {
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>ai.openwebui.hermes</string>
+  <string>ai.openwebui.her</string>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
@@ -251,14 +251,14 @@ install_launchd_service() {
 EOF
   launchctl bootout "gui/$(id -u)" "$plist" >/dev/null 2>&1 || true
   launchctl bootstrap "gui/$(id -u)" "$plist"
-  launchctl enable "gui/$(id -u)/ai.openwebui.hermes"
-  launchctl kickstart -k "gui/$(id -u)/ai.openwebui.hermes"
+  launchctl enable "gui/$(id -u)/ai.openwebui.her"
+  launchctl kickstart -k "gui/$(id -u)/ai.openwebui.her"
 }
 
 install_systemd_user_service() {
   require_cmd systemctl
   local unit_dir="$HOME/.config/systemd/user"
-  local unit="$unit_dir/openwebui-hermes.service"
+  local unit="$unit_dir/openwebui-her.service"
   mkdir -p "$unit_dir"
   cat > "$unit" <<EOF
 [Unit]
@@ -267,18 +267,18 @@ After=default.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash %h/.local/bin/start-open-webui-hermes.sh
+ExecStart=/bin/bash %h/.local/bin/start-open-webui-her.sh
 Restart=always
 RestartSec=3
 WorkingDirectory=%h
-StandardOutput=append:%h/.hermes/logs/openwebui.log
-StandardError=append:%h/.hermes/logs/openwebui.error.log
+StandardOutput=append:%h/.her/logs/openwebui.log
+StandardError=append:%h/.her/logs/openwebui.error.log
 
 [Install]
 WantedBy=default.target
 EOF
   systemctl --user daemon-reload
-  systemctl --user enable --now openwebui-hermes.service
+  systemctl --user enable --now openwebui-her.service
 }
 
 start_foreground_hint() {
@@ -287,7 +287,7 @@ start_foreground_hint() {
 }
 
 main() {
-  require_cmd hermes
+  require_cmd her
   require_cmd curl
   require_cmd python3
 
@@ -308,11 +308,11 @@ main() {
   ensure_env_permissions
 
   log 'Restarting Hermes gateway so API server settings take effect...'
-  hermes gateway restart >/dev/null 2>&1 || true
+  her gateway restart >/dev/null 2>&1 || true
   sleep 4
   if ! curl -fsS "http://${HERMES_API_CONNECT_HOST}:${HERMES_API_PORT}/health" >/dev/null; then
     log 'Hermes API server did not answer on the first check. Trying to start gateway in the background...'
-    nohup hermes gateway run >/dev/null 2>&1 &
+    nohup her gateway run >/dev/null 2>&1 &
     sleep 6
   fi
   curl -fsS "http://${HERMES_API_CONNECT_HOST}:${HERMES_API_PORT}/health" >/dev/null

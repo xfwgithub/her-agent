@@ -26,9 +26,9 @@ const {
 // --- uninstallArgsForMode ---
 
 test('uninstallArgsForMode maps each mode to the module-runner argv', () => {
-  assert.deepEqual(uninstallArgsForMode('gui'), ['-m', 'hermes_cli.uninstall', '--mode', 'gui'])
-  assert.deepEqual(uninstallArgsForMode('lite'), ['-m', 'hermes_cli.uninstall', '--mode', 'lite'])
-  assert.deepEqual(uninstallArgsForMode('full'), ['-m', 'hermes_cli.uninstall', '--mode', 'full'])
+  assert.deepEqual(uninstallArgsForMode('gui'), ['-m', 'her_cli.uninstall', '--mode', 'gui'])
+  assert.deepEqual(uninstallArgsForMode('lite'), ['-m', 'her_cli.uninstall', '--mode', 'lite'])
+  assert.deepEqual(uninstallArgsForMode('full'), ['-m', 'her_cli.uninstall', '--mode', 'full'])
 })
 
 test('uninstallArgsForMode throws on an unknown mode (no silent full wipe)', () => {
@@ -84,8 +84,8 @@ test('resolveRemovableAppPath finds the install dir on Windows', () => {
     'C:\\Users\\x\\AppData\\Local\\Programs\\Hermes'
   )
   assert.equal(
-    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\hermes-desktop\\Hermes.exe', 'win32'),
-    'C:\\Users\\x\\AppData\\Local\\hermes-desktop'
+    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\her-desktop\\Hermes.exe', 'win32'),
+    'C:\\Users\\x\\AppData\\Local\\her-desktop'
   )
 })
 
@@ -95,18 +95,18 @@ test('resolveRemovableAppPath returns null for an unrecognized Windows dir', () 
 
 test('resolveRemovableAppPath uses APPIMAGE on Linux when set', () => {
   assert.equal(
-    resolveRemovableAppPath('/tmp/.mount_HermesXXXX/hermes', 'linux', { APPIMAGE: '/home/x/Apps/Hermes.AppImage' }),
+    resolveRemovableAppPath('/tmp/.mount_HermesXXXX/her', 'linux', { APPIMAGE: '/home/x/Apps/Hermes.AppImage' }),
     '/home/x/Apps/Hermes.AppImage'
   )
 })
 
 test('resolveRemovableAppPath finds the unpacked dir on Linux', () => {
   assert.equal(
-    resolveRemovableAppPath('/opt/hermes/linux-unpacked/hermes', 'linux', {}),
-    '/opt/hermes/linux-unpacked'
+    resolveRemovableAppPath('/opt/her/linux-unpacked/her', 'linux', {}),
+    '/opt/her/linux-unpacked'
   )
   // A system-package install (/usr/bin) → null, left to apt/dnf.
-  assert.equal(resolveRemovableAppPath('/usr/bin/hermes', 'linux', {}), null)
+  assert.equal(resolveRemovableAppPath('/usr/bin/her', 'linux', {}), null)
 })
 
 test('resolveRemovableAppPath returns null for an empty exe path', () => {
@@ -128,37 +128,37 @@ test('shouldRemoveAppBundle requires packaged AND a resolved path', () => {
 test('buildPosixCleanupScript waits for the PID, runs the uninstall module, removes bundle', () => {
   const script = buildPosixCleanupScript({
     desktopPid: 4321,
-    pythonExe: '/home/x/.hermes/hermes-agent/venv/bin/python',
+    pythonExe: '/home/x/.her/her-agent/venv/bin/python',
     pythonPath: null,
-    agentRoot: '/home/x/.hermes/hermes-agent',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'gui'],
-    appPath: '/opt/hermes/linux-unpacked',
-    hermesHome: '/home/x/.hermes'
+    agentRoot: '/home/x/.her/her-agent',
+    uninstallArgs: ['-m', 'her_cli.uninstall', '--mode', 'gui'],
+    appPath: '/opt/her/linux-unpacked',
+    herHome: '/home/x/.her'
   })
   assert.match(script, /^#!\/bin\/bash/)
   assert.match(script, /pid=4321/)
   assert.match(script, /kill -0 "\$pid"/)
   // bounded wait (~30s), not unbounded
   assert.match(script, /seq 1 60/)
-  assert.match(script, /'-m' 'hermes_cli\.uninstall' '--mode' 'gui'/)
-  assert.match(script, /rm -rf '\/opt\/hermes\/linux-unpacked'/)
-  assert.match(script, /export HERMES_HOME='\/home\/x\/\.hermes'/)
+  assert.match(script, /'-m' 'her_cli\.uninstall' '--mode' 'gui'/)
+  assert.match(script, /rm -rf '\/opt\/her\/linux-unpacked'/)
+  assert.match(script, /export HER_HOME='\/home\/x\/\.her'/)
 })
 
 test('buildPosixCleanupScript exports PYTHONPATH when pythonPath is set (lite/full)', () => {
   const script = buildPosixCleanupScript({
     desktopPid: 1,
     pythonExe: '/usr/bin/python3',
-    pythonPath: '/home/x/.hermes/hermes-agent',
-    agentRoot: '/home/x/.hermes/hermes-agent',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'full'],
+    pythonPath: '/home/x/.her/her-agent',
+    agentRoot: '/home/x/.her/her-agent',
+    uninstallArgs: ['-m', 'her_cli.uninstall', '--mode', 'full'],
     appPath: null,
-    hermesHome: '/home/x/.hermes'
+    herHome: '/home/x/.her'
   })
-  // System python + source on PYTHONPATH so import hermes_cli works while the
+  // System python + source on PYTHONPATH so import her_cli works while the
   // venv is torn down.
-  assert.match(script, /export PYTHONPATH='\/home\/x\/\.hermes\/hermes-agent'/)
-  assert.match(script, /'\/usr\/bin\/python3' '-m' 'hermes_cli\.uninstall' '--mode' 'full'/)
+  assert.match(script, /export PYTHONPATH='\/home\/x\/\.her\/her-agent'/)
+  assert.match(script, /'\/usr\/bin\/python3' '-m' 'her_cli\.uninstall' '--mode' 'full'/)
 })
 
 test('buildPosixCleanupScript omits PYTHONPATH when pythonPath is null (gui)', () => {
@@ -167,9 +167,9 @@ test('buildPosixCleanupScript omits PYTHONPATH when pythonPath is null (gui)', (
     pythonExe: '/p/python',
     pythonPath: null,
     agentRoot: '/a',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'gui'],
+    uninstallArgs: ['-m', 'her_cli.uninstall', '--mode', 'gui'],
     appPath: null,
-    hermesHome: '/h'
+    herHome: '/h'
   })
   assert.doesNotMatch(script, /export PYTHONPATH/)
 })
@@ -180,13 +180,13 @@ test('buildPosixCleanupScript omits the bundle rm when appPath is null', () => {
     pythonExe: '/p/python',
     pythonPath: null,
     agentRoot: '/a',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'lite'],
+    uninstallArgs: ['-m', 'her_cli.uninstall', '--mode', 'lite'],
     appPath: null,
-    hermesHome: '/h'
+    herHome: '/h'
   })
   assert.doesNotMatch(script, /rm -rf '\//)
   // Still runs the uninstall.
-  assert.match(script, /'-m' 'hermes_cli\.uninstall' '--mode' 'lite'/)
+  assert.match(script, /'-m' 'her_cli\.uninstall' '--mode' 'lite'/)
 })
 
 test('buildPosixCleanupScript single-quote-escapes paths with apostrophes', () => {
@@ -195,9 +195,9 @@ test('buildPosixCleanupScript single-quote-escapes paths with apostrophes', () =
     pythonExe: "/home/o'brien/python",
     pythonPath: null,
     agentRoot: '/a',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'gui'],
+    uninstallArgs: ['-m', 'her_cli.uninstall', '--mode', 'gui'],
     appPath: null,
-    hermesHome: '/h'
+    herHome: '/h'
   })
   // The apostrophe is closed-escaped-reopened so the shell sees the literal.
   assert.match(script, /'\/home\/o'\\''brien\/python'/)
@@ -209,17 +209,17 @@ test('buildWindowsCleanupScript waits (bounded) for PID, runs uninstall, rmdir b
   const script = buildWindowsCleanupScript({
     desktopPid: 9988,
     pythonExe: 'C:\\Python313\\python.exe',
-    pythonPath: 'C:\\hermes',
-    agentRoot: 'C:\\hermes',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'full'],
+    pythonPath: 'C:\\her',
+    agentRoot: 'C:\\her',
+    uninstallArgs: ['-m', 'her_cli.uninstall', '--mode', 'full'],
     appPath: 'C:\\Users\\x\\AppData\\Local\\Programs\\Hermes',
-    hermesHome: 'C:\\Users\\x\\AppData\\Local\\hermes'
+    herHome: 'C:\\Users\\x\\AppData\\Local\\her'
   })
   assert.match(script, /@echo off/)
   assert.match(script, /set "PID=9988"/)
-  // PYTHONPATH set so a system python can import hermes_cli from source.
-  assert.match(script, /set "PYTHONPATH=C:\\hermes;%PYTHONPATH%"/)
-  assert.match(script, /"C:\\Python313\\python.exe" "-m" "hermes_cli\.uninstall" "--mode" "full"/)
+  // PYTHONPATH set so a system python can import her_cli from source.
+  assert.match(script, /set "PYTHONPATH=C:\\her;%PYTHONPATH%"/)
+  assert.match(script, /"C:\\Python313\\python.exe" "-m" "her_cli\.uninstall" "--mode" "full"/)
   // Bounded wait-loop (no infinite loop), whole-token PID match (no substring).
   assert.match(script, /if %waited% geq 60 goto waited_done/)
   assert.match(script, /findstr \/r \/c:" %PID% "/)
@@ -237,9 +237,9 @@ test('buildWindowsCleanupScript omits PYTHONPATH + rmdir when not needed (gui, n
     pythonExe: 'C:\\h\\venv\\Scripts\\python.exe',
     pythonPath: null,
     agentRoot: 'C:\\h',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'gui'],
+    uninstallArgs: ['-m', 'her_cli.uninstall', '--mode', 'gui'],
     appPath: null,
-    hermesHome: 'C:\\h'
+    herHome: 'C:\\h'
   })
   assert.doesNotMatch(script, /rmdir/)
   assert.doesNotMatch(script, /set "PYTHONPATH=/)

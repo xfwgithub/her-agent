@@ -1,5 +1,5 @@
 {
-  "name": "hermes",
+  "name": "her",
   "productName": "Hermes",
   "private": true,
   "version": "0.15.1",
@@ -52,7 +52,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@hermes/shared": "file:../shared",
+    "@her/shared": "file:../shared",
     "@icons-pack/react-simple-icons": "^13.13.0",
     "@nanostores/react": "^1.1.0",
     "@nous-research/ui": "^0.13.0",
@@ -130,7 +130,7 @@
   },
   "build": {
     "electronVersion": "40.9.3",
-    "appId": "com.nousresearch.hermes",
+    "appId": "com.nousresearch.her",
     "productName": "Hermes",
     "executableName": "Hermes",
     "artifactName": "Hermes-${version}-${os}-${arch}.${ext}",

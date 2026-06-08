@@ -1,6 +1,6 @@
 """ACP session manager — maps ACP sessions to Hermes AIAgent instances.
 
-Sessions are persisted to the shared SessionDB (``~/.hermes/state.db``) so they
+Sessions are persisted to the shared SessionDB (``~/.her/state.db``) so they
 survive process restarts and appear in ``session_search``.  When the editor
 reconnects after idle/restart, the ``load_session`` / ``resume_session`` calls
 find the persisted session in the database and restore the full conversation
@@ -8,7 +8,7 @@ history.
 """
 from __future__ import annotations
 
-from hermes_constants import get_hermes_home
+from her_constants import get_her_home
 
 import copy
 import json
@@ -39,13 +39,13 @@ def _win_path_to_wsl(path: str) -> str | None:
 def _translate_acp_cwd(cwd: str) -> str:
     """Translate Windows ACP cwd values when Hermes itself is running in WSL.
 
-    Windows ACP clients can launch ``hermes acp`` inside WSL while still sending
+    Windows ACP clients can launch ``her acp`` inside WSL while still sending
     editor workspaces as Windows drive paths such as ``E:\\Projects``. Store
     and execute against the WSL mount path so agents, tools, and persisted ACP
     sessions all agree on the usable workspace. Native Linux/macOS keeps the
     original cwd unchanged.
     """
-    from hermes_constants import is_wsl
+    from her_constants import is_wsl
 
     if not is_wsl():
         return cwd
@@ -143,7 +143,7 @@ def _expand_acp_enabled_toolsets(
 ) -> List[str]:
     """Return ACP toolsets plus explicit MCP server toolsets for this session."""
     expanded: List[str] = []
-    for name in list(toolsets or ["hermes-acp"]):
+    for name in list(toolsets or ["her-acp"]):
         if name and name not in expanded:
             expanded.append(name)
 
@@ -198,7 +198,7 @@ class SessionManager:
                            Used by tests. When omitted, a real AIAgent is created
                            using the current Hermes runtime provider configuration.
             db:            Optional SessionDB instance. When omitted, the default
-                           SessionDB (``~/.hermes/state.db``) is lazily created.
+                           SessionDB (``~/.her/state.db``) is lazily created.
         """
         self._sessions: Dict[str, SessionState] = {}
         self._lock = Lock()
@@ -404,17 +404,17 @@ class SessionManager:
         Returns ``None`` if the DB is unavailable (e.g. import error in a
         minimal test environment).
 
-        Note: we resolve ``HERMES_HOME`` dynamically rather than relying on
+        Note: we resolve ``HER_HOME`` dynamically rather than relying on
         the module-level ``DEFAULT_DB_PATH`` constant, because that constant
         is evaluated at import time and won't reflect env-var changes made
-        later (e.g. by the test fixture ``_isolate_hermes_home``).
+        later (e.g. by the test fixture ``_isolate_her_home``).
         """
         if self._db_instance is not None:
             return self._db_instance
         try:
-            from hermes_state import SessionDB
-            hermes_home = get_hermes_home()
-            self._db_instance = SessionDB(db_path=hermes_home / "state.db")
+            from her_state import SessionDB
+            her_home = get_her_home()
+            self._db_instance = SessionDB(db_path=her_home / "state.db")
             return self._db_instance
         except Exception:
             logger.debug("SessionDB unavailable for ACP persistence", exc_info=True)
@@ -569,8 +569,8 @@ class SessionManager:
             return self._agent_factory()
 
         from run_agent import AIAgent
-        from hermes_cli.config import load_config
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from her_cli.config import load_config
+        from her_cli.runtime_provider import resolve_runtime_provider
 
         config = load_config()
         model_cfg = config.get("model")
@@ -591,7 +591,7 @@ class SessionManager:
         kwargs = {
             "platform": "acp",
             "enabled_toolsets": _expand_acp_enabled_toolsets(
-                ["hermes-acp"],
+                ["her-acp"],
                 mcp_server_names=configured_mcp_servers,
             ),
             "quiet_mode": True,

@@ -21,10 +21,10 @@
 // HOW IT RUNS
 // -----------
 // Primarily as an electron-builder `afterPack` hook (scripts/after-pack.cjs),
-// so EVERY packed build — first install, `hermes desktop`, the installer's
+// so EVERY packed build — first install, `her desktop`, the installer's
 // --update rebuild, or a dev's manual `npm run pack` — gets a branded exe from
 // one place. Previously this stamp lived only in install.ps1, so the update
-// path (which rebuilds via `hermes desktop --build-only`, never install.ps1)
+// path (which rebuilds via `her desktop --build-only`, never install.ps1)
 // shipped a stock "Electron" exe. Keeping it in afterPack closes that gap.
 //
 // Also runnable standalone for ad-hoc re-stamping:

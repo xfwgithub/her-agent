@@ -10,7 +10,7 @@ description: "Hermes Agent MCP 配置键、过滤语义及工具策略参考"
 
 概念说明请参阅：
 - [MCP（Model Context Protocol）](/user-guide/features/mcp)
-- [在 Hermes 中使用 MCP](/guides/use-mcp-with-hermes)
+- [在 Hermes 中使用 MCP](/guides/use-mcp-with-her)
 
 ## 根配置结构
 
@@ -244,6 +244,6 @@ mcp_servers:
 行为：
 - Hermes 使用 MCP SDK 的 OAuth 2.1 PKCE 流程（元数据发现、动态客户端注册、token 交换及刷新）
 - 首次连接时，浏览器窗口将打开以完成授权
-- Token 持久化至 `~/.hermes/mcp-tokens/<server>.json`，跨会话复用
+- Token 持久化至 `~/.her/mcp-tokens/<server>.json`，跨会话复用
 - Token 刷新自动进行；仅在刷新失败时才需重新授权
 - 仅适用于 HTTP/StreamableHTTP 传输（基于 `url` 的服务器）

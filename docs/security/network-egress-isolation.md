@@ -27,12 +27,12 @@ explicitly allowlisted set.
 │  Docker Network: internal (no internet)     │
 │                                             │
 │   ┌──────────────┐   ┌──────────────────┐   │
-│   │ hermes-agent │   │ hermes-dashboard │   │
+│   │ her-agent │   │ her-dashboard │   │
 │   └──────┬───────┘   └────────┬─────────┘   │
 │          │                    │              │
 │          ▼                    │              │
 │   ┌──────────────┐            │              │
-│   │ hermes-gtw   │◄───────────┘              │
+│   │ her-gtw   │◄───────────┘              │
 │   └──────┬───────┘                           │
 │          │                                   │
 └──────────┼───────────────────────────────────┘
@@ -69,7 +69,7 @@ Override the default `docker-compose.yml` with a
 # Network egress isolation for production deployments.
 #
 # Usage:
-#   HERMES_UID=$(id -u) HERMES_GID=$(id -g) docker compose up -d
+#   HER_UID=$(id -u) HER_GID=$(id -g) docker compose up -d
 #
 # This overrides network_mode: host with isolated Docker networks.
 
@@ -119,7 +119,7 @@ services:
     environment:
       - HTTP_PROXY=http://egress-proxy:3128
       - HTTPS_PROXY=http://egress-proxy:3128
-      - NO_PROXY=hermes,hermes-dashboard,localhost
+      - NO_PROXY=her,her-dashboard,localhost
 
   dashboard:
     network_mode: ""
@@ -164,7 +164,7 @@ docker compose exec gateway \
 
 # From the agent container: this should SUCCEED (internal network)
 docker compose exec gateway \
-  curl -sf --max-time 5 http://hermes-dashboard:9119/health && echo "OK: internal reachable" || echo "FAIL"
+  curl -sf --max-time 5 http://her-dashboard:9119/health && echo "OK: internal reachable" || echo "FAIL"
 
 # If using egress proxy: this should SUCCEED (allowlisted)
 docker compose exec gateway \

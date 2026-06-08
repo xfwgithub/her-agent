@@ -93,7 +93,7 @@ fn get_mode(state: tauri::State<'_, Arc<AppState>>) -> AppMode {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Tracing → bootstrap-installer.log under HERMES_HOME/logs/ so install
+    // Tracing → bootstrap-installer.log under HER_HOME/logs/ so install
     // failures leave a trail for support. Console output also goes here in
     // debug builds.
     let _guard = paths::init_logging();
@@ -124,21 +124,21 @@ pub fn run() {
             // its existing behavior (Windows users relaunch via the Start
             // Menu/Desktop "Hermes" shortcuts that install.ps1 creates, and a
             // reliable detached relaunch there needs the DETACHED_PROCESS +
-            // startup-grace handling used by launch_hermes_desktop — out of
+            // startup-grace handling used by launch_her_desktop — out of
             // scope here). So this is a pure no-op on non-macOS.
             //
             // `--reinstall`/`--repair` opts out so a broken install can be
             // repaired by re-running setup instead of launching the bad app.
             if cfg!(target_os = "macos") && mode == AppMode::Install && !force_setup {
-                let install_root = paths::hermes_home().join("hermes-agent");
-                if bootstrap::hermes_is_installed(&install_root) {
+                let install_root = paths::her_home().join("her-agent");
+                if bootstrap::her_is_installed(&install_root) {
                     match bootstrap::spawn_installed_desktop(&install_root) {
                         Ok(()) => {
                             // Brief grace so the spawned app is registered
-                            // before we exit (mirrors launch_hermes_desktop).
+                            // before we exit (mirrors launch_her_desktop).
                             std::thread::sleep(std::time::Duration::from_millis(200));
                             tracing::info!(
-                                "hermes already installed — relaunched desktop; exiting installer"
+                                "her already installed — relaunched desktop; exiting installer"
                             );
                             app.handle().exit(0);
                             return Ok(());
@@ -175,10 +175,10 @@ pub fn run() {
             // Update lifecycle
             update::start_update,
             // Hand-off
-            bootstrap::launch_hermes_desktop,
+            bootstrap::launch_her_desktop,
             // Diagnostics
             paths::get_log_path,
-            paths::get_hermes_home,
+            paths::get_her_home,
             paths::open_log_dir,
         ])
         .run(tauri::generate_context!())

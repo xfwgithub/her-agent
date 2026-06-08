@@ -44,7 +44,7 @@ group_sessions_per_user: false
 安装所需的 Python 包：
 
 ```bash
-pip install "hermes-agent[dingtalk]"
+pip install "her-agent[dingtalk]"
 ```
 
 或单独安装：
@@ -97,12 +97,12 @@ Hermes Agent 使用你的钉钉用户 ID 来控制谁可以与机器人交互。
 运行引导式设置命令：
 
 ```bash
-hermes gateway setup
+her gateway setup
 ```
 
 在提示时选择 **DingTalk**。设置向导支持两种授权路径：
 
-- **二维码设备流（推荐）。** 用钉钉手机 App 扫描终端中打印的二维码——Client ID 和 Client Secret 将自动返回并写入 `~/.hermes/.env`，无需前往开发者控制台。
+- **二维码设备流（推荐）。** 用钉钉手机 App 扫描终端中打印的二维码——Client ID 和 Client Secret 将自动返回并写入 `~/.her/.env`，无需前往开发者控制台。
 - **手动粘贴。** 如果你已有凭证（或扫码不方便），在提示时粘贴你的 Client ID、Client Secret 和允许的用户 ID。
 
 :::note openClaw 品牌披露
@@ -111,7 +111,7 @@ hermes gateway setup
 
 ### 方式 B：手动配置
 
-在 `~/.hermes/.env` 文件中添加以下内容：
+在 `~/.her/.env` 文件中添加以下内容：
 
 ```bash
 # 必填
@@ -132,7 +132,7 @@ DINGTALK_ALLOWED_USERS=user-id-1
 # DINGTALK_ALLOW_ALL_USERS=true
 ```
 
-`~/.hermes/config.yaml` 中的可选行为设置：
+`~/.her/config.yaml` 中的可选行为设置：
 
 ```yaml
 group_sessions_per_user: true
@@ -161,13 +161,13 @@ gateway:
 配置完成后，启动钉钉 gateway：
 
 ```bash
-hermes gateway
+her gateway
 ```
 
 机器人应在几秒内连接到钉钉的 Stream Mode。发送一条消息——单聊或已添加机器人的群聊均可——进行测试。
 
 :::tip
-你可以在后台运行 `hermes gateway`，或将其配置为 systemd 服务以持续运行。详见部署文档。
+你可以在后台运行 `her gateway`，或将其配置为 systemd 服务以持续运行。详见部署文档。
 :::
 
 ## 功能特性
@@ -243,7 +243,7 @@ pip install dingtalk-stream httpx
 
 **原因**：凭证未在环境变量或 `.env` 文件中设置。
 
-**解决方法**：确认 `DINGTALK_CLIENT_ID` 和 `DINGTALK_CLIENT_SECRET` 已在 `~/.hermes/.env` 中正确设置。Client ID 是你的 AppKey，Client Secret 是钉钉开发者控制台中的 AppSecret。
+**解决方法**：确认 `DINGTALK_CLIENT_ID` 和 `DINGTALK_CLIENT_SECRET` 已在 `~/.her/.env` 中正确设置。Client ID 是你的 AppKey，Client Secret 是钉钉开发者控制台中的 AppSecret。
 
 ### Stream 断开 / 重连循环
 
@@ -255,7 +255,7 @@ pip install dingtalk-stream httpx
 
 **原因**：Hermes gateway 未运行，或连接失败。
 
-**解决方法**：检查 `hermes gateway` 是否正在运行。查看终端输出中的错误信息。常见问题：凭证错误、应用被停用、`dingtalk-stream` 或 `httpx` 未安装。
+**解决方法**：检查 `her gateway` 是否正在运行。查看终端输出中的错误信息。常见问题：凭证错误、应用被停用、`dingtalk-stream` 或 `httpx` 未安装。
 
 ### "No session_webhook available"
 

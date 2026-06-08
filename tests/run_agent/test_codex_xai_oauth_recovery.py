@@ -1093,7 +1093,7 @@ def test_transport_round_trip_drops_foreign_reasoning():
 
     transport = ResponsesApiTransport()
     messages = [
-        {"role": "system", "content": "you are hermes"},
+        {"role": "system", "content": "you are her"},
         {"role": "user", "content": "hi"},
         _stamped_assistant_msg("xai_responses", encrypted="grok_blob"),
         {"role": "user", "content": "엑스다임 프로젝트 파악, 스킬로 정리."},
@@ -1107,7 +1107,7 @@ def test_transport_round_trip_drops_foreign_reasoning():
         is_xai_responses=False,
         is_github_responses=False,
         base_url="https://chatgpt.com/backend-api/codex",
-        instructions="you are hermes",
+        instructions="you are her",
     )
 
     reasoning = [it for it in kwargs["input"] if it.get("type") == "reasoning"]
