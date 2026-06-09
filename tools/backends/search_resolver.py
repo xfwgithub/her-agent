@@ -1,54 +1,43 @@
 """Search backend resolver.
 
-Extensible search/discovery backends following the pluggable pattern.
+The web_search tool already uses a plugin-based provider registry
+(``agent.web_search_registry``) with 7+ providers. This resolver
+is a thin config layer that selects the right provider based on
+``web.search_backend`` / ``web.backend`` config keys.
 
-Current backends:
-  - ``searxng`` (default) — local SearXNG instance
-  - ``direct`` — direct API calls (Google/Bing/DuckDuckGo)
-  - ``meilisearch`` — local Meilisearch (for project/document search)
-  - ``mcp`` — MCP-based search server
+The real pluggable architecture lives in:
+  - ``tools/web_tools.py`` — ``_get_search_backend()``, ``_get_extract_backend()``
+  - ``agent.web_search_registry`` — provider registration + dispatch
+  - ``plugins/web/`` — individual provider plugins
 
-Config key: ``search_backend`` (in ``~/.her/config.yaml``)
+Config::
+
+    web:
+      backend: searxng            # shared default
+      search_backend: searxng      # override for search only
+      extract_backend: firecrawl   # override for extract only
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
 
-def _config_backend() -> str:
+def resolve_search_provider() -> str | None:
+    """Return the active search provider name, or None."""
     try:
-        from her_cli.config import load_config
-        cfg = load_config()
-        strategy = cfg.get("search_backend", "auto")
-        if isinstance(strategy, str):
-            return strategy
+        from tools.web_tools import _get_search_backend
+        return _get_search_backend()
     except Exception:
-        pass
-    return "auto"
+        return None
 
 
-def resolve_search_url() -> tuple[str | None, str | None]:
-    """Resolve search backend URLs.
-
-    Returns (search_url, extract_url) where each can be None.
-    """
-    import os
-    backend = _config_backend()
-
-    if backend == "meilisearch":
-        # Local Meilisearch
-        url = os.environ.get("MEILISEARCH_URL", "http://127.0.0.1:7700")
-        return url, None
-
-    if backend == "mcp":
-        # MCP-based search — returns None URLs, caller uses MCP tools
-        return None, None
-
-    # Default: SearXNG
-    search_url = os.environ.get("SEARXNG_URL", "").strip() or None
-    extract_fallback = os.environ.get("EXTRACT_FALLBACK", "").strip() or None
-    return search_url, extract_fallback
+def resolve_extract_provider() -> str | None:
+    """Return the active extract provider name, or None."""
+    try:
+        from tools.web_tools import _get_extract_backend
+        return _get_extract_backend()
+    except Exception:
+        return None
