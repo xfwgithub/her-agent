@@ -6,25 +6,26 @@ selects the best terminal backend at runtime based on configuration.
 Config key: ``terminal_backend`` (in ``~/.her/config.yaml``)
 
   ``"auto"`` (default)
-    Uses the existing ``TERMINAL_ENV`` env var or config. If a shell-capable
-    MCP server is connected, prefers that.
+    Uses the existing ``TERMINAL_ENV`` env var or config (no override).
 
-  ``"local"``, ``"docker"``, ``"ssh"``, ``"modal"``, etc.
+  ``"local"``, ``"docker"``, ``"ssh"``, ``"modal"``, ``"singularity"``, ``"daytona"``
     Pins a specific backend from ``tools/environments/``.
 
-  ``"mcp"``
-    Uses MCP shell server (requires an MCP server with shell capability).
+Only backends that actually exist in the codebase are supported.
+See ``tools/environments/`` for the full list.
 """
 
 from __future__ import annotations
 
 import logging
-import os
-from typing import Any, Optional
+from typing import Optional
 
 from tools.environments.base import BaseEnvironment
 
 logger = logging.getLogger(__name__)
+
+# Valid backends that actually exist in tools/environments/
+_REAL_BACKENDS = {"local", "docker", "ssh", "modal", "singularity", "daytona"}
 
 
 def _config_backend() -> str:
@@ -38,15 +39,6 @@ def _config_backend() -> str:
     except Exception:
         pass
     return "auto"
-
-
-def _mcp_shell_available() -> bool:
-    """Check if any connected MCP server provides shell execution."""
-    try:
-        from tools.backends.mcp_terminal import _find_shell_server
-        return _find_shell_server() is not None
-    except Exception:
-        return False
 
 
 def resolve_terminal_env(
@@ -69,20 +61,13 @@ def resolve_terminal_env(
 
     backend = _config_backend()
 
-    # Resolve effective env_type
-    if backend == "mcp":
-        if _mcp_shell_available():
-            from .mcp_terminal import McpTerminalBackend
-            return McpTerminalBackend(cwd=cwd)
-        logger.warning("MCP terminal requested but no shell-capable server connected; falling back")
+    # "auto" → use whatever env_type the caller already resolved
+    if backend == "auto":
         effective_type = env_type
-    elif backend != "auto":
+    elif backend in _REAL_BACKENDS:
         effective_type = backend
     else:
-        # "auto": prefer MCP if available, else use the configured env_type
-        if _mcp_shell_available():
-            from .mcp_terminal import McpTerminalBackend
-            return McpTerminalBackend(cwd=cwd)
+        logger.warning("Unknown terminal_backend %r; falling back to %r", backend, env_type)
         effective_type = env_type
 
     return _create_environment(
