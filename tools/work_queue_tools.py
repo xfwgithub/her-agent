@@ -52,6 +52,7 @@ def _item_summary(item: WorkItem) -> dict:
         "priority": _PRIORITY_NAMES.get(item.priority, str(item.priority)),
         "status": item.status,
         "context": item.context[:200] if item.context else "",
+        "progress": item.context[:200] if item.context and item.status == "running" else "",
         "created": f"{item.created_at:.0f}",
         "started": f"{item.started_at:.0f}" if item.started_at else "",
         "completed": f"{item.completed_at:.0f}" if item.completed_at else "",
@@ -97,6 +98,7 @@ def work_assign_tool(
     lines = [
         f"✅ Task assigned: `{item_id}`",
         f"  Goal: {goal[:200]}",
+        f"  Type: {task_type_resolved}",
         f"  Priority: {priority}",
         f"  Queue: {len(queued)} item(s) — "
         f"{len([i for i in queued if i.status == 'queued'])} waiting, "
@@ -136,6 +138,8 @@ def work_status_tool() -> str:
         lines.append(f"  ID: `{s['id']}`")
         lines.append(f"  Goal: {s['goal']}")
         lines.append(f"  Priority: {s['priority']}")
+        if s.get('progress'):
+            lines.append(f"  Progress: {s['progress']}")
         lines.append(f"  Started: {s['started']}")
         lines.append("")
 
@@ -143,7 +147,8 @@ def work_status_tool() -> str:
         lines.append(f"### Queued ({len(queued)} items)")
         for i, item in enumerate(queued):
             s = _item_summary(item)
-            lines.append(f"  {i+1}. `{s['id']}` [{s['priority']}] {s['goal']}")
+            progress = f" — {s['progress']}" if s.get('progress') else ""
+            lines.append(f"  {i+1}. `{s['id']}` [{s['priority']}] {s['goal']}{progress}")
         lines.append("")
 
     if recent:

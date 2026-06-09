@@ -378,7 +378,8 @@ def _work_agent_loop(
         try:
             if task.task_type == "script":
                 # ── Script path: direct subprocess, no LLM ──────────
-                queue.update(task.id, context="executing script...")
+                command_display = _strip_prefix(task.goal)[:80]
+                queue.update(task.id, context=f"script: {command_display}")
                 result = _execute_script_task(task, queue, stop_event)
                 final_status = _final_status_for(task.id, queue)
                 queue.update(
@@ -392,15 +393,35 @@ def _work_agent_loop(
             else:
                 # ── Goal path: LLM-driven via AIAgent ───────────────
                 wa_prompt = _build_wa_prompt(task)
+                queue.update(task.id, context="initializing...")
 
                 # Start the interrupt watcher for preemption
                 watcher = _start_interrupt_watcher(task, queue, wa_agent, stop_event)
+
+                # Progress callback: writes per-tool-call progress to the queue
+                def _make_progress_cb(task_id: str, q: WorkQueue):
+                    last_progress = {}
+                    def _cb(event: str, tool_name: str, preview: str, args: dict) -> None:
+                        nonlocal last_progress
+                        if event == "tool.started":
+                            now = time.time()
+                            # Throttle: update at most every 2s to avoid DB spam
+                            if last_progress.get("time", 0) + 2.0 > now:
+                                return
+                            last_progress = {"time": now}
+                            q.update(task_id, context=preview[:200])
+                    return _cb
+
+                wa_agent.tool_progress_callback = _make_progress_cb(task.id, queue)
 
                 # Clear any stale interrupt before starting
                 wa_agent.clear_interrupt()
 
                 # Execute via the WA's AIAgent
                 result = wa_agent.chat(wa_prompt)
+
+                # Clear progress callback
+                wa_agent.tool_progress_callback = None
 
                 # Wait for watcher to finish (it exits when task is done)
                 watcher.join(timeout=3)
