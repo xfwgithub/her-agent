@@ -68,6 +68,11 @@ _HER_CORE_TOOLS = [
     "kanban_complete", "kanban_block", "kanban_heartbeat",
     "kanban_comment", "kanban_create", "kanban_link",
     "kanban_unblock",
+    # Project identity — only in schema when the current profile
+    # explicitly enables the "project" toolset. Gated via check_fn in
+    # tools/project_tools.py.
+    "project_find", "project_show", "project_list",
+    "project_update",
     # Computer use (macOS, gated on cua-driver being installed via check_fn)
     "computer_use",
 ]
