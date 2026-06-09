@@ -548,7 +548,7 @@ def _is_internal_file_status_text(content: str) -> bool:
     return False
 
 
-def _get_file_ops(task_id: str = "default") -> ShellFileOperations:
+def _get_file_ops(task_id: str = "default") -> "FileOperations":
     """Get or create ShellFileOperations for a terminal environment.
 
     Respects the TERMINAL_ENV setting -- if the task_id doesn't have an
@@ -674,7 +674,8 @@ def _get_file_ops(task_id: str = "default") -> ShellFileOperations:
             logger.info("%s environment ready for task %s", env_type, task_id[:8])
 
     # Build file_ops from the (guaranteed live) environment and cache it
-    file_ops = ShellFileOperations(terminal_env)
+    from tools.backends.resolver import resolve_file_operations
+    file_ops = resolve_file_operations(terminal_env, cwd=getattr(terminal_env, 'cwd', None))
     with _file_ops_lock:
         _file_ops_cache[task_id] = file_ops
     return file_ops
