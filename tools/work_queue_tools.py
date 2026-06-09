@@ -23,7 +23,7 @@ from agent.work_queue import (
     WorkItem,
     PRIORITY_CRITICAL, PRIORITY_URGENT, PRIORITY_NORMAL, PRIORITY_LOW,
 )
-from agent.work_manager import get_queue, work_agent_status
+from agent.work_manager import get_queue, work_agent_status, detect_task_type
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,7 @@ def work_assign_tool(
     goal: str,
     context: str = "",
     priority: str = "normal",
+    task_type: str = "",
 ) -> str:
     """Assign a task to the Work Agent.
 
@@ -81,13 +82,16 @@ def work_assign_tool(
         goal: What to do (free-form instruction for the WA).
         context: Background information or progress from previous work.
         priority: Priority level — critical (0), urgent (1), normal (2), low (3).
+        task_type: "goal" (LLM-driven), "script" (direct command, bypasses LLM),
+                   or "" to auto-detect based on goal content.
 
     Returns:
         The assigned task ID and current queue state.
     """
     queue = get_queue()
     prio = _parse_priority(priority)
-    item_id = queue.add(goal=goal, context=context, priority=prio)
+    task_type_resolved = task_type if task_type else detect_task_type(goal)
+    item_id = queue.add(goal=goal, context=context, priority=prio, task_type=task_type_resolved)
     queued = queue.list(status_filter=["queued", "paused", "running"])
 
     lines = [
@@ -257,6 +261,12 @@ _TOOL_SCHEMA = {
                     "enum": ["critical", "urgent", "normal", "low"],
                     "description": "Task priority. critical=0 (interrupts current work), urgent=1, normal=2 (default), low=3.",
                     "default": "normal",
+                },
+                "task_type": {
+                    "type": "string",
+                    "enum": ["goal", "script", ""],
+                    "description": "'goal' (LLM-driven, default when empty), 'script' (direct command, bypasses LLM), or '' to auto-detect.",
+                    "default": "",
                 },
             },
             "required": ["goal"],

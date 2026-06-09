@@ -1,16 +1,16 @@
 """
 Work Agent Manager — daemon thread lifecycle for the second agent.
 
+v2: Script-only execution + true preemption via interrupt watcher.
+
 Follows the same pattern as ``agent/background_review.py``: spawns a
 second ``AIAgent`` in a daemon thread, restricted to execution-only tools.
 
-The Work Agent (WA):
-- Runs in a daemon thread, started when the main agent starts
-- Blocks on ``WorkQueue.wait_for_work()`` until a task is available
-- Executes tasks via ``AIAgent.chat(task.goal)`` with execution tools only
-- Writes results back to the work queue
-- Checks for cancellation/pause between tool calls
-- Loops back to wait_for_work() after each task
+v2 features:
+- Script task type: goals detected as shell commands bypass LLM entirely
+- Interrupt watcher: sub-thread monitors DB for pause/cancel signals,
+  preempts the WA mid-execution
+- Progress awareness: WA writes status updates to the work queue
 
 Module-level singleton: one work queue + one WA thread per process.
 """
@@ -19,12 +19,17 @@ from __future__ import annotations
 
 import json
 import logging
+import shlex
+import subprocess
 import threading
 import time
 from pathlib import Path
 from typing import Any, Optional
 
-from agent.work_queue import WorkQueue, WorkItem, STATUS_RUNNING
+from agent.work_queue import (
+    WorkQueue, WorkItem,
+    STATUS_RUNNING, STATUS_CANCELLED, STATUS_PAUSED,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +38,46 @@ logger = logging.getLogger(__name__)
 _work_queue: WorkQueue | None = None
 _wa_thread: threading.Thread | None = None
 _stop_event = threading.Event()
+
+# Shared reference for script task subprocess (so watcher can kill it)
+_script_proc: subprocess.Popen | None = None
+_script_proc_lock = threading.Lock()
+
+
+# ── Script detection ─────────────────────────────────────────────────
+
+_SCRIPT_PREFIXES = ("run:", "cmd:", ">", "!")
+
+def detect_task_type(goal: str) -> str:
+    """Classify a task goal as 'script' or 'goal'.
+
+    Heuristics:
+    - Starts with a known prefix (``run:``, ``cmd:``, ``>``, ``!``) → script
+    - Single short line containing shell operators (``|``, ``&&``, ``||``) → script
+    - Everything else → goal (LLM-driven)
+    """
+    goal_stripped = goal.strip()
+
+    # Prefix match
+    for prefix in _SCRIPT_PREFIXES:
+        if goal_stripped.startswith(prefix):
+            return "script"
+
+    # Single line with shell operators
+    if "\n" not in goal_stripped and len(goal_stripped) < 200:
+        for op in (" | ", " && ", " || ", " ; ", " 2>", " > "):
+            if op in goal_stripped:
+                return "script"
+
+    return "goal"
+
+
+def _strip_prefix(goal: str) -> str:
+    """Strip ''run:'', ''cmd:'', ''>'', ''!'' prefix from a script goal."""
+    for prefix in _SCRIPT_PREFIXES:
+        if goal.strip().startswith(prefix):
+            return goal.strip()[len(prefix):].strip()
+    return goal.strip()
 
 
 # ── Public API ───────────────────────────────────────────────────────
@@ -98,11 +143,12 @@ def stop_work_agent(timeout: float = 5.0) -> bool:
     # Also signal the work queue so wait_for_work() unblocks
     queue = _work_queue
     if queue is not None:
-        from agent.work_queue import STATUS_CANCELLED
         running = queue.running_item()
         if running:
             queue.update(running.id, status=STATUS_CANCELLED,
                          result="WA shutting down")
+
+    _kill_script_proc()
 
     _wa_thread.join(timeout=timeout)
     if _wa_thread.is_alive():
@@ -129,6 +175,154 @@ def work_agent_status() -> dict:
     }
 
 
+# ── Script execution ─────────────────────────────────────────────────
+
+def _kill_script_proc() -> None:
+    """Kill the currently running script subprocess, if any."""
+    global _script_proc
+    with _script_proc_lock:
+        if _script_proc is not None:
+            try:
+                _script_proc.kill()
+                _script_proc.wait(timeout=3)
+            except Exception:
+                pass
+            _script_proc = None
+
+
+def _execute_script_task(
+    task: WorkItem,
+    queue: WorkQueue,
+    stop_event: threading.Event,
+) -> str:
+    """Execute a script-type task directly via subprocess (no LLM).
+
+    The command is run via ``subprocess.Popen`` with shell=True.
+    Can be interrupted by killing the subprocess.
+
+    Returns the stdout+stderr output as the result string.
+    """
+    global _script_proc
+
+    command = _strip_prefix(task.goal)
+    logger.info("work_agent: script execution: %s", command[:120])
+
+    _kill_script_proc()  # Safety: ensure no previous proc is running
+
+    with _script_proc_lock:
+        _script_proc = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+    # Wait for completion with periodic checks
+    output_lines = []
+    poll_interval = 0.2
+    max_wait = 600  # 10 minutes max for a script
+    waited = 0.0
+
+    try:
+        while waited < max_wait:
+            if stop_event.is_set() or _should_abort(task.id, queue):
+                _kill_script_proc()
+                return "[interrupted]"
+
+            ret = _script_proc.poll()
+            if ret is not None:
+                # Read remaining stdout
+                try:
+                    stdout, _ = _script_proc.communicate(timeout=5)
+                    if stdout:
+                        output_lines.append(stdout)
+                except Exception:
+                    pass
+                break
+
+            # Read available stdout incrementally
+            try:
+                line = _script_proc.stdout.readline() if _script_proc.stdout else ""
+                if line:
+                    output_lines.append(line)
+            except Exception:
+                pass
+
+            time.sleep(poll_interval)
+            waited += poll_interval
+
+        else:
+            # Timeout
+            _kill_script_proc()
+            return f"[timeout after {max_wait}s]"
+
+    except Exception as e:
+        _kill_script_proc()
+        return f"[script error: {e}]"
+
+    output = "".join(output_lines)
+    if output:
+        return output.strip()
+    return f"Command completed (exit code: {ret})"
+
+
+def _should_abort(task_id: str, queue: WorkQueue) -> bool:
+    """Check if the currently executing task should abort.
+
+    Checks the DB for pause/cancel signals.
+    Called between execution steps so the WA responds promptly.
+    """
+    item = queue.get(task_id)
+    if item is None:
+        return True  # Task deleted
+    return item.status in (STATUS_CANCELLED, STATUS_PAUSED)
+
+
+# ── Interrupt watcher ────────────────────────────────────────────────
+
+def _start_interrupt_watcher(
+    task: WorkItem,
+    queue: WorkQueue,
+    wa_agent: Any,
+    stop_event: threading.Event,
+) -> threading.Thread:
+    """Start a watcher thread that monitors the DB for interrupt signals.
+
+    When a task is cancelled/paused, the watcher:
+    1. Calls ``wa_agent.interrupt()`` to stop the current LLM loop
+    2. Updates the task status in the queue
+
+    The watcher runs for the duration of the task and exits when the
+    task is no longer in ``running`` state or a stop is requested.
+    """
+    watcher_stop = threading.Event()
+
+    def _watcher():
+        while not watcher_stop.is_set() and not stop_event.is_set():
+            item = queue.get(task.id)
+            if item is None or item.status not in (STATUS_RUNNING,):
+                break  # Task finished or no longer running
+
+            if item.status in (STATUS_CANCELLED, STATUS_PAUSED):
+                logger.info(
+                    "work_agent: interrupt watcher firing for %s (status=%s)",
+                    task.id, item.status,
+                )
+                # Interrupt the WA agent's LLM loop
+                try:
+                    wa_agent.interrupt(f"Task {item.status} by CA")
+                except Exception:
+                    logger.exception("work_agent: interrupt() failed")
+                break
+
+            watcher_stop.wait(timeout=0.5)
+
+    t = threading.Thread(target=_watcher, name=f"wa-watcher-{task.id[:8]}", daemon=True)
+    t.start()
+    return t
+
+
 # ── WA Loop ──────────────────────────────────────────────────────────
 
 def _work_agent_loop(
@@ -138,8 +332,13 @@ def _work_agent_loop(
 ) -> None:
     """Main loop of the Work Agent daemon thread.
 
-    Runs in a daemon thread. Creates its own ``AIAgent`` instance with
-    execution-only tools, then blocks on the work queue.
+    Creates its own ``AIAgent`` instance with execution-only tools, then
+    blocks on the work queue. Each task is routed to either:
+    - Script execution (direct subprocess, no LLM)
+    - Goal execution (LLM-driven via AIAgent.chat())
+
+    An interrupt watcher thread runs alongside each task to enable
+    preemption from the CA side.
     """
     from run_agent import AIAgent
 
@@ -156,11 +355,10 @@ def _work_agent_loop(
         max_iterations=90,
         quiet_mode=True,
         # WA gets execution-only tools (terminal, file, web, browser, code)
-        # The "execution" toolset includes all of these via toolset composition.
         enabled_toolsets=["execution"],
         disabled_toolsets=getattr(parent_agent, "disabled_toolsets", None),
-        skip_memory=True,          # WA doesn't touch memory
-        skip_context_files=True,   # WA doesn't reload project context
+        skip_memory=True,
+        skip_context_files=True,
         platform=getattr(parent_agent, "platform", "cli"),
     )
     wa_agent._memory_enabled = False
@@ -169,47 +367,83 @@ def _work_agent_loop(
     logger.info("work_agent: WA agent created, waiting for work...")
 
     while not stop_event.is_set():
-        # Block until a task is available (checks stop_event internally)
+        # Block until a task is available
         task = queue.wait_for_work(stop_event=stop_event)
         if task is None:
-            # stop_event was set during wait
             break
 
-        logger.info("work_agent: starting task %s: %s", task.id, task.goal[:80])
+        logger.info("work_agent: starting task %s (type=%s, pri=%d): %s",
+                    task.id, task.task_type, task.priority, task.goal[:80])
 
         try:
-            # Build a self-contained prompt for the WA
-            wa_prompt = _build_wa_prompt(task)
+            if task.task_type == "script":
+                # ── Script path: direct subprocess, no LLM ──────────
+                queue.update(task.id, context="executing script...")
+                result = _execute_script_task(task, queue, stop_event)
+                final_status = _final_status_for(task.id, queue)
+                queue.update(
+                    task.id,
+                    status=final_status,
+                    result=result,
+                    context=f"script completed in {time.time() - task.started_at:.1f}s",
+                )
+                logger.info("work_agent: script task %s → %s", task.id, final_status)
 
-            # Execute via the WA's AIAgent
-            # ``chat()`` returns the final response string
-            result = wa_agent.chat(wa_prompt)
+            else:
+                # ── Goal path: LLM-driven via AIAgent ───────────────
+                wa_prompt = _build_wa_prompt(task)
 
-            # Check if this task was cancelled/paused during execution
-            current = queue.get(task.id)
-            if current and current.status in ("cancelled", "paused"):
-                logger.info("work_agent: task %s was %s mid-execution", task.id, current.status)
-                continue
+                # Start the interrupt watcher for preemption
+                watcher = _start_interrupt_watcher(task, queue, wa_agent, stop_event)
 
-            # Report success
-            queue.update(
-                task.id,
-                status="completed",
-                result=result,
-                context=f"completed by WA in {time.time() - task.started_at:.1f}s",
-            )
-            logger.info("work_agent: task %s completed", task.id)
+                # Clear any stale interrupt before starting
+                wa_agent.clear_interrupt()
+
+                # Execute via the WA's AIAgent
+                result = wa_agent.chat(wa_prompt)
+
+                # Wait for watcher to finish (it exits when task is done)
+                watcher.join(timeout=3)
+
+                # Determine final status
+                final_status = _final_status_for(task.id, queue)
+                queue.update(
+                    task.id,
+                    status=final_status,
+                    result=result,
+                    context=f"completed by WA in {time.time() - task.started_at:.1f}s",
+                )
+                logger.info("work_agent: goal task %s → %s", task.id, final_status)
 
         except Exception as e:
             logger.exception("work_agent: task %s failed: %s", task.id, e)
+            final_status = _final_status_for(task.id, queue)
+            if final_status not in (STATUS_CANCELLED, STATUS_PAUSED):
+                final_status = "failed"
             queue.update(
                 task.id,
-                status="failed",
+                status=final_status,
                 result=f"WA error: {e}",
             )
 
     logger.info("work_agent: loop ended (stop_event)")
 
+
+def _final_status_for(task_id: str, queue: WorkQueue) -> str:
+    """Determine the final status after task execution.
+
+    If CA paused/cancelled during execution, honour that.
+    Otherwise mark as completed.
+    """
+    item = queue.get(task_id)
+    if item is None:
+        return STATUS_CANCELLED
+    if item.status in (STATUS_CANCELLED, STATUS_PAUSED):
+        return item.status
+    return "completed"
+
+
+# ── Prompt builder ──────────────────────────────────────────────────
 
 def _build_wa_prompt(task: WorkItem) -> str:
     """Build the prompt the WA receives to execute a task.

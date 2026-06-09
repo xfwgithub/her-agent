@@ -59,12 +59,13 @@ _VALID_STATUSES = {
 
 @dataclass
 class WorkItem:
-    """A single item in the work queue."""
+    """Work Item in the work queue."""
     id: str = ""
     goal: str = ""              # What to do (WA receives this as instruction)
     context: str = ""           # Background info / progress snapshot
     priority: int = PRIORITY_NORMAL
     status: str = STATUS_QUEUED
+    task_type: str = "goal"     # "goal" (LLM-driven) or "script" (direct command)
     result: str = ""            # Output from WA (completion message / error)
     toolset: str = "execution"  # Toolset for WA to use
     created_at: float = 0.0
@@ -126,6 +127,7 @@ class WorkQueue:
                 context     TEXT DEFAULT '',
                 priority    INTEGER NOT NULL DEFAULT 2,
                 status      TEXT NOT NULL DEFAULT 'queued',
+                task_type   TEXT NOT NULL DEFAULT 'goal',
                 result      TEXT DEFAULT '',
                 toolset     TEXT DEFAULT 'execution',
                 created_at  REAL NOT NULL,
@@ -137,6 +139,11 @@ class WorkQueue:
             CREATE INDEX IF NOT EXISTS idx_wq_status_priority
             ON work_queue(status, priority)
         """)
+        # Migrate: add task_type column if it doesn't exist
+        try:
+            conn.execute("ALTER TABLE work_queue ADD COLUMN task_type TEXT NOT NULL DEFAULT 'goal'")
+        except Exception:
+            pass  # Column already exists
         conn.commit()
 
     def close(self) -> None:
@@ -154,18 +161,28 @@ class WorkQueue:
         goal: str,
         context: str = "",
         priority: int = PRIORITY_NORMAL,
+        task_type: str = "goal",
         toolset: str = "execution",
     ) -> str:
-        """Add a work item. Returns its ID. Wakes the WA."""
+        """Add a work item. Returns its ID. Wakes the WA.
+
+        Args:
+            goal: What to do.
+            context: Background info for the WA.
+            priority: Priority level (0=critical, 1=urgent, 2=normal, 3=low).
+            task_type: "goal" (LLM-driven) or "script" (direct command).
+            toolset: Which tools the WA should have access to.
+        """
         item_id = uuid.uuid4().hex[:12]
         now = time.time()
         with self._lock:
             conn = self._get_conn()
             conn.execute(
                 """INSERT INTO work_queue (id, goal, context, priority, status,
-                   toolset, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (item_id, goal, context, priority, STATUS_QUEUED, toolset, now),
+                   task_type, toolset, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (item_id, goal, context, priority, STATUS_QUEUED,
+                 task_type, toolset, now),
             )
             conn.commit()
         logger.info("work_queue: added %s (priority=%d): %s", item_id, priority, goal[:80])
