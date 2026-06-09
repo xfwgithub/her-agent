@@ -75,6 +75,9 @@ _HER_CORE_TOOLS = [
     "project_update",
     # Computer use (macOS, gated on cua-driver being installed via check_fn)
     "computer_use",
+    # Work queue (native dual-agent system)
+    "work_assign", "work_status", "work_cancel",
+    "work_reorder", "work_pause", "work_resume",
 ]
 
 # Webhook events may originate from untrusted third-party content (for example,
@@ -213,6 +216,21 @@ TOOLSETS = {
         "description": "Task planning and tracking for multi-step work",
         "tools": ["todo"],
         "includes": []
+    },
+
+    "work": {
+        "description": "Work queue management for the native dual-agent system (assign, cancel, reorder, pause, resume tasks for the Work Agent)",
+        "tools": [
+            "work_assign", "work_status", "work_cancel",
+            "work_reorder", "work_pause", "work_resume",
+        ],
+        "includes": []
+    },
+
+    "execution": {
+        "description": "Combined execution tools for the Work Agent (terminal, file, web, browser, code)",
+        "tools": [],
+        "includes": ["terminal", "file", "web", "browser", "code_execution", "vision", "skills"]
     },
     
     "memory": {

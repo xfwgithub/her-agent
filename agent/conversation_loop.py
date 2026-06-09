@@ -395,6 +395,16 @@ def run_conversation(
 
     agent._ensure_db_session()
 
+    # Spawn the Work Agent (WA) daemon thread on the very first turn.
+    # Once spawned, it runs for the lifetime of this process.
+    if not getattr(agent, '_work_agent_spawned', False):
+        try:
+            from agent.work_manager import spawn_work_agent
+            spawn_work_agent(agent)
+        except Exception:
+            logger.warning("Failed to spawn Work Agent", exc_info=True)
+        agent._work_agent_spawned = True
+
     # Tell auxiliary_client what the live main provider/model are for
     # this turn. Used by tools whose behaviour depends on the active
     # main model (e.g. vision_analyze's native fast path) so they see
