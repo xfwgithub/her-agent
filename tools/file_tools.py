@@ -654,7 +654,8 @@ def _get_file_ops(task_id: str = "default") -> "FileOperations":
                     "persistent": config.get("local_persistent", False),
                 }
 
-            terminal_env = _create_environment(
+            from tools.backends.terminal_resolver import resolve_terminal_env
+            terminal_env = resolve_terminal_env(
                 env_type=env_type,
                 image=image,
                 cwd=cwd,

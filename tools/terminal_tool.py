@@ -1932,7 +1932,8 @@ def terminal_tool(
                                 "persistent": config.get("local_persistent", False),
                             }
 
-                        new_env = _create_environment(
+                        from tools.backends.terminal_resolver import resolve_terminal_env
+                        new_env = resolve_terminal_env(
                             env_type=env_type,
                             image=image,
                             cwd=cwd,
