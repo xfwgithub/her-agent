@@ -382,12 +382,22 @@ def _work_agent_loop(
                 queue.update(task.id, context=f"script: {command_display}")
                 result = _execute_script_task(task, queue, stop_event)
                 final_status = _final_status_for(task.id, queue)
-                queue.update(
-                    task.id,
-                    status=final_status,
-                    result=result,
-                    context=f"script completed in {time.time() - task.started_at:.1f}s",
-                )
+
+                if final_status == STATUS_PAUSED:
+                    resume_ctx = f"[paused] Script was interrupted: {command_display}"
+                    queue.update(
+                        task.id,
+                        status=STATUS_PAUSED,
+                        context=resume_ctx,
+                        result=result[:500],
+                    )
+                else:
+                    queue.update(
+                        task.id,
+                        status=final_status,
+                        result=result,
+                        context=f"script completed in {time.time() - task.started_at:.1f}s",
+                    )
                 logger.info("work_agent: script task %s → %s", task.id, final_status)
 
             else:
@@ -428,12 +438,26 @@ def _work_agent_loop(
 
                 # Determine final status
                 final_status = _final_status_for(task.id, queue)
-                queue.update(
-                    task.id,
-                    status=final_status,
-                    result=result,
-                    context=f"completed by WA in {time.time() - task.started_at:.1f}s",
-                )
+
+                if final_status == STATUS_PAUSED:
+                    # Save resume context: the last progress + partial result
+                    last_progress = queue.get(task.id).context if queue.get(task.id) else ""
+                    resume_ctx = f"[paused] Last: {last_progress[:100]}\nPartial: {result[:500]}"
+                    queue.update(
+                        task.id,
+                        status=STATUS_PAUSED,
+                        context=resume_ctx,
+                        result="",
+                    )
+                    logger.info("work_agent: goal task %s paused — context saved", task.id)
+
+                else:
+                    queue.update(
+                        task.id,
+                        status=final_status,
+                        result=result,
+                        context=f"completed by WA in {time.time() - task.started_at:.1f}s",
+                    )
                 logger.info("work_agent: goal task %s → %s", task.id, final_status)
 
         except Exception as e:
@@ -471,17 +495,33 @@ def _build_wa_prompt(task: WorkItem) -> str:
 
     The WA gets the goal + context as its instruction. It has full
     execution tools available (terminal, file, search, browser, codex).
+
+    If the task context starts with ``[paused]``, the prompt includes
+    resume instructions so the WA can continue where it left off.
     """
     parts = [
         "You are the Work Agent. Execute the following task using the tools available to you.",
         "",
         f"## Goal\n{task.goal}",
     ]
+
     if task.context:
-        parts.extend([
-            "",
-            "## Context\n" + task.context,
-        ])
+        if task.context.startswith("[paused]"):
+            # Resume from a previously paused task
+            resume_info = task.context[len("[paused]"):].strip()
+            parts.extend([
+                "",
+                "## ⚠️ Resume — This task was previously paused",
+                "You were working on this before. Here's what happened so far:",
+                resume_info,
+                "",
+                "Continue from where you left off. Do NOT redo work that's already done.",
+            ])
+        else:
+            parts.extend([
+                "",
+                "## Context\n" + task.context,
+            ])
     parts.extend([
         "",
         "When you're done, write a concise summary of what you did and the results.",
