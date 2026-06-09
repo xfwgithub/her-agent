@@ -1031,9 +1031,10 @@ def run_doctor(args):
         if should_fix:
             soul_path.parent.mkdir(parents=True, exist_ok=True)
             soul_path.write_text(
-                "# her Agent Persona\n\n"
-                "<!-- Edit this file to customize how her communicates. -->\n\n"
-                "You are her, a helpful AI assistant.\n",
+                "name: her Agent\n"
+                "role: a helpful AI assistant\n"
+                "creator: Nous Research\n"
+                "style: helpful, knowledgeable\n",
                 encoding="utf-8",
             )
             check_ok(f"Created {_DHH}/SOUL.md with basic template")

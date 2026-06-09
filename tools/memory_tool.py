@@ -2,25 +2,24 @@
 """
 Memory Tool Module - Persistent Curated Memory
 
-Provides bounded, file-backed memory that persists across sessions. Two stores:
-  - MEMORY.md: agent's personal notes and observations (environment facts, project
-    conventions, tool quirks, things learned)
-  - USER.md: what the agent knows about the user (preferences, communication style,
-    expectations, workflow habits)
+Provides file-backed memory that persists across sessions. Two stores:
+
+  MEMORY.md — structured activity log (agent writes, YAML format)
+    Tracks what the user has been doing in three time tiers:
+      daily:     last 7 days (per-day, date-keyed)
+      last_week: the week before the last 7 days (one summary)
+      last_month: the month before that (one summary)
+    The agent only sets the current day's activity; auto-consolidation
+    on load ages older entries out of ``daily`` into ``last_week``.
+
+  USER.md — structured user profile (user edits, YAML format)
+    Read-only through the tool. The user edits this file directly.
 
 Both are injected into the system prompt as a frozen snapshot at session start.
-Mid-session writes update files on disk immediately (durable) but do NOT change
-the system prompt -- this preserves the prefix cache for the entire session.
-The snapshot refreshes on the next session start.
+Mid-session writes to MEMORY.md are durable but do NOT change the system prompt
+(preserves prefix cache). Snapshot refreshes on next session start.
 
-Entry delimiter: § (section sign). Entries can be multiline.
 Character limits (not tokens) because char counts are model-independent.
-
-Design:
-- Single `memory` tool with action parameter: add, replace, remove, read
-- replace/remove use short unique substring matching (not full text or IDs)
-- Behavioral guidance lives in the tool schema description
-- Frozen snapshot pattern: system prompt is stable, tool responses show live state
 """
 
 import json
@@ -29,6 +28,7 @@ import os
 import tempfile
 import time
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 from pathlib import Path
 from her_constants import get_her_home
 from typing import Dict, Any, List, Optional
@@ -36,143 +36,252 @@ from typing import Dict, Any, List, Optional
 from utils import atomic_replace
 
 import fcntl
+import yaml
 
 logger = logging.getLogger(__name__)
 
-# Where memory files live — resolved dynamically so profile overrides
-# (HER_HOME env var changes) are always respected.  The old module-level
-# constant was cached at import time and could go stale if a profile switch
-# happened after the first import.
+MEMORY_CHAR_LIMIT = 2200
+USER_CHAR_LIMIT = 256
+
+# Max daily entries kept before oldest ones roll up into last_week
+MAX_DAILY_ENTRIES = 7
+
+
 def get_memory_dir() -> Path:
     """Return the profile-scoped memories directory."""
     return get_her_home() / "memories"
 
-ENTRY_DELIMITER = "\n§\n"
-
 
 # ---------------------------------------------------------------------------
-# Memory content scanning — lightweight check for injection/exfiltration
-# in content that gets injected into the system prompt.
-#
-# Patterns live in ``tools/threat_patterns.py`` — the single source of truth
-# shared with the context-file scanner and the tool-result delimiter system.
-# Memory uses the "strict" scope (broadest pattern set) because:
-#  - memory entries are user-curated; the user can rewrite a flagged entry
-#  - memory enters the system prompt as a FROZEN snapshot, so a poisoned
-#    entry persists for the entire session and across sessions until
-#    explicitly removed.
+# Threat scanning
 # ---------------------------------------------------------------------------
-
 from tools.threat_patterns import first_threat_message as _first_threat_message
 
 
 def _scan_memory_content(content: str) -> Optional[str]:
-    """Scan memory content for injection/exfil patterns. Returns error string if blocked."""
     return _first_threat_message(content, scope="strict")
 
 
-def _drift_error(path: "Path", bak_path: str) -> Dict[str, Any]:
-    """Build the error dict returned when external drift is detected.
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-    The on-disk memory file contains content that wouldn't round-trip
-    through the tool's parser/serializer — flushing would discard the
-    appended/edited content from a patch tool, shell append, manual edit,
-    or sister-session write. We refuse the mutation, point the operator at
-    the .bak.<ts> snapshot we took, and tell them what to do next.
-    """
-    return {
-        "success": False,
-        "error": (
-            f"Refusing to write {path.name}: file on disk has content that "
-            f"wouldn't round-trip through the memory tool (likely added by "
-            f"the patch tool, a shell append, a manual edit, or a "
-            f"concurrent session). A snapshot was saved to {bak_path}. "
-            f"Resolve the drift first — either rewrite the file as a clean "
-            f"§-delimited list of entries, or move the extra content out — "
-            f"then retry. This guard exists to prevent silent data loss "
-            f"(issue #26045)."
-        ),
-        "drift_backup": bak_path,
-        "remediation": (
-            "Open the .bak file, integrate the missing entries into the "
-            "memory tool one at a time via memory(action=add, content=...), "
-            "then remove or rewrite the original file to a clean state."
-        ),
-    }
+_DEFAULT_MEMORY_YAML = """\
+daily: {}
+last_week: ''
+last_month: ''
+"""
 
+
+def _today_str() -> str:
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def _week_range_str(dates: List[str]) -> str:
+    """Return a human-friendly week range like '06-01 ~ 06-07'."""
+    if not dates:
+        return ""
+    sorted_dates = sorted(dates)
+    start = sorted_dates[0][5:]  # strip year
+    end = sorted_dates[-1][5:]
+    return f"{start} ~ {end}"
+
+
+# ---------------------------------------------------------------------------
+# YAML I/O for structured memory files
+# ---------------------------------------------------------------------------
+
+def _read_yaml_file(path: Path) -> Optional[Dict[str, Any]]:
+    """Read a YAML file and return parsed dict. Returns None on failure/missing."""
+    if not path.exists():
+        return None
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except (OSError, IOError):
+        return None
+    if not raw.strip():
+        return None
+    try:
+        data = yaml.safe_load(raw)
+        if isinstance(data, dict):
+            return data
+    except yaml.YAMLError:
+        pass
+    return None
+
+
+def _write_yaml_file(path: Path, data: Dict[str, Any]) -> None:
+    """Write a dict as YAML to path, using atomic temp-file + rename."""
+    content = yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False).strip()
+    if content:
+        content += "\n"
+    try:
+        fd, tmp_path = tempfile.mkstemp(
+            dir=str(path.parent), suffix=".tmp", prefix=".mem_"
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(content)
+                f.flush()
+                os.fsync(f.fileno())
+            atomic_replace(tmp_path, path)
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+    except (OSError, IOError) as e:
+        raise RuntimeError(f"Failed to write {path}: {e}")
+
+
+# ---------------------------------------------------------------------------
+# MemoryStore
+# ---------------------------------------------------------------------------
 
 class MemoryStore:
     """
-    Bounded curated memory with file persistence. One instance per AIAgent.
+    Manages two independent, file-backed memory stores.
 
-    Maintains two parallel states:
-      - _system_prompt_snapshot: frozen at load time, used for system prompt injection.
-        Never mutated mid-session. Keeps prefix cache stable.
-      - memory_entries / user_entries: live state, mutated by tool calls, persisted to disk.
-        Tool responses always reflect this live state.
+    - MEMORY.md (``target="memory"``): YAML activity log (daily / last_week / last_month).
+      The agent sets the current day via ``action='add'``. Auto-consolidation on load.
+    - USER.md  (``target="user"``):  YAML user profile. Read-only through tool.
     """
 
-    def __init__(self, memory_char_limit: int = 2200, user_char_limit: int = 1375):
-        self.memory_entries: List[str] = []
+    def __init__(self, memory_char_limit: int = MEMORY_CHAR_LIMIT, user_char_limit: int = USER_CHAR_LIMIT):
+        # MEMORY.md — stored as raw dict from YAML
+        self._memory_data: Dict[str, Any] = {}
+        # USER.md — stored as single-entry list (raw YAML text)
         self.user_entries: List[str] = []
         self.memory_char_limit = memory_char_limit
         self.user_char_limit = user_char_limit
         # Frozen snapshot for system prompt -- set once at load_from_disk()
         self._system_prompt_snapshot: Dict[str, str] = {"memory": "", "user": ""}
 
+    # -- Disk I/O ------------------------------------------------------------
+
     def load_from_disk(self):
-        """Load entries from MEMORY.md and USER.md, capture system prompt snapshot.
-
-        The frozen snapshot is what enters the system prompt. We scan each
-        entry for injection/promptware patterns at snapshot-build time —
-        ANY hit replaces the entry text in the snapshot with a placeholder
-        like ``[BLOCKED: …]``, so a poisoned-on-disk memory file (supply
-        chain, compromised tool, sister-session write) cannot inject into
-        the system prompt.
-
-        The live ``memory_entries`` / ``user_entries`` lists keep the
-        original text so the user can still SEE poisoned entries via
-        ``memory(action=read)`` and remove them — silently dropping them
-        would hide the attack from the user.
-
-        Scanning is deterministic from disk bytes, so the snapshot remains
-        stable for the entire session (prefix-cache invariant holds).
-        """
+        """Load MEMORY.md and USER.md from disk, capture frozen snapshot."""
         mem_dir = get_memory_dir()
         mem_dir.mkdir(parents=True, exist_ok=True)
 
-        self.memory_entries = self._read_file(mem_dir / "MEMORY.md")
-        self.user_entries = self._read_file(mem_dir / "USER.md")
+        # MEMORY.md
+        mem_data = _read_yaml_file(mem_dir / "MEMORY.md")
+        if mem_data is None:
+            mem_data = yaml.safe_load(_DEFAULT_MEMORY_YAML)
+        self._memory_data = self._consolidate(mem_data)
+        self._write_memory_file()  # persist consolidation immediately
+        sanitized_memory = self._sanitize_memory_for_snapshot(self._memory_data)
 
-        # Deduplicate entries (preserves order, keeps first occurrence)
-        self.memory_entries = list(dict.fromkeys(self.memory_entries))
-        self.user_entries = list(dict.fromkeys(self.user_entries))
-
-        # Sanitize entries for the system-prompt snapshot only.  Live state
-        # (memory_entries / user_entries) keeps the raw text so the user
-        # can see + remove poisoned entries via the memory tool.
-        sanitized_memory = self._sanitize_entries_for_snapshot(self.memory_entries, "MEMORY.md")
+        # USER.md
+        self.user_entries = self._read_user_file(mem_dir / "USER.md")
         sanitized_user = self._sanitize_entries_for_snapshot(self.user_entries, "USER.md")
 
-        # Capture frozen snapshot for system prompt injection
         self._system_prompt_snapshot = {
-            "memory": self._render_block("memory", sanitized_memory),
-            "user": self._render_block("user", sanitized_user),
+            "memory": self._render_memory_block(sanitized_memory),
+            "user": self._render_user_block(sanitized_user),
         }
+
+    def save_to_disk(self, target: str):
+        get_memory_dir().mkdir(parents=True, exist_ok=True)
+        if target == "user":
+            self._write_user_file(self._path_for(target), self.user_entries)
+        else:
+            self._write_memory_file()
+
+    # -- Consolidation -------------------------------------------------------
+
+    @staticmethod
+    def _consolidate(data: Dict[str, Any]) -> Dict[str, Any]:
+        """Auto-age daily entries: keep newest MAX_DAILY_ENTRIES, roll up older ones.
+
+        Rules:
+          1. Ensure ``daily`` key exists (default empty dict).
+          2. Ensure ``last_week`` and ``last_month`` keys exist (default empty string).
+          3. If daily has more than MAX_DAILY_ENTRIES entries, the oldest
+             surplus entries are rolled into ``last_week``.
+          4. Does NOT auto-consolidate last_week → last_month (the agent may
+             update last_month explicitly via replace).
+        """
+        out = dict(data)
+        out.setdefault("daily", {})
+        out.setdefault("last_week", "")
+        out.setdefault("last_month", "")
+
+        daily = out["daily"]
+        if not isinstance(daily, dict):
+            logger.warning("MEMORY.md 'daily' is not a dict, resetting.")
+            daily = {}
+            out["daily"] = daily
+
+        dates = sorted(daily.keys(), reverse=True)
+        if len(dates) <= MAX_DAILY_ENTRIES:
+            return out
+
+        # Entries beyond the newest MAX_DAILY_ENTRIES are surplus
+        keep = set(dates[:MAX_DAILY_ENTRIES])
+        surplus_dates = [d for d in reversed(dates) if d not in keep]
+
+        # Build a summary of surplus entries
+        surplus_lines = []
+        for d in surplus_dates:
+            text = daily.get(d, "").strip()
+            if text:
+                surplus_lines.append(f"{d}: {text}")
+            del daily[d]
+
+        if surplus_lines:
+            old_week = out.get("last_week", "").strip()
+            new_text = "; ".join(surplus_lines)
+            out["last_week"] = (new_text + " | " + old_week) if old_week else new_text
+
+        return out
+
+    # -- Sanitization for snapshot -------------------------------------------
+
+    @staticmethod
+    def _sanitize_memory_for_snapshot(data: Dict[str, Any]) -> Dict[str, Any]:
+        """Scan memory YAML values for threats, replace flagged ones.
+
+        Scans daily entry text, last_week, and last_month values.
+        Returns a copy of the dict with blocked entries replaced by placeholders.
+        """
+        from tools.threat_patterns import scan_for_threats
+
+        out = {}
+        out["last_week"] = data.get("last_week", "")
+        out["last_month"] = data.get("last_month", "")
+        out["daily"] = {}
+
+        for date_str, text in data.get("daily", {}).items():
+            if not text or text.startswith("[BLOCKED:"):
+                out["daily"][date_str] = text
+                continue
+            findings = scan_for_threats(text, scope="strict")
+            if findings:
+                logger.warning("MEMORY.md entry %s blocked: %s", date_str, ", ".join(findings))
+                out["daily"][date_str] = (
+                    f"[BLOCKED: daily entry {date_str} contained threat pattern(s): "
+                    f"{', '.join(findings)}. Removed from system prompt.]"
+                )
+            else:
+                out["daily"][date_str] = text
+
+        for field in ("last_week", "last_month"):
+            text = data.get(field, "")
+            if text and not text.startswith("[BLOCKED:"):
+                findings = scan_for_threats(text, scope="strict")
+                if findings:
+                    logger.warning("MEMORY.md %s blocked: %s", field, ", ".join(findings))
+                    out[field] = (
+                        f"[BLOCKED: {field} contained threat pattern(s): "
+                        f"{', '.join(findings)}. Removed from system prompt.]"
+                    )
+
+        return out
 
     @staticmethod
     def _sanitize_entries_for_snapshot(entries: List[str], filename: str) -> List[str]:
-        """Return ``entries`` with any threat-matching entry replaced by a placeholder.
-
-        Each entry is scanned with the shared threat-pattern library at the
-        ``"strict"`` scope (same as memory writes).  On match, the entry is
-        replaced in the returned list with ``"[BLOCKED: <filename> entry
-        contained threat pattern: <ids>. Removed from system prompt.]"`` —
-        the placeholder enters the snapshot, the original entry stays in
-        live state for the user to inspect and delete.
-
-        Empty or already-block-marker entries pass through unchanged.
-        """
         from tools.threat_patterns import scan_for_threats
 
         sanitized: List[str] = []
@@ -196,17 +305,31 @@ class MemoryStore:
                 sanitized.append(entry)
         return sanitized
 
+    # -- File helpers --------------------------------------------------------
+
+    @staticmethod
+    def _path_for(target: str) -> Path:
+        mem_dir = get_memory_dir()
+        if target == "user":
+            return mem_dir / "USER.md"
+        return mem_dir / "MEMORY.md"
+
+    def _reload_target(self, target: str) -> None:
+        """Re-read a target from disk into in-memory state."""
+        path = self._path_for(target)
+        if target == "user":
+            self.user_entries = self._read_user_file(path)
+        else:
+            data = _read_yaml_file(path)
+            if data is not None:
+                self._memory_data = self._consolidate(data)
+                self._write_memory_file()
+
     @staticmethod
     @contextmanager
     def _file_lock(path: Path):
-        """Acquire an exclusive file lock for read-modify-write safety.
-
-        Uses a separate .lock file so the memory file itself can still be
-        atomically replaced via os.replace().
-        """
         lock_path = path.with_suffix(path.suffix + ".lock")
         lock_path.parent.mkdir(parents=True, exist_ok=True)
-
         fd = open(lock_path, "a+", encoding="utf-8")
         try:
             fcntl.flock(fd, fcntl.LOCK_EX)
@@ -218,343 +341,44 @@ class MemoryStore:
                 pass
             fd.close()
 
-    @staticmethod
-    def _path_for(target: str) -> Path:
-        mem_dir = get_memory_dir()
-        if target == "user":
-            return mem_dir / "USER.md"
-        return mem_dir / "MEMORY.md"
-
-    def _reload_target(self, target: str) -> Optional[str]:
-        """Re-read entries from disk into in-memory state.
-
-        Called under file lock to get the latest state before mutating.
-        Returns the backup path if external drift was detected (the on-disk
-        file contains content that wouldn't round-trip through our
-        parser/serializer, OR an entry larger than the store's char limit).
-        When drift is detected the caller must abort the mutation —
-        flushing would discard the un-roundtrippable content.
-        Returns None on clean reload.
-        """
-        path = self._path_for(target)
-        bak = self._detect_external_drift(target)
-        fresh = self._read_file(path)
-        fresh = list(dict.fromkeys(fresh))  # deduplicate
-        self._set_entries(target, fresh)
-        return bak
-
-    def save_to_disk(self, target: str):
-        """Persist entries to the appropriate file. Called after every mutation."""
-        get_memory_dir().mkdir(parents=True, exist_ok=True)
-        self._write_file(self._path_for(target), self._entries_for(target))
-
-    def _entries_for(self, target: str) -> List[str]:
-        if target == "user":
-            return self.user_entries
-        return self.memory_entries
-
-    def _set_entries(self, target: str, entries: List[str]):
-        if target == "user":
-            self.user_entries = entries
-        else:
-            self.memory_entries = entries
-
-    def _char_count(self, target: str) -> int:
-        entries = self._entries_for(target)
-        if not entries:
-            return 0
-        return len(ENTRY_DELIMITER.join(entries))
-
-    def _char_limit(self, target: str) -> int:
-        if target == "user":
-            return self.user_char_limit
-        return self.memory_char_limit
-
-    def add(self, target: str, content: str) -> Dict[str, Any]:
-        """Append a new entry. Returns error if it would exceed the char limit."""
-        content = content.strip()
-        if not content:
-            return {"success": False, "error": "Content cannot be empty."}
-
-        # Scan for injection/exfiltration before accepting
-        scan_error = _scan_memory_content(content)
-        if scan_error:
-            return {"success": False, "error": scan_error}
-
-        with self._file_lock(self._path_for(target)):
-            # Re-read from disk under lock to pick up writes from other sessions.
-            # If external drift was detected, the file was backed up to .bak.<ts>
-            # — refuse the mutation so we don't clobber the un-roundtrippable
-            # content the patch tool / shell append / sister session wrote.
-            bak = self._reload_target(target)
-            if bak:
-                return _drift_error(self._path_for(target), bak)
-
-            entries = self._entries_for(target)
-            limit = self._char_limit(target)
-
-            # Reject exact duplicates
-            if content in entries:
-                return self._success_response(target, "Entry already exists (no duplicate added).")
-
-            # Calculate what the new total would be
-            new_entries = entries + [content]
-            new_total = len(ENTRY_DELIMITER.join(new_entries))
-
-            if new_total > limit:
-                current = self._char_count(target)
-                return {
-                    "success": False,
-                    "error": (
-                        f"Memory at {current:,}/{limit:,} chars. "
-                        f"Adding this entry ({len(content)} chars) would exceed the limit. "
-                        f"Replace or remove existing entries first."
-                    ),
-                    "current_entries": entries,
-                    "usage": f"{current:,}/{limit:,}",
-                }
-
-            entries.append(content)
-            self._set_entries(target, entries)
-            self.save_to_disk(target)
-
-        return self._success_response(target, "Entry added.")
-
-    def replace(self, target: str, old_text: str, new_content: str) -> Dict[str, Any]:
-        """Find entry containing old_text substring, replace it with new_content."""
-        old_text = old_text.strip()
-        new_content = new_content.strip()
-        if not old_text:
-            return {"success": False, "error": "old_text cannot be empty."}
-        if not new_content:
-            return {"success": False, "error": "new_content cannot be empty. Use 'remove' to delete entries."}
-
-        # Scan replacement content for injection/exfiltration
-        scan_error = _scan_memory_content(new_content)
-        if scan_error:
-            return {"success": False, "error": scan_error}
-
-        with self._file_lock(self._path_for(target)):
-            bak = self._reload_target(target)
-            if bak:
-                return _drift_error(self._path_for(target), bak)
-
-            entries = self._entries_for(target)
-            matches = [(i, e) for i, e in enumerate(entries) if old_text in e]
-
-            if not matches:
-                return {"success": False, "error": f"No entry matched '{old_text}'."}
-
-            if len(matches) > 1:
-                # If all matches are identical (exact duplicates), operate on the first one
-                unique_texts = {e for _, e in matches}
-                if len(unique_texts) > 1:
-                    previews = [e[:80] + ("..." if len(e) > 80 else "") for _, e in matches]
-                    return {
-                        "success": False,
-                        "error": f"Multiple entries matched '{old_text}'. Be more specific.",
-                        "matches": previews,
-                    }
-                # All identical -- safe to replace just the first
-
-            idx = matches[0][0]
-            limit = self._char_limit(target)
-
-            # Check that replacement doesn't blow the budget
-            test_entries = entries.copy()
-            test_entries[idx] = new_content
-            new_total = len(ENTRY_DELIMITER.join(test_entries))
-
-            if new_total > limit:
-                return {
-                    "success": False,
-                    "error": (
-                        f"Replacement would put memory at {new_total:,}/{limit:,} chars. "
-                        f"Shorten the new content or remove other entries first."
-                    ),
-                }
-
-            entries[idx] = new_content
-            self._set_entries(target, entries)
-            self.save_to_disk(target)
-
-        return self._success_response(target, "Entry replaced.")
-
-    def remove(self, target: str, old_text: str) -> Dict[str, Any]:
-        """Remove the entry containing old_text substring."""
-        old_text = old_text.strip()
-        if not old_text:
-            return {"success": False, "error": "old_text cannot be empty."}
-
-        with self._file_lock(self._path_for(target)):
-            bak = self._reload_target(target)
-            if bak:
-                return _drift_error(self._path_for(target), bak)
-
-            entries = self._entries_for(target)
-            matches = [(i, e) for i, e in enumerate(entries) if old_text in e]
-
-            if not matches:
-                return {"success": False, "error": f"No entry matched '{old_text}'."}
-
-            if len(matches) > 1:
-                # If all matches are identical (exact duplicates), remove the first one
-                unique_texts = {e for _, e in matches}
-                if len(unique_texts) > 1:
-                    previews = [e[:80] + ("..." if len(e) > 80 else "") for _, e in matches]
-                    return {
-                        "success": False,
-                        "error": f"Multiple entries matched '{old_text}'. Be more specific.",
-                        "matches": previews,
-                    }
-                # All identical -- safe to remove just the first
-
-            idx = matches[0][0]
-            entries.pop(idx)
-            self._set_entries(target, entries)
-            self.save_to_disk(target)
-
-        return self._success_response(target, "Entry removed.")
-
-    def format_for_system_prompt(self, target: str) -> Optional[str]:
-        """
-        Return the frozen snapshot for system prompt injection.
-
-        This returns the state captured at load_from_disk() time, NOT the live
-        state. Mid-session writes do not affect this. This keeps the system
-        prompt stable across all turns, preserving the prefix cache.
-
-        Returns None if the snapshot is empty (no entries at load time).
-        """
-        block = self._system_prompt_snapshot.get(target, "")
-        return block if block else None
-
-    # -- Internal helpers --
-
-    def _success_response(self, target: str, message: str = None) -> Dict[str, Any]:
-        entries = self._entries_for(target)
-        current = self._char_count(target)
-        limit = self._char_limit(target)
-        pct = min(100, int((current / limit) * 100)) if limit > 0 else 0
-
-        resp = {
-            "success": True,
-            "target": target,
-            "entries": entries,
-            "usage": f"{pct}% — {current:,}/{limit:,} chars",
-            "entry_count": len(entries),
+    def _write_memory_file(self) -> None:
+        """Persist current _memory_data to disk as YAML."""
+        path = self._path_for("memory")
+        # Only keep the three known keys when writing
+        out = {
+            "daily": self._memory_data.get("daily", {}),
+            "last_week": self._memory_data.get("last_week", ""),
+            "last_month": self._memory_data.get("last_month", ""),
         }
-        if message:
-            resp["message"] = message
-        return resp
+        _write_yaml_file(path, out)
 
-    def _render_block(self, target: str, entries: List[str]) -> str:
-        """Render a system prompt block with header and usage indicator."""
-        if not entries:
-            return ""
-
-        limit = self._char_limit(target)
-        content = ENTRY_DELIMITER.join(entries)
-        current = len(content)
-        pct = min(100, int((current / limit) * 100)) if limit > 0 else 0
-
-        if target == "user":
-            header = f"USER PROFILE (who the user is) [{pct}% — {current:,}/{limit:,} chars]"
-        else:
-            header = f"MEMORY (your personal notes) [{pct}% — {current:,}/{limit:,} chars]"
-
-        separator = "═" * 46
-        return f"{separator}\n{header}\n{separator}\n{content}"
+    # -- USER.md YAML I/O ----------------------------------------------------
 
     @staticmethod
-    def _read_file(path: Path) -> List[str]:
-        """Read a memory file and split into entries.
-
-        No file locking needed: _write_file uses atomic rename, so readers
-        always see either the previous complete file or the new complete file.
-        """
+    def _read_user_file(path: Path) -> List[str]:
+        """Read USER.md, validate as YAML dict, return as single-entry list."""
         if not path.exists():
             return []
         try:
             raw = path.read_text(encoding="utf-8")
         except (OSError, IOError):
             return []
-
         if not raw.strip():
             return []
-
-        # Use ENTRY_DELIMITER for consistency with _write_file. Splitting by "§"
-        # alone would incorrectly split entries that contain "§" in their content.
-        entries = [e.strip() for e in raw.split(ENTRY_DELIMITER)]
-        return [e for e in entries if e]
-
-    def _detect_external_drift(self, target: str) -> Optional[str]:
-        """Return a backup-path string if on-disk content shows external drift.
-
-        The memory file is supposed to be a list of small entries the tool
-        wrote, joined by §. Detect drift via two signals:
-
-        1. Round-trip mismatch — re-parsing and re-serializing the file
-           doesn't produce identical bytes (rare; would catch oddly-encoded
-           delimiters).
-        2. Entry-size overflow — any single parsed entry exceeds the
-           store's whole-file char limit. The tool budgets the ENTIRE store
-           against that limit; no single tool-written entry can exceed it.
-           When we see one entry larger than the limit, an external writer
-           (patch tool, shell append, manual edit, sister session) appended
-           free-form content into what the tool will treat as one entry.
-           Flushing would then truncate that entry to the model's new
-           content, discarding the appended bytes — issue #26045.
-
-        Returns the absolute path of the .bak file when drift was found and
-        backed up; returns None when the file looks tool-shaped.
-
-        Note: this is an INSTANCE method (not static) because we need the
-        per-target char_limit for signal #2.
-        """
-        path = self._path_for(target)
-        if not path.exists():
-            return None
         try:
-            raw = path.read_text(encoding="utf-8")
-        except (OSError, IOError):
-            return None
-        if not raw.strip():
-            return None
-
-        parsed = [e.strip() for e in raw.split(ENTRY_DELIMITER) if e.strip()]
-        roundtrip = ENTRY_DELIMITER.join(parsed)
-
-        char_limit = self._char_limit(target)
-        max_entry_len = max((len(e) for e in parsed), default=0)
-
-        drift_detected = (raw.strip() != roundtrip) or (max_entry_len > char_limit)
-        if not drift_detected:
-            return None
-
-        # Drift confirmed — snapshot the file so the operator can recover
-        # whatever the external writer added, then return the .bak path so
-        # the caller can refuse the mutation.
-        ts = int(time.time())
-        bak_path = path.with_suffix(path.suffix + f".bak.{ts}")
-        try:
-            bak_path.write_text(raw, encoding="utf-8")
-        except (OSError, IOError):
-            return str(bak_path) + " (BACKUP FAILED — file unchanged on disk)"
-        return str(bak_path)
+            data = yaml.safe_load(raw)
+            if not isinstance(data, dict):
+                logger.warning("USER.md root is not a mapping. Ignoring.")
+                return []
+        except yaml.YAMLError as e:
+            logger.warning("USER.md invalid YAML: %s. Ignoring.", e)
+            return []
+        return [raw.strip()]
 
     @staticmethod
-    def _write_file(path: Path, entries: List[str]):
-        """Write entries to a memory file using atomic temp-file + rename.
-
-        Previous implementation used open("w") + flock, but "w" truncates the
-        file *before* the lock is acquired, creating a race window where
-        concurrent readers see an empty file. Atomic rename avoids this:
-        readers always see either the old complete file or the new one.
-        """
-        content = ENTRY_DELIMITER.join(entries) if entries else ""
+    def _write_user_file(path: Path, entries: List[str]) -> None:
+        content = entries[0].strip() + "\n" if entries else ""
         try:
-            # Write to temp file in same directory (same filesystem for atomic rename)
             fd, tmp_path = tempfile.mkstemp(
                 dir=str(path.parent), suffix=".tmp", prefix=".mem_"
             )
@@ -565,59 +389,444 @@ class MemoryStore:
                     os.fsync(f.fileno())
                 atomic_replace(tmp_path, path)
             except BaseException:
-                # Clean up temp file on any failure
                 try:
                     os.unlink(tmp_path)
                 except OSError:
                     pass
                 raise
         except (OSError, IOError) as e:
-            raise RuntimeError(f"Failed to write memory file {path}: {e}")
+            raise RuntimeError(f"Failed to write user profile {path}: {e}")
 
+    # -- Actions -------------------------------------------------------------
+
+    def read(self, target: str) -> Dict[str, Any]:
+        """Return structured content of the specified store."""
+        if target == "user":
+            raw = self.user_entries[0] if self.user_entries else ""
+            current = len(raw)
+            limit = self.user_char_limit
+            pct = min(100, int((current / limit) * 100)) if limit > 0 else 0
+            try:
+                data = yaml.safe_load(raw) if raw else {}
+                if isinstance(data, dict):
+                    return {
+                        "success": True,
+                        "target": target,
+                        "profile": data,
+                        "usage": f"{pct}% — {current:,}/{limit:,} chars",
+                    }
+            except Exception:
+                pass
+            return {
+                "success": True,
+                "target": target,
+                "profile_raw": raw,
+                "usage": f"{pct}% — {current:,}/{limit:,} chars",
+            }
+
+        # memory target
+        daily = dict(self._memory_data.get("daily", {}))
+        today = _today_str()
+        if today in daily and daily[today]:
+            has_today = daily[today]
+        else:
+            has_today = None
+
+        current = self._memory_char_count()
+        limit = self.memory_char_limit
+        pct = min(100, int((current / limit) * 100)) if limit > 0 else 0
+
+        return {
+            "success": True,
+            "target": target,
+            "daily": daily,
+            "today": today,
+            "today_entry": has_today,
+            "last_week": self._memory_data.get("last_week", ""),
+            "last_month": self._memory_data.get("last_month", ""),
+            "entry_count": len(daily),
+            "usage": f"{pct}% — {current:,}/{limit:,} chars",
+        }
+
+    def add(self, target: str, content: str, date: str = None) -> Dict[str, Any]:
+        """Add an activity entry for a specific date or section. target='memory' only.
+
+        Args:
+            target: Must be "memory".
+            content: Summary text.
+            date: Date in YYYY-MM-DD format, or "last_week", or "last_month".
+                   Defaults to today if omitted.
+        """
+        if target == "user":
+            return {"success": False, "error": "User profile is read-only. Edit USER.md directly."}
+
+        content = content.strip()
+        if not content:
+            return {"success": False, "error": "Content cannot be empty."}
+
+        scan_error = _scan_memory_content(content)
+        if scan_error:
+            return {"success": False, "error": scan_error}
+
+        with self._file_lock(self._path_for(target)):
+            self._reload_target(target)
+
+            # Determine where to write
+            key = (date or _today_str()).strip()
+
+            if key in ("last_week", "last_month"):
+                self._memory_data[key] = content
+                self._write_memory_file()
+                return self._memory_success(f"{key} updated.")
+
+            # It's a daily entry — validate YYYY-MM-DD format loosely
+            if not self._valid_date_key(key):
+                return {
+                    "success": False,
+                    "error": f"Invalid date '{key}'. Use YYYY-MM-DD format, 'last_week', or 'last_month'.",
+                }
+
+            daily = self._memory_data.setdefault("daily", {})
+
+            # Check memory char limit
+            test_daily = dict(daily)
+            test_daily[key] = content
+            test_data = {
+                "daily": test_daily,
+                "last_week": self._memory_data.get("last_week", ""),
+                "last_month": self._memory_data.get("last_month", ""),
+            }
+            total = self._yaml_char_count(test_data)
+            if total > self.memory_char_limit:
+                return {
+                    "success": False,
+                    "error": f"Memory would exceed {self.memory_char_limit:,} char limit ({total:,} chars). Remove or consolidate older entries first.",
+                    "usage": f"{total:,}/{self.memory_char_limit:,}",
+                }
+
+            is_update = key in daily and bool(daily[key])
+            daily[key] = content
+            self._memory_data["daily"] = daily
+            self._write_memory_file()
+
+            label = "today" if key == _today_str() else key
+            msg = f"{label} activity updated." if is_update else f"{label} activity recorded."
+            return self._memory_success(msg)
+
+    @staticmethod
+    def _valid_date_key(key: str) -> bool:
+        """Basic YYYY-MM-DD format check."""
+        parts = key.split("-")
+        if len(parts) != 3:
+            return False
+        y, m, d = parts
+        return len(y) == 4 and len(m) == 2 and len(d) == 2 and all(p.isdigit() for p in parts)
+
+    def replace(self, target: str, old_text: str, new_content: str) -> Dict[str, Any]:
+        """Replace content for a date or summary section. target='memory' only."""
+        if target == "user":
+            return {"success": False, "error": "User profile is read-only. Edit USER.md directly."}
+        old_text = old_text.strip()
+        new_content = new_content.strip()
+        if not old_text:
+            return {"success": False, "error": "old_text cannot be empty."}
+        if not new_content:
+            return {"success": False, "error": "new_content is required."}
+
+        scan_error = _scan_memory_content(new_content)
+        if scan_error:
+            return {"success": False, "error": scan_error}
+
+        with self._file_lock(self._path_for(target)):
+            self._reload_target(target)
+
+            # Try matching as a date key in daily
+            daily = self._memory_data.get("daily", {})
+            if old_text in daily:
+                # Check char limit
+                test_daily = dict(daily)
+                test_daily[old_text] = new_content
+                test_data = {
+                    "daily": test_daily,
+                    "last_week": self._memory_data.get("last_week", ""),
+                    "last_month": self._memory_data.get("last_month", ""),
+                }
+                total = self._yaml_char_count(test_data)
+                if total > self.memory_char_limit:
+                    return {
+                        "success": False,
+                        "error": f"Replacement would exceed {self.memory_char_limit:,} char limit.",
+                    }
+                daily[old_text] = new_content
+                self._memory_data["daily"] = daily
+                self._write_memory_file()
+                return self._memory_success(f"Entry for {old_text} replaced.")
+
+            # Try matching as a section name
+            if old_text in ("last_week", "last_month"):
+                if old_text in self._memory_data:
+                    test_data = dict(self._memory_data)
+                    test_data[old_text] = new_content
+                    total = self._yaml_char_count(test_data)
+                    if total > self.memory_char_limit:
+                        return {
+                            "success": False,
+                            "error": f"Replacement would exceed {self.memory_char_limit:,} char limit.",
+                        }
+                    self._memory_data[old_text] = new_content
+                    self._write_memory_file()
+                    return self._memory_success(f"{old_text} updated.")
+
+            # Try substring match in daily entry text
+            matches = [(d, t) for d, t in daily.items() if old_text in t]
+            if matches:
+                if len(matches) > 1:
+                    return {
+                        "success": False,
+                        "error": f"Multiple daily entries matched '{old_text}'. Use a date (YYYY-MM-DD) as old_text to target a specific day.",
+                        "matches": [f"{d}: {t[:60]}..." for d, t in matches],
+                    }
+                date_key = matches[0][0]
+                test_daily = dict(daily)
+                test_daily[date_key] = new_content
+                test_data = {
+                    "daily": test_daily,
+                    "last_week": self._memory_data.get("last_week", ""),
+                    "last_month": self._memory_data.get("last_month", ""),
+                }
+                total = self._yaml_char_count(test_data)
+                if total > self.memory_char_limit:
+                    return {
+                        "success": False,
+                        "error": f"Replacement would exceed {self.memory_char_limit:,} char limit.",
+                    }
+                daily[date_key] = new_content
+                self._memory_data["daily"] = daily
+                self._write_memory_file()
+                return self._memory_success(f"Entry for {date_key} replaced.")
+
+            return {"success": False, "error": f"No entry or section matched '{old_text}'."}
+
+    def remove(self, target: str, old_text: str) -> Dict[str, Any]:
+        """Remove a daily entry or reset a summary section. target='memory' only."""
+        if target == "user":
+            return {"success": False, "error": "User profile is read-only. Edit USER.md directly."}
+        old_text = old_text.strip()
+        if not old_text:
+            return {"success": False, "error": "old_text cannot be empty."}
+
+        with self._file_lock(self._path_for(target)):
+            self._reload_target(target)
+
+            daily = self._memory_data.get("daily", {})
+
+            # Try exact date match
+            if old_text in daily:
+                del daily[old_text]
+                self._memory_data["daily"] = daily
+                self._write_memory_file()
+                return self._memory_success(f"Entry for {old_text} removed.")
+
+            # Try section name
+            if old_text in ("last_week", "last_month") and old_text in self._memory_data:
+                self._memory_data[old_text] = ""
+                self._write_memory_file()
+                return self._memory_success(f"{old_text} cleared.")
+
+            # Try substring in entry text
+            matches = [(d, t) for d, t in daily.items() if old_text in t]
+            if matches:
+                if len(matches) > 1:
+                    return {
+                        "success": False,
+                        "error": f"Multiple entries matched '{old_text}'. Use a date (YYYY-MM-DD) as old_text to target a specific day.",
+                        "matches": [f"{d}: {t[:60]}..." for d, t in matches],
+                    }
+                date_key = matches[0][0]
+                del daily[date_key]
+                self._memory_data["daily"] = daily
+                self._write_memory_file()
+                return self._memory_success(f"Entry for {date_key} removed.")
+
+            return {"success": False, "error": f"No entry matched '{old_text}'."}
+
+    # -- System prompt -------------------------------------------------------
+
+    def format_for_system_prompt(self, target: str) -> Optional[str]:
+        block = self._system_prompt_snapshot.get(target, "")
+        return block if block else None
+
+    # -- Rendering -----------------------------------------------------------
+
+    def _memory_success(self, message: str = None) -> Dict[str, Any]:
+        current = self._memory_char_count()
+        limit = self.memory_char_limit
+        pct = min(100, int((current / limit) * 100)) if limit > 0 else 0
+        resp: Dict[str, Any] = {
+            "success": True,
+            "target": "memory",
+            "usage": f"{pct}% — {current:,}/{limit:,} chars",
+            "entry_count": len(self._memory_data.get("daily", {})),
+        }
+        if message:
+            resp["message"] = message
+        return resp
+
+    def _memory_char_count(self) -> int:
+        return self._yaml_char_count(self._memory_data)
+
+    @staticmethod
+    def _yaml_char_count(data: Dict[str, Any]) -> int:
+        daily = data.get("daily", {})
+        total = 0
+        for d, t in daily.items():
+            if t:
+                total += len(d) + len(str(t)) + 2  # "date: text"
+        lw = data.get("last_week", "")
+        lm = data.get("last_month", "")
+        if lw:
+            total += len(str(lw)) + 10  # "last_week: "
+        if lm:
+            total += len(str(lm)) + 11  # "last_month: "
+        return total
+
+    def _render_memory_block(self, data: Dict[str, Any]) -> str:
+        """Render the three-tier activity log for system prompt injection."""
+        daily = data.get("daily", {}) or {}
+        last_week = data.get("last_week", "") or ""
+        last_month = data.get("last_month", "") or ""
+
+        if not daily and not last_week and not last_month:
+            return ""
+
+        current = self._memory_char_count()
+        limit = self.memory_char_limit
+        pct = min(100, int((current / limit) * 100)) if limit > 0 else 0
+
+        lines = []
+        separator = "═" * 46
+        header = f"RECENT ACTIVITY LOG [{pct}% — {current:,}/{limit:,} chars]"
+        lines.append(separator)
+        lines.append(header)
+        lines.append(separator)
+
+        # Last 7 days
+        if daily:
+            sorted_dates = sorted(daily.keys(), reverse=True)
+            lines.append("")
+            lines.append("📅 最近7天:")
+            for d in sorted_dates:
+                text = daily.get(d, "")
+                if text:
+                    lines.append(f"  {d}  {text}")
+                else:
+                    lines.append(f"  {d}  (no record)")
+
+        # Previous week
+        if last_week:
+            lines.append("")
+            lines.append("📆 一周前:")
+            lines.append(f"  {last_week}")
+
+        # Last month
+        if last_month:
+            lines.append("")
+            lines.append("📚 一月前:")
+            lines.append(f"  {last_month}")
+
+        return "\n".join(lines)
+
+    def _render_user_block(self, entries: List[str]) -> str:
+        """Render USER.md profile for system prompt injection."""
+        if not entries:
+            return ""
+
+        raw = entries[0] if entries else ""
+        current = len(raw)
+        limit = self.user_char_limit
+        pct = min(100, int((current / limit) * 100)) if limit > 0 else 0
+
+        header = f"USER PROFILE (who the user is) [{pct}% — {current:,}/{limit:,} chars]"
+
+        try:
+            data = yaml.safe_load(raw) if raw else {}
+            if isinstance(data, dict) and data:
+                lines = [header]
+                lines.append("═" * 46)
+                for key, value in data.items():
+                    if isinstance(value, list):
+                        items = "\n".join(f"  - {v}" for v in value)
+                        lines.append(f"{key}:\n{items}")
+                    elif isinstance(value, dict):
+                        items = "\n".join(f"  {k}: {v}" for k, v in value.items())
+                        lines.append(f"{key}:\n{items}")
+                    else:
+                        lines.append(f"{key}: {value}")
+                return "\n".join(lines)
+        except Exception:
+            pass
+
+        separator = "═" * 46
+        return f"{separator}\n{header}\n{separator}\n{raw}"
+
+
+# ---------------------------------------------------------------------------
+# Tool entry point
+# ---------------------------------------------------------------------------
 
 def memory_tool(
     action: str,
     target: str = "memory",
     content: str = None,
     old_text: str = None,
+    date: str = None,
     store: Optional[MemoryStore] = None,
 ) -> str:
-    """
-    Single entry point for the memory tool. Dispatches to MemoryStore methods.
-
-    Returns JSON string with results.
-    """
+    """Dispatch to MemoryStore methods. Returns JSON string."""
     if store is None:
         return tool_error("Memory is not available. It may be disabled in config or this environment.", success=False)
 
     if target not in {"memory", "user"}:
         return tool_error(f"Invalid target '{target}'. Use 'memory' or 'user'.", success=False)
 
-    if action == "add":
+    if action == "read":
+        result = store.read(target)
+    elif action == "add":
+        if target == "user":
+            return json.dumps({
+                "success": False,
+                "error": "User profile is read-only. Edit USER.md directly.",
+            }, ensure_ascii=False)
         if not content:
             return tool_error("Content is required for 'add' action.", success=False)
-        result = store.add(target, content)
-
+        result = store.add(target, content, date=date)
     elif action == "replace":
+        if target == "user":
+            return json.dumps({
+                "success": False,
+                "error": "User profile is read-only. Edit USER.md directly.",
+            }, ensure_ascii=False)
         if not old_text:
             return tool_error("old_text is required for 'replace' action.", success=False)
         if not content:
             return tool_error("content is required for 'replace' action.", success=False)
         result = store.replace(target, old_text, content)
-
     elif action == "remove":
+        if target == "user":
+            return json.dumps({
+                "success": False,
+                "error": "User profile is read-only. Edit USER.md directly.",
+            }, ensure_ascii=False)
         if not old_text:
             return tool_error("old_text is required for 'remove' action.", success=False)
         result = store.remove(target, old_text)
-
     else:
-        return tool_error(f"Unknown action '{action}'. Use: add, replace, remove", success=False)
+        return tool_error(f"Unknown action '{action}'. Use: read, add, replace, remove", success=False)
 
     return json.dumps(result, ensure_ascii=False)
 
 
 def check_memory_requirements() -> bool:
-    """Memory tool has no external requirements -- always available."""
     return True
 
 
@@ -628,48 +837,55 @@ def check_memory_requirements() -> bool:
 MEMORY_SCHEMA = {
     "name": "memory",
     "description": (
-        "Save durable information to persistent memory that survives across sessions. "
-        "Memory is injected into future turns, so keep it compact and focused on facts "
-        "that will still matter later.\n\n"
-        "WHEN TO SAVE (do this proactively, don't wait to be asked):\n"
-        "- User corrects you or says 'remember this' / 'don't do that again'\n"
-        "- User shares a preference, habit, or personal detail (name, role, timezone, coding style)\n"
-        "- You discover something about the environment (OS, installed tools, project structure)\n"
-        "- You learn a convention, API quirk, or workflow specific to this user's setup\n"
-        "- You identify a stable fact that will be useful again in future sessions\n\n"
-        "PRIORITY: User preferences and corrections > environment facts > procedural knowledge. "
-        "The most valuable memory prevents the user from having to repeat themselves.\n\n"
-        "Do NOT save task progress, session outcomes, completed-work logs, or temporary TODO "
-        "state to memory; use session_search to recall those from past transcripts.\n"
-        "If you've discovered a new way to do something, solved a problem that could be "
-        "necessary later, save it as a skill with the skill tool.\n\n"
-        "TWO TARGETS:\n"
-        "- 'user': who the user is -- name, role, preferences, communication style, pet peeves\n"
-        "- 'memory': your notes -- environment facts, project conventions, tool quirks, lessons learned\n\n"
-        "ACTIONS: add (new entry), replace (update existing -- old_text identifies it), "
-        "remove (delete -- old_text identifies it).\n\n"
-        "SKIP: trivial/obvious info, things easily re-discovered, raw data dumps, and temporary task state."
+        "Persistent memory that survives across sessions. Two targets with different purposes:\n\n"
+        "TARGET='memory' — Activity Log (STRUCTURED YAML, WRITABLE)\n"
+        "  Records what the user has been doing in three time tiers:\n"
+        "    • daily:     last 7 days (per-day summaries, date-keyed)\n"
+        "    • last_week: the week before the last 7 days (one summary)\n"
+        "    • last_month: the month before last_week (one summary)\n"
+        "  ACTIONS:\n"
+        "    add(content=..., date=...) — Record activity for a specific date.\n"
+        "                          date='YYYY-MM-DD' for a past day,\n"
+        "                          date='last_week' or date='last_month' for summaries,\n"
+        "                          omit date for today.\n"
+        "    read                — Return the full structured log.\n"
+        "    replace(old_text, content) — Update a specific date's entry (use YYYY-MM-DD as old_text)\n"
+        "                          or update last_week / last_month sections.\n"
+        "    remove(old_text)    — Delete a daily entry by date or clear a summary section.\n\n"
+        "TARGET='user' — User Profile (STRUCTURED YAML, READ-ONLY)\n"
+        "  The user's identity, preferences, and fixed attributes. Only the user edits USER.md.\n"
+        "  ACTIONS: read only. add/replace/remove are rejected.\n\n"
+        "GENERAL GUIDANCE:\n"
+        "  • For target='memory': save what the user worked on at the end of each session.\n"
+        "    Keep summaries concise (1-2 lines per day). Do NOT save trivial details.\n"
+        "  • For target='user': ONLY read — never attempt to write.\n"
+        "  • Older daily entries (>7 days) are automatically consolidated into last_week.\n"
+        "  • The agent should also update last_week and last_month occasionally via add(date=...) or replace()."
     ),
     "parameters": {
         "type": "object",
         "properties": {
             "action": {
                 "type": "string",
-                "enum": ["add", "replace", "remove"],
-                "description": "The action to perform."
+                "enum": ["read", "add", "replace", "remove"],
+                "description": "What to do. 'read' works on both targets. 'add'/'replace'/'remove' only work on target='memory'."
             },
             "target": {
                 "type": "string",
                 "enum": ["memory", "user"],
-                "description": "Which memory store: 'memory' for personal notes, 'user' for user profile."
+                "description": "'memory' = activity log (writable YAML, 3-tier time structure). 'user' = user profile (read-only YAML)."
             },
             "content": {
                 "type": "string",
-                "description": "The entry content. Required for 'add' and 'replace'."
+                "description": "For 'add' (target='memory'): activity summary (1-2 lines). For 'replace': the new content."
+            },
+            "date": {
+                "type": "string",
+                "description": "For 'add' (target='memory'): target date (YYYY-MM-DD), 'last_week', or 'last_month'. Omit for today."
             },
             "old_text": {
                 "type": "string",
-                "description": "Short unique substring identifying the entry to replace or remove."
+                "description": "For 'replace'/'remove' (target='memory'): a date key (YYYY-MM-DD) to target a specific day, a section name (last_week/last_month), or a substring to match in daily entries."
             },
         },
         "required": ["action", "target"],
@@ -689,11 +905,8 @@ registry.register(
         target=args.get("target", "memory"),
         content=args.get("content"),
         old_text=args.get("old_text"),
+        date=args.get("date"),
         store=kw.get("store")),
     check_fn=check_memory_requirements,
     emoji="🧠",
 )
-
-
-
-

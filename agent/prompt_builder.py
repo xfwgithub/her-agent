@@ -14,6 +14,8 @@ from pathlib import Path
 from her_constants import get_her_home, get_skills_dir
 from typing import Optional
 
+import yaml
+
 from agent.runtime_cwd import resolve_agent_cwd
 from agent.skill_utils import (
     extract_skill_conditions,
@@ -1358,8 +1360,86 @@ def _truncate_content(content: str, filename: str, max_chars: int = CONTEXT_FILE
     return head + marker + tail
 
 
+def _render_soul_yaml(data: dict) -> str:
+    """Render a parsed SOUL.md YAML dict as a natural-language identity block.
+
+    Fields are rendered in a fixed order so the system prompt is deterministic:
+      name, creator, role, style, communication, uncertainty, priority, approach,
+      rules/principles, capabilities.
+
+    Unknown fields are appended as-is at the end.
+    """
+    lines = []
+    name = str(data.get("name", "")).strip()
+    creator = str(data.get("creator", "")).strip()
+    role = str(data.get("role", "")).strip()
+
+    # Core identity
+    identity_parts = []
+    if name:
+        identity_parts.append(name)
+    if role:
+        article = "an" if role[0].lower() in "aeiou" else "a"
+        identity_parts.append(f"{article} {role}")
+    if creator:
+        identity_parts.append(f"created by {creator}")
+    if identity_parts:
+        lines.append(f"You are {', '.join(identity_parts)}.")
+
+    # Style/traits
+    style = str(data.get("style", "")).strip()
+    if style:
+        lines.append(f"You are {style}.")
+
+    # Capabilities
+    caps = data.get("capabilities", [])
+    if caps:
+        flat_caps = [str(c).strip() for c in caps if str(c).strip()]
+        if len(flat_caps) == 1:
+            lines.append(f"You assist users with {flat_caps[0]}.")
+        elif len(flat_caps) >= 2:
+            lines.append(
+                f"You assist users with a wide range of tasks including "
+                f"{', '.join(flat_caps[:-1])}, and {flat_caps[-1]}."
+            )
+
+    # Behavioral rules / principles
+    rules = data.get("rules", data.get("principles", []))
+    if isinstance(rules, list):
+        for r in rules:
+            r_str = str(r).strip()
+            if r_str:
+                lines.append(r_str.rstrip(".") + ".")
+    elif isinstance(rules, str) and rules.strip():
+        lines.append(rules.strip().rstrip(".") + ".")
+
+    # Named behavioral fields
+    for field in ("communication", "uncertainty", "priority", "approach"):
+        val = str(data.get(field, "")).strip()
+        if val:
+            lines.append(val.rstrip(".") + ".")
+
+    # Any other fields not already handled
+    handled = {"name", "creator", "role", "style", "capabilities", "rules",
+               "principles", "communication", "uncertainty", "priority", "approach"}
+    for key, value in data.items():
+        if key in handled:
+            continue
+        if isinstance(value, list):
+            items = "; ".join(str(v) for v in value)
+            lines.append(f"{key}: {items}.")
+        elif isinstance(value, str) and value.strip():
+            lines.append(value.strip().rstrip(".") + ".")
+
+    return "\n\n".join(lines)
+
+
 def load_soul_md() -> Optional[str]:
     """Load SOUL.md from HER_HOME and return its content, or None.
+
+    If the file is valid YAML with a dict root, it is rendered as a
+    natural-language identity block.  Otherwise the raw text is returned
+    (backward-compatible with plain-text SOUL.md files).
 
     Used as the agent identity (slot #1 in the system prompt).  When this
     returns content, ``build_context_files_prompt`` should be called with
@@ -1378,6 +1458,15 @@ def load_soul_md() -> Optional[str]:
         content = soul_path.read_text(encoding="utf-8").strip()
         if not content:
             return None
+
+        # Try to parse as YAML; if it's a dict, render it
+        try:
+            parsed = yaml.safe_load(content)
+            if isinstance(parsed, dict):
+                content = _render_soul_yaml(parsed)
+        except yaml.YAMLError:
+            pass  # Not YAML — use raw text (backward compat)
+
         content = _scan_context_content(content, "SOUL.md")
         content = _truncate_content(content, "SOUL.md")
         return content
